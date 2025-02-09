@@ -67,9 +67,7 @@ localparam SIM_MODE = 0;
 localparam SIM_MODE = 1;
 `endif
 
-//localparam CTRL_CLOCK_HZ = 101041667;
-//localparam CTRL_CLOCK_HZ = 86607143;
-localparam CTRL_CLOCK_HZ = 75781250;
+localparam CTRL_CLOCK_HZ = 76562500;
 localparam UART_BAUD = 115200;
 
 localparam GPIO_IN_PORTS=1, GPIO_OUT_PORTS=1;

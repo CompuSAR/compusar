@@ -4,7 +4,7 @@
 <!-- Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.                   -->
 <!-- Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.   -->
 
-<Project Product="Vivado" Version="7" Minor="68" Path="/home/shachar/sources/CompuSar/ControlCpu/ControlCpu.xpr">
+<Project Product="Vivado" Version="7" Minor="68" Path="/home/shachar/sources/CompuSar/sar_apple2/ControlCpu.xpr">
   <DefaultLaunch Dir="$PRUNDIR"/>
   <Configuration>
     <Option Name="Id" Val="ad8bf39ad11f43e9aa3e2ec535522337"/>
