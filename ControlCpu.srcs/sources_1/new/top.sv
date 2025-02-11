@@ -68,6 +68,7 @@ localparam SIM_MODE = 1;
 `endif
 
 localparam CTRL_CLOCK_HZ = 76562500;
+localparam BUS8_FREQ_DIV = 75;
 localparam UART_BAUD = 115200;
 
 localparam GPIO_IN_PORTS=1, GPIO_OUT_PORTS=1;
@@ -122,7 +123,7 @@ clk_converter clocks(
     .locked(clocks_locked)
 );
 
-localparam CACHE_PORTS_NUM = 3;
+localparam CACHE_PORTS_NUM = 4;
 localparam CACHELINE_BITS = 128;
 localparam CACHELINE_BYTES = CACHELINE_BITS/8;
 localparam NUM_CACHELINES = 16*1024*8/CACHELINE_BITS;
@@ -138,9 +139,10 @@ logic [CACHELINE_BITS-1:0]              cache_port_cmd_write_data_s[CACHE_PORTS_
 logic                                   cache_port_rsp_valid_n[CACHE_PORTS_NUM];
 logic [CACHELINE_BITS-1:0]              cache_port_rsp_read_data_n[CACHE_PORTS_NUM];
 
-localparam CACHE_PORT_IDX_DBUS = 0;
-localparam CACHE_PORT_IDX_IBUS = 1;
-localparam CACHE_PORT_IDX_SPI_FLASH = 2;
+localparam CACHE_PORT_IDX_6502 = 0;
+localparam CACHE_PORT_IDX_DBUS = 1;
+localparam CACHE_PORT_IDX_IBUS = 2;
+localparam CACHE_PORT_IDX_SPI_FLASH = 3;
 
 logic                                   inst_cache_port_cmd_valid_s[0:0];
 logic [31:0]                            inst_cache_port_cmd_addr_s[0:0];
@@ -254,6 +256,8 @@ logic gpio_enable, gpio_req_ack, gpio_rsp_valid;
 logic [31:0] gpio_rsp_data;
 logic uart_enable, uart_req_ack, uart_rsp_valid;
 logic [31:0] uart_rsp_data;
+logic apple_pager_enable, apple_pager_req_ack, apple_pager_rsp_valid;
+logic [31:0] apple_pager_rsp_data;
 
 io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .clock(ctrl_cpu_clock),
@@ -295,7 +299,13 @@ io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .passthrough_uart_enable(uart_enable),
     .passthrough_uart_req_ack(uart_req_ack),
     .passthrough_uart_rsp_valid(uart_rsp_valid),
-    .passthrough_uart_rsp_data(uart_rsp_data)
+    .passthrough_uart_rsp_data(uart_rsp_data),
+
+    .passthrough_apple_pager_enable(apple_pager_enable),
+    .passthrough_apple_pager_req_ack(apple_pager_req_ack),
+    .passthrough_apple_pager_rsp_valid(apple_pager_rsp_valid),
+    .passthrough_apple_pager_rsp_data(apple_pager_rsp_data)
+
 );
 
 cache#(
@@ -580,5 +590,76 @@ always_ff@(posedge board_clock) begin
         blink_counter <= 50000000;
     end
 end
+
+wire bus8_req_valid, bus8_req_ack, bus8_rsp_valid;
+wire bus8_req_write;
+wire [7:0] bus8_req_data, bus8_rsp_data;
+wire [15:0] bus8_req_addr;
+wire [31:0] bus8_paged_req_addr;
+
+assign bus8_rsp_valid = cache_port_rsp_valid_n[CACHE_PORT_IDX_6502];
+
+bus_width_adjust#(.IN_WIDTH(8), .OUT_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(16)) bus8_width_adjuster(
+    .clock_i( ctrl_cpu_clock ),
+    .in_cmd_valid_i( bus8_req_valid ),
+    .in_cmd_addr_i( bus8_paged_req_addr ),
+    .in_cmd_write_mask_i( 1'b1 ),
+    .in_cmd_write_data_i( bus8_req_data ),
+    .in_rsp_read_data_o( bus8_rsp_data ),
+
+    .out_cmd_ready_i( bus8_req_ack ),
+    .out_cmd_write_mask_o( cache_port_cmd_write_mask_s[CACHE_PORT_IDX_6502] ),
+    .out_cmd_write_data_o( cache_port_cmd_write_data_s[CACHE_PORT_IDX_6502] ),
+    .out_rsp_valid_i( cache_port_rsp_valid_n[CACHE_PORT_IDX_6502] ),
+    .out_rsp_read_data_i( cache_port_rsp_read_data_n[CACHE_PORT_IDX_6502] )
+);
+
+freq_div_bus#() freq_div_6502(
+    .clock_i( ctrl_cpu_clock ),
+    .ctl_div_nom_i( BUS8_FREQ_DIV ),
+    .ctl_div_denom_i( 16'd1 ),
+    .reset_i( 1'b0 ),
+
+    .slow_cmd_valid_i( bus8_req_valid ),
+    .slow_cmd_ready_o( bus8_req_ack )
+
+    );
+
+sar6502_sync apple_cpu(
+    .clock_i( ctrl_cpu_clock ),
+
+    .reset_i( 1'b0 ),
+    .nmi_i( 1'b0 ),
+    .irq_i( 1'b0 ),
+    .set_overflow_i( 1'b0 ),
+
+    .bus_req_valid_o( bus8_req_valid ),
+    .bus_req_address_o( bus8_req_addr ),
+    .bus_req_write_o( bus8_req_write ),
+    .bus_req_ack_i( bus8_req_ack ),
+    .bus_req_data_o( bus8_req_data ),
+    .bus_rsp_valid_i( bus8_rsp_valid ),
+    .bus_rsp_data_i( bus8_rsp_data )
+);
+
+apple_pager pager(
+    .clock_i(ctrl_cpu_clock),
+
+    .cpu_req_valid_i(bus8_req_valid),
+    .cpu_req_write_i(bus8_req_write),
+    .cpu_req_addr_i(bus8_req_addr),
+
+    .mem_req_addr_o(bus8_paged_req_addr),
+
+    .ctrl_req_valid_i(apple_pager_enable),
+    .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
+    .ctrl_req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
+    .ctrl_req_data_i(ctrl_dBus_cmd_payload_data),
+    .ctrl_req_ack_o(apple_pager_req_ack),
+    .ctrl_rsp_valid_o(apple_pager_rsp_valid),
+    .ctrl_rsp_data_o(apple_pager_rsp_data)
+);
+
+assign cache_port_cmd_addr_s[CACHE_PORT_IDX_6502] = bus8_paged_req_addr;
 
 endmodule

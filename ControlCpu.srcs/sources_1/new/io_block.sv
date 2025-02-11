@@ -62,7 +62,12 @@ module io_block#(
     output logic passthrough_uart_enable,
     input passthrough_uart_req_ack,
     input passthrough_uart_rsp_valid,
-    input [31:0] passthrough_uart_rsp_data
+    input [31:0] passthrough_uart_rsp_data,
+
+    output logic passthrough_apple_pager_enable,
+    input passthrough_apple_pager_req_ack,
+    input passthrough_apple_pager_rsp_valid,
+    input [31:0] passthrough_apple_pager_rsp_data
 
     );
 
@@ -137,6 +142,9 @@ always_comb begin
                     rsp_valid = passthrough_spi_rsp_valid;
                     data_out = passthrough_spi_rsp_data;
                 end
+                8'h5: begin                     // Apple II pager
+                    rsp_valid = passthrough_apple_pager_rsp_valid;
+                    data_out = passthrough_apple_pager_rsp_data;
                 default: begin                  // Invalid memory access
                     rsp_valid = 1'b1;
                     rsp_error = 1'b1;
@@ -180,6 +188,9 @@ always_comb begin
                     passthrough_spi_enable = 1'b1;
                     req_ack = passthrough_spi_req_ack;
                 end
+                8'h5: begin                // Apple II pager
+                    passthrough_apple_pager_enable = 1'b1;
+                    req_ack = passthrough_apple_pager_req_ack;
                 default: begin
                     // Bus error case. If it's a read, it's handled with the
                     // responses. If it's a write, we have no way to
