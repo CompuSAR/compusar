@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module gpio#(NUM_IN_PORTS = 1, NUM_OUT_PORTS = 1)
+module gpio#(NUM_IN_PORTS = 1, NUM_OUT_PORTS = 1, GPOUT_RESET_VALUES = {{32'h0}})
 (
     input               clock_i,
 

@@ -73,6 +73,9 @@ localparam UART_BAUD = 115200;
 
 localparam GPIO_IN_PORTS=1, GPIO_OUT_PORTS=1;
 
+// GPOUT port 1
+localparam GPOUT_6502_RESET = 0;
+
 `ifdef SYNTHESIS
 wire spi_clk;
 `endif
@@ -476,8 +479,6 @@ timer_int_ctrl#(.CLOCK_HZ(CTRL_CLOCK_HZ)) interrupt_controller(
     .ctrl_software_interrupt_i(ctrl_software_interrupt)
 );
 
-wire [31:0]gp_out[GPIO_OUT_PORTS];
-
 wire [3:0]buffered_switches;
 
 input_delay#(.NUM_BITS(4)) switches_delay(
@@ -485,6 +486,8 @@ input_delay#(.NUM_BITS(4)) switches_delay(
     .in(switches),
     .out(buffered_switches)
 );
+
+wire [31:0]gp_out[GPIO_OUT_PORTS];
 
 gpio#(
     .NUM_IN_PORTS(GPIO_IN_PORTS),
@@ -599,7 +602,7 @@ wire [31:0] bus8_paged_req_addr;
 
 assign bus8_rsp_valid = cache_port_rsp_valid_n[CACHE_PORT_IDX_6502];
 
-bus_width_adjust#(.IN_WIDTH(8), .OUT_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(16)) bus8_width_adjuster(
+bus_width_adjust#(.IN_WIDTH(8), .OUT_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(32)) bus8_width_adjuster(
     .clock_i( ctrl_cpu_clock ),
     .in_cmd_valid_i( bus8_req_valid ),
     .in_cmd_addr_i( bus8_paged_req_addr ),
@@ -628,7 +631,7 @@ freq_div_bus#() freq_div_6502(
 sar6502_sync apple_cpu(
     .clock_i( ctrl_cpu_clock ),
 
-    .reset_i( 1'b0 ),
+    .reset_i( gp_out[0][GPOUT_6502_RESET] ),
     .nmi_i( 1'b0 ),
     .irq_i( 1'b0 ),
     .set_overflow_i( 1'b0 ),
