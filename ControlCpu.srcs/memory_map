@@ -13,3 +13,16 @@ This is the memory map in 32 bit addresses
 0x8020_0000 - 0x8030_0000 - 1MB: 32 RW program memory
 0x8030_0000 - 0x8100_0000 - 32 bit heap
 
+8 bit memory:
+0x8100_0000 - 0x8101_0000 - 64KB ROMs
+    0x8100_c000 - 0x8100_c100 - IO read region
+    0x8100_d000 - 0x8100_ffff - Applesoft basic and monitor
+0x8101_0000 - 0x8102_0000 - Main bank (64KB)
+
+0xc000_0000 - IO space
+0xc000_0000 - UART
+0xc001_0000 - DDR controller
+0xc002_0000 - GPIO
+0xc003_0000 - Interrupt controller
+0xc004_0000 - SPI controller
+0xc005_0000 - Apple II pager
