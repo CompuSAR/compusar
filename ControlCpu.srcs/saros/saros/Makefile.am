@@ -17,7 +17,8 @@ ABI=-mabi=ilp32
 noinst_PROGRAMS=saros.elf
 
 saros_elf_SOURCES=main.cpp uart.cpp saros.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \
-                  start.s ../abort.cpp crt.cpp
+                  start.s ../abort.cpp crt.cpp \
+                  roms/Apple2_Plus_rom.s
 EXTRA_saros_elf_DEPENDENCIES=$(srcdir)/saros.ld kernel/libkernel.a
 saros_elf_LDFLAGS=-T $(srcdir)/saros.ld --orphan-handling=error
 saros_elf_LDADD=$(TOOLCHAIN_LIB_PATH)/libgcc.a $(TOOLCHAIN_PATH)/$(HOST_TRIPLET)/lib/libc.a kernel/libkernel.a
@@ -41,3 +42,12 @@ $(top_builddir)/roms/%_rom.s: $(top_srcdir)/roms/%.rom $(top_srcdir)/roms/assemb
 
 kernel/%:
 	$(MAKE) -C kernel "$*"
+
+$(srcdir)/roms/%.rom:
+	wget 'https://github.com/AppleWin/AppleWin/raw/refs/heads/master/resource/$*.rom' -O '$@'.tmp
+	mv '$@.tmp' '$@'
+.PRECIOUS: $(srcdir)/roms/%.rom
+
+roms/%_rom.s: $(srcdir)/roms/%.rom $(srcdir)/roms/assemblify
+	mkdir -p roms
+	$(srcdir)/roms/assemblify --section '.apple2_rom' '$<' '$@'
