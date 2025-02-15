@@ -18,7 +18,7 @@ noinst_PROGRAMS=saros.elf
 
 saros_elf_SOURCES=main.cpp uart.cpp saros.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \
                   start.s ../abort.cpp crt.cpp \
-                  roms/Apple2_Plus_rom.s
+                  apple2.cpp roms/Apple2_Plus_rom.s
 EXTRA_saros_elf_DEPENDENCIES=$(srcdir)/saros.ld kernel/libkernel.a
 saros_elf_LDFLAGS=-T $(srcdir)/saros.ld --orphan-handling=error
 saros_elf_LDADD=$(TOOLCHAIN_LIB_PATH)/libgcc.a $(TOOLCHAIN_PATH)/$(HOST_TRIPLET)/lib/libc.a kernel/libkernel.a

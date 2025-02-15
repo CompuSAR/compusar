@@ -48,26 +48,26 @@ localparam NUM_BANKS = rep_bank.num();
     *  d000-dfff - ROM/LC bank1/LC bank2
     *  e000-ffff - ROM/LC
     */
-logic [31:16] mapper[NUM_BANKS][2];
+logic [31:0] mapper[NUM_BANKS][2];
 
-function logic[31:16] translate_addr(logic write, logic [15:0] addr);
+function logic[31:0] translate_addr(logic write, logic [15:0] addr);
     case( addr[15:12] )
-        8'h0: translate_addr=mapper[write][MAIN];
-        8'h1: translate_addr=mapper[write][MAIN];
-        8'h2: translate_addr=mapper[write][MAIN];
-        8'h3: translate_addr=mapper[write][MAIN];
-        8'h4: translate_addr=mapper[write][MAIN];
-        8'h5: translate_addr=mapper[write][MAIN];
-        8'h6: translate_addr=mapper[write][MAIN];
-        8'h7: translate_addr=mapper[write][MAIN];
-        8'h8: translate_addr=mapper[write][MAIN];
-        8'h9: translate_addr=mapper[write][MAIN];
-        8'ha: translate_addr=mapper[write][MAIN];
-        8'hb: translate_addr=mapper[write][MAIN];
-        8'hc: translate_addr=mapper[write][MAIN];
-        8'hd: translate_addr=mapper[write][BANK_D];
-        8'he: translate_addr=mapper[write][BANKS_E_F];
-        8'hf: translate_addr=mapper[write][BANKS_E_F];
+        8'h0: translate_addr=mapper[write][MAIN] ^ addr;
+        8'h1: translate_addr=mapper[write][MAIN] ^ addr;
+        8'h2: translate_addr=mapper[write][MAIN] ^ addr;
+        8'h3: translate_addr=mapper[write][MAIN] ^ addr;
+        8'h4: translate_addr=mapper[write][MAIN] ^ addr;
+        8'h5: translate_addr=mapper[write][MAIN] ^ addr;
+        8'h6: translate_addr=mapper[write][MAIN] ^ addr;
+        8'h7: translate_addr=mapper[write][MAIN] ^ addr;
+        8'h8: translate_addr=mapper[write][MAIN] ^ addr;
+        8'h9: translate_addr=mapper[write][MAIN] ^ addr;
+        8'ha: translate_addr=mapper[write][MAIN] ^ addr;
+        8'hb: translate_addr=mapper[write][MAIN] ^ addr;
+        8'hc: translate_addr=mapper[write][MAIN] ^ addr;
+        8'hd: translate_addr=mapper[write][BANK_D] ^ addr;
+        8'he: translate_addr=mapper[write][BANKS_E_F] ^ addr;
+        8'hf: translate_addr=mapper[write][BANKS_E_F] ^ addr;
     endcase
 endfunction
 
@@ -75,8 +75,7 @@ always_comb begin
     mem_req_addr_o = 32'hX;
 
     if( cpu_req_valid_i ) begin
-        mem_req_addr_o[31:16] = translate_addr(cpu_req_write_i, cpu_req_addr_i);
-        mem_req_addr_o[15:0] = cpu_req_addr_i;
+        mem_req_addr_o = translate_addr(cpu_req_write_i, cpu_req_addr_i);
     end
 end
 
