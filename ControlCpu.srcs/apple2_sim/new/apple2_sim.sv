@@ -23,6 +23,8 @@
 module apple2_sim();
 
 localparam BUS8_FREQ_DIV = 5;
+localparam CACHELINE_BITS = 128;
+localparam CACHELINE_BYTES = CACHELINE_BITS / 8;
 
 logic clock, ctrl_cpu_clock;
 
@@ -38,13 +40,15 @@ initial begin
     end
 end
 
-logic [7:0] memory[1024*1024];
+logic [CACHELINE_BITS-1:0] memory[64*1024];
 initial
-    $readmemh("Apple2_Plus.mem", memory, 20'hfd000);
+    $readmemh("Apple2_Plus.mem", memory, 20'hfd00);
 
-logic mem_req_valid, mem_req_ack = 1'b1, mem_req_write, mem_rsp_valid;
+
+logic mem_req_valid, mem_req_ack = 1'b1, mem_rsp_valid;
+logic [15:0] mem_req_write_mask;
 logic [31:0] mem_req_addr;
-logic [7:0] mem_req_data, mem_rsp_data;
+logic [CACHELINE_BITS-1:0] mem_req_data, mem_rsp_data;
 
 wire bus8_req_valid, bus8_req_ack, bus8_rsp_valid;
 wire bus8_req_write;
@@ -92,19 +96,45 @@ initial begin
     #50 reset = 1'b0;
 end
 
+genvar i;
+
+logic [CACHELINE_BITS-1:0] mem_req_write_mask_expanded;
+
+generate
+
+for( i=0; i<CACHELINE_BYTES; i++ )
+    assign mem_req_write_mask_expanded[i*8+7:i*8] = mem_req_write_mask[i] ? 8'hFF : 8'h00;
+
+endgenerate
+
 always_ff@(posedge clock) begin
     mem_rsp_valid <= 1'b0;
     mem_rsp_data <= 8'hXX;
 
     if( mem_req_valid ) begin
-        if( mem_req_write )
-            memory[mem_req_addr] <= mem_req_data;
+        if( mem_req_write_mask != 16'h0 )
+            memory[mem_req_addr[31:$clog2(CACHELINE_BYTES)]] <= (memory[mem_req_addr[31:4]] & ~mem_req_write_mask_expanded) | (mem_req_data & mem_req_write_mask_expanded);
         else begin
-            mem_rsp_data <= memory[mem_req_addr];
+            mem_rsp_data <= memory[mem_req_addr[31:$clog2(CACHELINE_BYTES)]];
             mem_rsp_valid <= 1'b1;
         end
     end
 end
+
+bus_width_adjust#(.IN_WIDTH(8), .OUT_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(32)) bus8_width_adjuster(
+    .clock_i( ctrl_cpu_clock ),
+    .in_cmd_valid_i( bus8_req_valid ),
+    .in_cmd_addr_i( bus8_paged_req_addr ),
+    .in_cmd_write_mask_i( bus8_req_write ),
+    .in_cmd_write_data_i( bus8_req_data ),
+    .in_rsp_read_data_o( bus8_rsp_data ),
+
+    .out_cmd_ready_i( bus8_req_ack ),
+    .out_cmd_write_mask_o( mem_req_write_mask ),
+    .out_cmd_write_data_o( mem_req_data ),
+    .out_rsp_valid_i( mem_rsp_valid ),
+    .out_rsp_read_data_i( mem_rsp_data )
+);
 
 freq_div_bus#() freq_div_6502(
     .clock_i( ctrl_cpu_clock ),
@@ -156,14 +186,15 @@ apple_pager pager(
     .ctrl_rsp_data_o(apple_pager_rsp_data)
 );
 
-//assign mem_req_valid = bus8_req_valid;
 assign mem_req_addr = bus8_paged_req_addr;
+/*
 assign mem_req_write = bus8_req_write;
 assign mem_req_data = bus8_req_data;
+*/
 assign bus8_rsp_valid = mem_rsp_valid;
+/*
 assign bus8_rsp_data = mem_rsp_data;
 
-/*
 bus_width_adjust#(.IN_WIDTH(8), .OUT_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(32)) bus8_width_adjuster(
     .clock_i( clock ),
     .in_cmd_valid_i( bus8_req_valid ),

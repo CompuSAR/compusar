@@ -609,7 +609,7 @@ bus_width_adjust#(.IN_WIDTH(8), .OUT_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(32)) bus
     .clock_i( ctrl_cpu_clock ),
     .in_cmd_valid_i( bus8_req_valid ),
     .in_cmd_addr_i( bus8_paged_req_addr ),
-    .in_cmd_write_mask_i( 1'b1 ),
+    .in_cmd_write_mask_i( bus8_req_write ),
     .in_cmd_write_data_i( bus8_req_data ),
     .in_rsp_read_data_o( bus8_rsp_data ),
 
