@@ -18,7 +18,7 @@ wire mmcm_locked;
 
 MMCME2_BASE#(
     .DIVCLK_DIVIDE(4),
-    .CLKFBOUT_MULT_F(49),
+    .CLKFBOUT_MULT_F(48.5),
     .CLKIN1_PERIOD(20.000),     // 50MHz input clock
     .CLKOUT0_DIVIDE_F(8),       // 75.562500MHz output
     .CLKOUT1_DIVIDE(2)          // 306.250000MHz output

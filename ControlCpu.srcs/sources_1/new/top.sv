@@ -67,7 +67,7 @@ localparam SIM_MODE = 0;
 localparam SIM_MODE = 1;
 `endif
 
-localparam CTRL_CLOCK_HZ = 76562500;
+localparam CTRL_CLOCK_HZ = 75781250;
 localparam BUS8_FREQ_DIV = 75;
 localparam UART_BAUD = 115200;
 
@@ -76,6 +76,7 @@ localparam GPIO_IN_PORTS=1, GPIO_OUT_PORTS=1;
 // GPOUT port 1
 localparam GPOUT0_6502_RESET = 0;
 localparam GPOUT0_FREQ_DIV_RESET = 1;
+localparam GPOUT0_DISPLAY_RESET = 2;
 
 `ifdef SYNTHESIS
 wire spi_clk;
@@ -127,7 +128,7 @@ clk_converter clocks(
     .locked(clocks_locked)
 );
 
-localparam CACHE_PORTS_NUM = 4;
+localparam CACHE_PORTS_NUM = 5;
 localparam CACHELINE_BITS = 128;
 localparam CACHELINE_BYTES = CACHELINE_BITS/8;
 localparam NUM_CACHELINES = 16*1024*8/CACHELINE_BITS;
@@ -143,10 +144,11 @@ logic [CACHELINE_BITS-1:0]              cache_port_cmd_write_data_s[CACHE_PORTS_
 logic                                   cache_port_rsp_valid_n[CACHE_PORTS_NUM];
 logic [CACHELINE_BITS-1:0]              cache_port_rsp_read_data_n[CACHE_PORTS_NUM];
 
-localparam CACHE_PORT_IDX_6502 = 0;
-localparam CACHE_PORT_IDX_DBUS = 1;
-localparam CACHE_PORT_IDX_IBUS = 2;
-localparam CACHE_PORT_IDX_SPI_FLASH = 3;
+localparam CACHE_PORT_IDX_DISPLAY = 0;
+localparam CACHE_PORT_IDX_6502 = 1;
+localparam CACHE_PORT_IDX_DBUS = 2;
+localparam CACHE_PORT_IDX_IBUS = 3;
+localparam CACHE_PORT_IDX_SPI_FLASH = 4;
 
 logic                                   inst_cache_port_cmd_valid_s[0:0];
 logic [31:0]                            inst_cache_port_cmd_addr_s[0:0];
@@ -625,8 +627,10 @@ freq_div_bus#() freq_div_6502(
     .reset_i( gp_out[0][GPOUT0_FREQ_DIV_RESET] ),
 
     .slow_cmd_valid_i( bus8_req_valid ),
-    .slow_cmd_ready_o( bus8_req_ack )
+    .slow_cmd_ready_o( bus8_req_ack ),
 
+    .fast_cmd_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_6502]),
+    .fast_cmd_ready_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_6502])
     );
 
 sar6502_sync apple_cpu(
@@ -665,5 +669,20 @@ apple_pager pager(
 );
 
 assign cache_port_cmd_addr_s[CACHE_PORT_IDX_6502] = bus8_paged_req_addr;
+
+assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY] = { CACHELINE_BYTES{1'b0} };
+display#(.CLOCK_SPEED(CTRL_CLOCK_HZ), .TEXT_PAGE_ADDR(32'h81010400))
+apple_display(
+    .clock_i(ctrl_cpu_clock),
+    .reset_i(gp_out[0][GPOUT0_DISPLAY_RESET]),
+
+    .req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY]),
+    .req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY]),
+    .req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY]),
+    .rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY]),
+    .rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY]),
+
+    .uart_send_o(/*uart_tx*/ debug[0])
+);
 
 endmodule

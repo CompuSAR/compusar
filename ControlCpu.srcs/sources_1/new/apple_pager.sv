@@ -41,8 +41,7 @@ module apple_pager(
 
 
 typedef enum { MAIN, BANK_D, BANKS_E_F } banks;
-localparam banks rep_bank = MAIN;
-localparam NUM_BANKS = rep_bank.num();
+localparam NUM_BANKS = 3;
 
     /* map1 0000-1ff, W: c008 main c009 aux
     *  d000-dfff - ROM/LC bank1/LC bank2
@@ -52,22 +51,22 @@ logic [31:0] mapper[NUM_BANKS][2];
 
 function logic[31:0] translate_addr(logic write, logic [15:0] addr);
     case( addr[15:12] )
-        8'h0: translate_addr=mapper[write][MAIN] ^ addr;
-        8'h1: translate_addr=mapper[write][MAIN] ^ addr;
-        8'h2: translate_addr=mapper[write][MAIN] ^ addr;
-        8'h3: translate_addr=mapper[write][MAIN] ^ addr;
-        8'h4: translate_addr=mapper[write][MAIN] ^ addr;
-        8'h5: translate_addr=mapper[write][MAIN] ^ addr;
-        8'h6: translate_addr=mapper[write][MAIN] ^ addr;
-        8'h7: translate_addr=mapper[write][MAIN] ^ addr;
-        8'h8: translate_addr=mapper[write][MAIN] ^ addr;
-        8'h9: translate_addr=mapper[write][MAIN] ^ addr;
-        8'ha: translate_addr=mapper[write][MAIN] ^ addr;
-        8'hb: translate_addr=mapper[write][MAIN] ^ addr;
-        8'hc: translate_addr=mapper[write][MAIN] ^ addr;
-        8'hd: translate_addr=mapper[write][BANK_D] ^ addr;
-        8'he: translate_addr=mapper[write][BANKS_E_F] ^ addr;
-        8'hf: translate_addr=mapper[write][BANKS_E_F] ^ addr;
+        8'h0: translate_addr=mapper[MAIN][write] ^ addr;
+        8'h1: translate_addr=mapper[MAIN][write] ^ addr;
+        8'h2: translate_addr=mapper[MAIN][write] ^ addr;
+        8'h3: translate_addr=mapper[MAIN][write] ^ addr;
+        8'h4: translate_addr=mapper[MAIN][write] ^ addr;
+        8'h5: translate_addr=mapper[MAIN][write] ^ addr;
+        8'h6: translate_addr=mapper[MAIN][write] ^ addr;
+        8'h7: translate_addr=mapper[MAIN][write] ^ addr;
+        8'h8: translate_addr=mapper[MAIN][write] ^ addr;
+        8'h9: translate_addr=mapper[MAIN][write] ^ addr;
+        8'ha: translate_addr=mapper[MAIN][write] ^ addr;
+        8'hb: translate_addr=mapper[MAIN][write] ^ addr;
+        8'hc: translate_addr=mapper[MAIN][write] ^ addr;
+        8'hd: translate_addr=mapper[BANK_D][write] ^ addr;
+        8'he: translate_addr=mapper[BANKS_E_F][write] ^ addr;
+        8'hf: translate_addr=mapper[BANKS_E_F][write] ^ addr;
     endcase
 endfunction
 
@@ -88,12 +87,12 @@ always_ff@(posedge clock_i) begin
     if( ctrl_req_valid_i ) begin
         if( ctrl_req_write_i ) begin
             case( ctrl_req_addr_i )
-                MAIN:                           mapper[0][MAIN]         <= ctrl_req_data_i;
-                BANK_D:                         mapper[0][BANK_D]       <= ctrl_req_data_i;
-                BANKS_E_F:                      mapper[0][BANKS_E_F]    <= ctrl_req_data_i;
-                MAIN + NUM_BANKS:               mapper[1][MAIN]         <= ctrl_req_data_i;
-                BANK_D + NUM_BANKS:             mapper[1][BANK_D]       <= ctrl_req_data_i;
-                BANKS_E_F + NUM_BANKS:          mapper[1][BANKS_E_F]    <= ctrl_req_data_i;
+                MAIN:                           mapper[MAIN][0]         <= ctrl_req_data_i;
+                BANK_D:                         mapper[BANK_D][0]       <= ctrl_req_data_i;
+                BANKS_E_F:                      mapper[BANKS_E_F][0]    <= ctrl_req_data_i;
+                MAIN + NUM_BANKS:               mapper[MAIN][1]         <= ctrl_req_data_i;
+                BANK_D + NUM_BANKS:             mapper[BANK_D][1]       <= ctrl_req_data_i;
+                BANKS_E_F + NUM_BANKS:          mapper[BANKS_E_F][1]    <= ctrl_req_data_i;
             endcase
         end
     end
