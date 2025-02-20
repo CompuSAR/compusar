@@ -100,6 +100,7 @@ task default_state_current();
     passthrough_gpio_enable = 1'b0;
     passthrough_irq_enable = 1'b0;
     passthrough_spi_enable = 1'b0;
+    passthrough_apple_pager_enable = 1'b0;
 endtask
 
 function logic is_ddr(logic [31:0]address);
