@@ -87,12 +87,12 @@ always_ff@(posedge clock_i) begin
     if( ctrl_req_valid_i ) begin
         if( ctrl_req_write_i ) begin
             case( ctrl_req_addr_i )
-                MAIN:                           mapper[MAIN][0]         <= ctrl_req_data_i;
-                BANK_D:                         mapper[BANK_D][0]       <= ctrl_req_data_i;
-                BANKS_E_F:                      mapper[BANKS_E_F][0]    <= ctrl_req_data_i;
-                MAIN + NUM_BANKS:               mapper[MAIN][1]         <= ctrl_req_data_i;
-                BANK_D + NUM_BANKS:             mapper[BANK_D][1]       <= ctrl_req_data_i;
-                BANKS_E_F + NUM_BANKS:          mapper[BANKS_E_F][1]    <= ctrl_req_data_i;
+                16'h0000:       mapper[MAIN][0]         <= ctrl_req_data_i;
+                16'h0004:       mapper[BANK_D][0]       <= ctrl_req_data_i;
+                16'h0008:       mapper[BANKS_E_F][0]    <= ctrl_req_data_i;
+                16'h000c:       mapper[MAIN][1]         <= ctrl_req_data_i;
+                16'h0010:       mapper[BANK_D][1]       <= ctrl_req_data_i;
+                16'h0014:       mapper[BANKS_E_F][1]    <= ctrl_req_data_i;
             endcase
         end
     end
