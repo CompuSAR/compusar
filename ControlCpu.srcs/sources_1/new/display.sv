@@ -75,8 +75,8 @@ always_ff@(posedge clock_i) begin
         state <= IDLE;
     end else begin
         if( uart_send_valid && uart_send_ack ) begin
-            // Shift up the buffer
-            prefetch_buffer <= { prefetch_buffer[NORTH_BUS_WIDTH-9:0], 8'h00 };
+            // Shift down the buffer
+            prefetch_buffer <= { 8'h00, prefetch_buffer[NORTH_BUS_WIDTH-1:8] };
             prefetch_buffer_fill <= prefetch_buffer_fill - 1;
         end
 
@@ -102,7 +102,7 @@ endfunction
 
 uart_send#(.ClockDivider(CLOCK_SPEED / BAUD_RATE)) uart(
     .clock(clock_i),
-    .data_in(byte2char( prefetch_buffer[NORTH_BUS_WIDTH-1:NORTH_BUS_WIDTH-8] )),
+    .data_in(byte2char( prefetch_buffer[7:0] )),
     .data_in_ready(uart_send_valid),
     .receive_ready(uart_send_ack),
     .out_bit(uart_send_o)
