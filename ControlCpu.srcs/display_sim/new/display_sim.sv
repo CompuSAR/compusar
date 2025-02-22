@@ -43,6 +43,10 @@ initial begin
     #200 reset = 1'b0;
 end
 
+logic [127:0] memory[64*1024/16];
+initial
+    $readmemh("screen.mem", memory);
+
 always_ff@(posedge clock) begin
     rsp_valid <= 1'b0;
 
@@ -52,7 +56,7 @@ always_ff@(posedge clock) begin
             req_ack <= next_ack;
             next_ack <= !next_ack;
 
-            rsp_data <= rsp_data + 128'h12121212121212121212121212121212;
+            rsp_data <= memory[req_addr[31:4]];
         end else begin
             req_ack <= 1'b1;
         end

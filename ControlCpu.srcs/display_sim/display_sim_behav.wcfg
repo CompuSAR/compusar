@@ -11,15 +11,18 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0.000000 us"></ZoomStartTime>
-      <ZoomEndTime time="1,188.412303 us"></ZoomEndTime>
-      <Cursor1Time time="1.000000 us"></Cursor1Time>
+      <ZoomStartTime time="80,252.850000 us"></ZoomStartTime>
+      <ZoomEndTime time="91,442.850001 us"></ZoomEndTime>
+      <Cursor1Time time="89,577.850000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="208"></NameColumnWidth>
-      <ValueColumnWidth column_width="111"></ValueColumnWidth>
+      <ValueColumnWidth column_width="99"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="15" />
+   <WVObjectSize size="23" />
+   <wave_markers>
+      <marker label="" time="88709830000" />
+   </wave_markers>
    <wvobject type="logic" fp_name="/display_sim/clock">
       <obj_property name="ElementShortName">clock</obj_property>
       <obj_property name="ObjectShortName">clock</obj_property>
@@ -56,6 +59,27 @@
       <obj_property name="ElementShortName">state[31:0]</obj_property>
       <obj_property name="ObjectShortName">state[31:0]</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/display_sim/d/col_num">
+      <obj_property name="ElementShortName">col_num[15:0]</obj_property>
+      <obj_property name="ObjectShortName">col_num[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display_sim/d/line_num">
+      <obj_property name="ElementShortName">line_num[7:0]</obj_property>
+      <obj_property name="ObjectShortName">line_num[7:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display_sim/d/off_third">
+      <obj_property name="ElementShortName">off_third[31:0]</obj_property>
+      <obj_property name="ObjectShortName">off_third[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display_sim/d/off_line">
+      <obj_property name="ElementShortName">off_line[31:0]</obj_property>
+      <obj_property name="ObjectShortName">off_line[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display_sim/d/off_adj">
+      <obj_property name="ElementShortName">off_adj[31:0]</obj_property>
+      <obj_property name="ObjectShortName">off_adj[31:0]</obj_property>
+   </wvobject>
    <wvobject type="array" fp_name="/display_sim/d/prefetch_buffer">
       <obj_property name="ElementShortName">prefetch_buffer[127:0]</obj_property>
       <obj_property name="ObjectShortName">prefetch_buffer[127:0]</obj_property>
@@ -63,6 +87,18 @@
    <wvobject type="array" fp_name="/display_sim/d/prefetch_buffer_fill">
       <obj_property name="ElementShortName">prefetch_buffer_fill[6:0]</obj_property>
       <obj_property name="ObjectShortName">prefetch_buffer_fill[6:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display_sim/d/uart_send_valid">
+      <obj_property name="ElementShortName">uart_send_valid</obj_property>
+      <obj_property name="ObjectShortName">uart_send_valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display_sim/d/uart_send_ack">
+      <obj_property name="ElementShortName">uart_send_ack</obj_property>
+      <obj_property name="ObjectShortName">uart_send_ack</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display_sim/d/uart_send_data">
+      <obj_property name="ElementShortName">uart_send_data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">uart_send_data[7:0]</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/display_sim/d/uart/data_in_ready">
       <obj_property name="ElementShortName">data_in_ready</obj_property>
@@ -75,6 +111,7 @@
    <wvobject type="array" fp_name="/display_sim/d/uart/data_in">
       <obj_property name="ElementShortName">data_in[7:0]</obj_property>
       <obj_property name="ObjectShortName">data_in[7:0]</obj_property>
+      <obj_property name="Radix">ASCIIRADIX</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/display_sim/uart_tx">
       <obj_property name="ElementShortName">uart_tx</obj_property>
