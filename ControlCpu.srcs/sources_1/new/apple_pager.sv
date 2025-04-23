@@ -63,7 +63,7 @@ localparam NUM_BANKS = 3;
     */
 logic [31:0] mapper[NUM_BANKS][2];
 
-logic io_cmd_pending = 1'b0;
+logic io_cmd_pending = 1'b0, io_cmd_pending_prev = 1'b0;
 logic [15:0] io_cmd_addr;
 logic io_cmd_write;
 logic [7:0] io_cmd_write_data;
@@ -75,8 +75,8 @@ assign ctrl_intr_o = io_cmd_pending;
 assign mem_req_write_o = cpu_req_write_i;
 assign mem_req_data_o = cpu_req_data_i;
 
-assign cpu_rsp_valid_o = !io_cmd_pending && mem_rsp_valid_i || io_rsp_valid;
-assign cpu_rsp_data_o = io_cmd_pending ? io_rsp_data : mem_rsp_data_i;
+assign cpu_rsp_valid_o = !io_cmd_pending_prev && mem_rsp_valid_i || io_rsp_valid;
+assign cpu_rsp_data_o = io_cmd_pending_prev ? io_rsp_data : mem_rsp_data_i;
 
 function logic is_io(logic [15:0] addr);
     is_io = addr[15:12]==8'hc;
@@ -132,6 +132,7 @@ always_ff@(posedge clock_i) begin
     ctrl_rsp_valid_o <= ctrl_req_valid_i && !ctrl_req_write_i;
     ctrl_rsp_data_o <= 32'hX;   // Reading the registers is not supported
 
+    io_cmd_pending_prev <= io_cmd_pending;
     io_rsp_valid <= 1'b0;
 
     if( ctrl_req_valid_i ) begin
@@ -154,7 +155,8 @@ always_ff@(posedge clock_i) begin
             // CTRL CPU read request
             case( ctrl_req_addr_i )
                 16'h0080:       begin
-                    ctrl_rsp_data_o <= { io_cmd_pending, io_cmd_write, 6'b000000, io_cmd_write_data, io_cmd_addr };
+                    ctrl_rsp_data_o <=
+                        { io_cmd_pending, io_cmd_write, 6'b000000, io_cmd_write ? io_cmd_write_data : 8'h00, io_cmd_addr };
                 end
             endcase
         end
