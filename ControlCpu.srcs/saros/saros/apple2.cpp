@@ -14,6 +14,8 @@ namespace {
 constexpr uint32_t ROMS_BASE = 0x8100'0000;
 constexpr uint32_t BANK0_BASE = 0x8101'0000;
 
+constexpr size_t IO_BASE = 0xc000;
+
 constexpr uint32_t PagerDeviceNum = 5;
 
 constexpr uint32_t Pager_MainBank = 0x0000;
@@ -23,6 +25,10 @@ constexpr uint32_t Pager_BanksEF = 0x000c;
 constexpr uint32_t Pager_WriteOffset = 0x0800;
 constexpr uint32_t Pager_IoOp = 0x1000;
 
+static void io8_write(uint8_t port, uint8_t val) {
+    reinterpret_cast<volatile uint8_t *>(ROMS_BASE)[IO_BASE + port] = val;
+}
+
 void uartHandler(void *) noexcept {
     while(true) {
         uint32_t ch = uart_recv_char();
@@ -31,6 +37,14 @@ void uartHandler(void *) noexcept {
         } else {
             //pendingKeyboardChar = ch | 0x80;
             uart_send(ch);
+
+            for( uint8_t i=0x00; i<0x10; ++i ) {
+                io8_write(i, ch|0x80);
+            }
+
+            for( uint8_t i=0x10; i<0x20; ++i ) {
+                io8_write(i, ch);
+            }
         }
     }
 }
@@ -57,7 +71,6 @@ void start_8bit() {
     reg_write_32( PagerDeviceNum, Pager_IoBank, ROMS_BASE );
     reg_write_32( PagerDeviceNum, Pager_IoBank | Pager_WriteOffset, 0 );
 
-    constexpr size_t IO_BASE = 0xc000;
     constexpr size_t IO_SLOTS_ROM_BASE = 0xc100;
     constexpr size_t IO_SHARED_ROM_BASE = 0xc800;
     memset(reinterpret_cast<void *>(ROMS_BASE + IO_SLOTS_ROM_BASE), 0xff, 256*7 + 256*8);
@@ -73,6 +86,8 @@ void start_8bit() {
 }
 
 void handleSoftwareInterrupt() {
+    return;
+#if 0
     uint32_t ioOp = reg_read_32( PagerDeviceNum, Pager_IoOp );
 
     uint16_t addr = (ioOp & IO_ADDR_MASK) >> IO_ADDR_SHIFT;
@@ -93,4 +108,5 @@ void handleSoftwareInterrupt() {
     }
 
     reg_write_32( PagerDeviceNum, Pager_IoOp, result );
+#endif
 }
