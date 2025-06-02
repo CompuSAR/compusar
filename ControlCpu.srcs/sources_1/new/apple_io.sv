@@ -34,7 +34,7 @@ module apple_io(
     );
 
 logic io_op_pending = 1'b0;
-logic io_rsp_ready = 1'b0;
+logic io_rsp_valid = 1'b0;
 logic io_req_write;
 logic io_mem_req = 1'b0;
 logic [7:0] io_req_data, io_rsp_data;
@@ -45,13 +45,13 @@ function logic is_io(logic [15:0] addr);
 endfunction
 
 assign cpu_req_ack_o = !io_op_pending && mem_req_ack_i;
-assign cpu_rsp_valid_o = io_op_pending ? io_rsp_ready : mem_rsp_valid_i;
-assign cpu_rsp_data_o = io_op_pending ? io_rsp_data : mem_rsp_data_i;
+assign cpu_rsp_valid_o = io_rsp_valid || mem_rsp_valid_i;
+assign cpu_rsp_data_o = io_rsp_valid ? io_rsp_data : mem_rsp_data_i;
 
-assign mem_req_valid_o = cpu_req_valid_i && ! is_io(cpu_req_addr_i) && ! io_op_pending || io_mem_req;
+assign mem_req_valid_o = (cpu_req_valid_i && ! is_io(cpu_req_addr_i) && ! io_op_pending) || io_mem_req;
 assign mem_req_addr_o = io_mem_req ? {8'hc0, io_req_addr} : cpu_req_addr_i;
 assign mem_req_data_o = cpu_req_data_i;
-assign mem_req_write_o = io_mem_req ? 1'b0 : cpu_req_write_i;
+assign mem_req_write_o = io_mem_req ? io_req_write : cpu_req_write_i;
 
 // BUG there is a race here, as an IO request that needs io_mem_req may come
 // in at the same cycle the control CPU asks to make a change
@@ -91,19 +91,25 @@ always_ff@(posedge clock_i) begin
     end
 
     ctrl_rsp_valid_o <= 1'b0;
-    io_rsp_ready <= 1'b0;
+    io_rsp_valid <= 1'b0;
     // Handle control CPU requests
     if( ctrl_req_valid_i && ctrl_req_ack_o ) begin
         if( ctrl_req_write_i ) begin
             case( ctrl_req_addr_i )
-                16'h0000:       io_rsp_data <= ctrl_req_data_i[7:0];
+                16'h0000: begin
+                    io_rsp_data <= ctrl_req_data_i[7:0];
+                    if( ctrl_intr_o ) begin
+                        io_op_pending <= 1'b0;
+                        ctrl_intr_o <= 1'b0;
+                        if( ! io_req_write )
+                            io_rsp_valid <= 1'b1;
+                    end 
+                end
             endcase
-            io_rsp_ready <= 1'b1;
-            io_op_pending <= 1'b0;
         end else begin
             ctrl_rsp_valid_o <= 1'b1;
             case( ctrl_req_addr_i )
-                16'h0000:       ctrl_rsp_data_o <= { io_op_pending, io_req_write, io_mem_req, 5'b0, io_req_data, io_req_addr };
+                16'h0000:       ctrl_rsp_data_o <= { io_op_pending, io_req_write, io_mem_req, 13'b0, io_req_data, io_req_addr };
                 default:        ctrl_rsp_data_o <= 32'hX;
             endcase
         end
