@@ -25,9 +25,41 @@ constexpr uint32_t Pager_BanksEF = 0x000c;
 constexpr uint32_t Pager_WriteOffset = 0x0800;
 constexpr uint32_t Pager_IoOp = 0x1000;
 
+constexpr uint32_t IoDeviceNum = 6;
+
+constexpr uint32_t Io_Event = 0x0000;
+
 static void io8_write(uint8_t port, uint8_t val) {
     reinterpret_cast<volatile uint8_t *>(ROMS_BASE)[IO_BASE + port] = val;
 }
+
+class KeyPress {
+    uint8_t key = 0;
+
+public:
+    KeyPress() = default;
+
+    void keyPressed(char ch) {
+        key = ch | 0x80;
+
+        updateMem();
+    }
+
+    uint8_t keyProbed() {
+        key &= 0x7f;
+
+        updateMem();
+
+        return key;
+    }
+
+private:
+    void updateMem() {
+        for( uint8_t i=0x00; i<0x10; ++i ) {
+            io8_write(i, key);
+        }
+    }
+} lastKey;
 
 void uartHandler(void *) noexcept {
     while(true) {
@@ -38,13 +70,7 @@ void uartHandler(void *) noexcept {
             //pendingKeyboardChar = ch | 0x80;
             uart_send(ch);
 
-            for( uint8_t i=0x00; i<0x10; ++i ) {
-                io8_write(i, ch|0x80);
-            }
-
-            for( uint8_t i=0x10; i<0x20; ++i ) {
-                io8_write(i, ch);
-            }
+            lastKey.keyPressed(ch);
         }
     }
 }
@@ -85,28 +111,36 @@ void start_8bit() {
     write_gpio(0, 0xfffffff8);
 }
 
+union IoOp {
+    uint32_t value;
+    struct {
+        uint32_t addr:8;
+        uint32_t data:8;
+        uint32_t padding:13;
+        uint32_t memReq:1;
+        uint32_t write:1;
+        uint32_t pending:1;
+    };
+};
+
 void handleSoftwareInterrupt() {
-    return;
-#if 0
-    uint32_t ioOp = reg_read_32( PagerDeviceNum, Pager_IoOp );
+    const IoOp ioOp{ .value = reg_read_32( IoDeviceNum, Io_Event ) };
 
-    uint16_t addr = (ioOp & IO_ADDR_MASK) >> IO_ADDR_SHIFT;
-
-    uint32_t result = 0;
-    if( (addr & 0xff00) != 0 )
-        result = 0xff;
-    else {
-        switch( addr & 0xff ) {
-        case 0x00:
-            result = pendingKeyboardChar;
+    uint8_t result = 0;
+    if( ioOp.write ) {
+        switch( ioOp.addr ) {
+        default:
             break;
+        }
+    } else {
+        switch( ioOp.addr ) {
         case 0x10:
-            pendingKeyboardChar &= 0x7f;
-            result = pendingKeyboardChar;
+            result = lastKey.keyProbed();
+            break;
+        default:
             break;
         }
     }
 
-    reg_write_32( PagerDeviceNum, Pager_IoOp, result );
-#endif
+    reg_write_32( IoDeviceNum, Io_Event, result );
 }

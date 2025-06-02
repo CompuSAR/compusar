@@ -67,7 +67,12 @@ module io_block#(
     output logic passthrough_apple_pager_enable,
     input passthrough_apple_pager_req_ack,
     input passthrough_apple_pager_rsp_valid,
-    input [31:0] passthrough_apple_pager_rsp_data
+    input [31:0] passthrough_apple_pager_rsp_data,
+
+    output logic passthrough_apple_io_enable,
+    input passthrough_apple_io_req_ack,
+    input passthrough_apple_io_rsp_valid,
+    input [31:0] passthrough_apple_io_rsp_data
 
     );
 
@@ -101,6 +106,7 @@ task default_state_current();
     passthrough_irq_enable = 1'b0;
     passthrough_spi_enable = 1'b0;
     passthrough_apple_pager_enable = 1'b0;
+    passthrough_apple_io_enable = 1'b0;
 endtask
 
 function logic is_ddr(logic [31:0]address);
@@ -146,6 +152,10 @@ always_comb begin
                 8'h5: begin                     // Apple II pager
                     rsp_valid = passthrough_apple_pager_rsp_valid;
                     data_out = passthrough_apple_pager_rsp_data;
+                end
+                8'h6: begin                     // Apple II IO
+                    rsp_valid = passthrough_apple_io_rsp_valid;
+                    data_out = passthrough_apple_io_rsp_data;
                 end
                 default: begin                  // Invalid memory access
                     rsp_valid = 1'b1;
@@ -193,6 +203,10 @@ always_comb begin
                 8'h5: begin                // Apple II pager
                     passthrough_apple_pager_enable = 1'b1;
                     req_ack = passthrough_apple_pager_req_ack;
+                end
+                8'h6: begin                // Apple II io
+                    passthrough_apple_io_enable = 1'b1;
+                    req_ack = passthrough_apple_io_req_ack;
                 end
                 default: begin
                     // Bus error case. If it's a read, it's handled with the

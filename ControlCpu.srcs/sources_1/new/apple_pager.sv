@@ -64,7 +64,7 @@ function logic[31:0] translate_addr(logic write, logic [15:0] addr);
         8'h9: translate_addr=mapper[MAIN][write] ^ addr;
         8'ha: translate_addr=mapper[MAIN][write] ^ addr;
         8'hb: translate_addr=mapper[MAIN][write] ^ addr;
-        8'hc: translate_addr=32'hXXXXXXXX;
+        8'hc: translate_addr=mapper[BANK_IO][write] ^ addr;
         8'hd: translate_addr=mapper[BANK_D][write] ^ addr;
         8'he: translate_addr=mapper[BANKS_E_F][write] ^ addr;
         8'hf: translate_addr=mapper[BANKS_E_F][write] ^ addr;
