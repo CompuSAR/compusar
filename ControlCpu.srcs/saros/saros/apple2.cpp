@@ -16,6 +16,23 @@ constexpr uint32_t BANK0_BASE = 0x8101'0000;
 
 constexpr size_t IO_BASE = 0xc000;
 
+constexpr size_t IO_KBD         = 0x00;
+constexpr size_t IO_KBDSTRB     = 0x10;
+constexpr size_t IO_TAPEOUT     = 0x20;
+constexpr size_t IO_SPKR        = 0x30;
+constexpr size_t IO_TXTCLR      = 0x50;
+constexpr size_t IO_TXTSET      = 0x51;
+constexpr size_t IO_MIXSET      = 0x53;
+constexpr size_t IO_TXTPAGE1    = 0x54;
+constexpr size_t IO_LORES       = 0x56;
+constexpr size_t IO_SETAN0      = 0x58;
+constexpr size_t IO_SETAN1      = 0x5a;
+constexpr size_t IO_CLRAN2      = 0x5d;
+constexpr size_t IO_CLRAN3      = 0x5f;
+constexpr size_t IO_TAPEIN      = 0x60;
+constexpr size_t IO_PADDL0      = 0x64;
+constexpr size_t IO_PTRIG       = 0x70;
+
 constexpr uint32_t PagerDeviceNum = 5;
 
 constexpr uint32_t Pager_MainBank = 0x0000;
@@ -102,6 +119,10 @@ void start_8bit() {
     memset(reinterpret_cast<void *>(ROMS_BASE + IO_SLOTS_ROM_BASE), 0xff, 256*7 + 256*8);
     memset(reinterpret_cast<void *>(ROMS_BASE + IO_BASE), 0x00, 256);
 
+    // Fill main memory with junk
+    for( auto ptr = reinterpret_cast<uint32_t *>(BANK0_BASE); ptr != reinterpret_cast<uint32_t *>(BANK0_BASE + 64*1024); ++ptr )
+        *ptr = 0xff00ff00;
+
     saros.createThread( uartHandler, nullptr );
 
     saros.enableSoftwareInterrupt();
@@ -134,7 +155,7 @@ void handleSoftwareInterrupt() {
         }
     } else {
         switch( ioOp.addr ) {
-        case 0x10:
+        case IO_KBDSTRB:
             result = lastKey.keyProbed();
             break;
         default:
