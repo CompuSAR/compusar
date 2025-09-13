@@ -1,7 +1,9 @@
 #include "ddr.h"
 #include "elf_reader.h"
 #include "format.h"
+#include "gpio.h"
 #include "irq.h"
+#include "memtest.h"
 #include "spi.h"
 #include "spi_flash.h"
 #include "uart.h"
@@ -30,8 +32,14 @@ void bl1_main() {
 
     uart_send("\nInitializing memory\n");
     ddr_init();
+    uart_send("Memory initialized.\n");
 
-    uart_send("Memory initialized. Initializing SPI flash\n");
+//    if( (read_gpio(0) & 0xe) == 0xc ) {
+        // Keys 2 and 4 are pressed, 3 is not. Switch to memory check mode
+        test_mem();
+//    }
+
+    uart_send("Initializing SPI flash\n");
 
     SPI_FLASH::init();
 
