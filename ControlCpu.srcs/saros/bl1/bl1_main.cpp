@@ -35,6 +35,7 @@ void bl1_main() {
 
     SPI_FLASH::init();
 
+    uart_send("Loading OS\n");
     ElfReader::EntryPoint second_stage = ElfReader::load_os();
 
     uart_send("OS loaded with entry point ");

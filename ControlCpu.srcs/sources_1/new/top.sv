@@ -24,7 +24,6 @@ module top
 (
     input board_clock,
     input nReset,
-    input enable_uart_output,
 
     output leds[4],
     input switches[4],
@@ -61,6 +60,13 @@ module top
     output wire  [7:0] numeric_segments_n,
     output wire  [5:0] numeric_enable_n
 );
+
+`ifdef SYNTHESIS
+localparam SIM_MODE = 0;
+`else
+localparam SIM_MODE = 1;
+`endif
+
 //localparam CTRL_CLOCK_HZ = 101041667;
 //localparam CTRL_CLOCK_HZ = 86607143;
 localparam CTRL_CLOCK_HZ = 75781250;
@@ -507,7 +513,7 @@ gpio#(.NUM_IN_PORTS(1)) gpio(
     .rsp_data_o(gpio_rsp_data),
     .rsp_valid_o(gpio_rsp_valid),
 
-    .gp_in( '{ { 31'b0, enable_uart_output } } ),
+    .gp_in( '{ { 32'b0 } } ),
     .gp_out()
 );
 

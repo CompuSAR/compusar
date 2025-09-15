@@ -2,32 +2,27 @@
 //-MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON-
 //-MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON-
 //
-//  MT25TU256HBA8Exx-0xxx
+//  MT25QL256ABA8E0 
 //
 //  Verilog Behavioral Model
-//  Version 1.6 
+//  Version 1.2 
 //
 //  Copyright (c) 2013 Micron Inc.
 //
 //-MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON-
 //-MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON-
 //-MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON--MICRON-
+The files in this folder contain NCSIM transactions,
+that can be visualized into the waveform window.
 
-//`define MT25TU256HBA8Exx_0xxx
-//`define MT25QU128ABB8E0
-`define N25Q128A11E
-`define DENSITY_128
+Trasactions visualization is useful to increase
+waveform readability.
 
-`define FILENAME_mem_die1 "mem_Q128_die1.vmf" // Memory File Name 
-`define FILENAME_mem_die2 "mem_Q128_die2.vmf" // Memory File Name 
-`define FILENAME_mem "saros.mem" // Memory File Name
-//`define FILENAME_sfdp "sfdp.vmf" // SFDP File Name 
-`define FILENAME_sfdp "" // SFDP File Name 
-`define NVCR_DEFAULT_VALUE 'hFFFF
-`undef RESET_pin
-`define HOLD_pin
-//`define Feature_8
 
-`define INT_RST_SEQ
+If you are using NCSIM simulator,
+the following transactions-fiber can be visualized:
 
-`define TIMING_166
+- Testbench.tasks."Tasks fiber" (compile top/Transactions/Stimtasks.v instead of top/Stimtasks.v)
+
+- Testbench.stim."Test fiber" (compile stimuli files contained in ./stim/Transactions/ directory 
+                               instead of ./stim/directory)
