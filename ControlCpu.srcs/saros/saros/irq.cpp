@@ -67,20 +67,21 @@ void wfi() {
 
 void halt() {
     while( true ) {
+        reg_write_64(DEVICE_NUM, REG_WAIT_COUNT, 0xffff'ffff'ffff'ffff);
         wfi();
     }
 }
 
-static void handle_software_interrupt() {
+void __attribute__((weak)) handleSoftwareInterrupt() {
+    abortWithMessage("handleSoftwareInterrupt is unimplemented");
+}
+
+static void handleTimerInterrupt() {
     // TODO implement
     reset_timer_cycles();
 }
 
-static void handle_timer_interrupt() {
-    // TODO implement
-}
-
-static void handle_external_interrupt() {
+static void handleExternalInterrupt() {
     uint32_t active_irqs = reg_read_32( DEVICE_NUM, REG_ACTIVE_IRQS );
 
     if( (active_irqs & IrqExt__UartTxReady) != 0 )
@@ -96,9 +97,9 @@ extern "C"
     if( cause & 0x80000000 ) {
         // Interrupt
         switch( cause & 0x7fffffff ) {
-        case MIE__MSIE_BIT: handle_software_interrupt(); break;
-        case MIE__MTIE_BIT: handle_timer_interrupt(); break;
-        case MIE__MEIE_BIT: handle_external_interrupt(); break;
+        case MIE__MSIE_BIT: handleSoftwareInterrupt(); break;
+        case MIE__MTIE_BIT: handleTimerInterrupt(); break;
+        case MIE__MEIE_BIT: handleExternalInterrupt(); break;
         default: // TODO handle invalid case
                             ;
         }

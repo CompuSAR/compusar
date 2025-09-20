@@ -26,7 +26,7 @@ module top
     input nReset,
 
     output leds[4],
-    input switches[4],
+    input [3:0] switches,
 
     output logic[3:0] debug,
 
@@ -71,6 +71,8 @@ localparam SIM_MODE = 1;
 //localparam CTRL_CLOCK_HZ = 86607143;
 localparam CTRL_CLOCK_HZ = 75781250;
 localparam UART_BAUD = 115200;
+
+localparam GPIO_IN_PORTS=1, GPIO_OUT_PORTS=1;
 
 `ifdef SYNTHESIS
 wire spi_clk;
@@ -499,10 +501,16 @@ timer_int_ctrl#(.CLOCK_HZ(CTRL_CLOCK_HZ)) interrupt_controller(
     .irqs_i(irq_lines),
 
     .ctrl_timer_interrupt_o(ctrl_timer_interrupt),
-    .ctrl_ext_interrupt_o(ctrl_ext_interrupt)
+    .ctrl_ext_interrupt_o(ctrl_ext_interrupt),
+    .ctrl_software_interrupt_i(ctrl_software_interrupt)
 );
 
-gpio#(.NUM_IN_PORTS(1)) gpio(
+wire [31:0]gp_out[GPIO_OUT_PORTS];
+
+gpio#(
+    .NUM_IN_PORTS(GPIO_IN_PORTS),
+    .NUM_OUT_PORTS(GPIO_OUT_PORTS))
+gpio(
     .clock_i(ctrl_cpu_clock),
     .req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
     .req_data_i(ctrl_dBus_cmd_payload_data),
@@ -513,8 +521,8 @@ gpio#(.NUM_IN_PORTS(1)) gpio(
     .rsp_data_o(gpio_rsp_data),
     .rsp_valid_o(gpio_rsp_valid),
 
-    .gp_in( '{ { 32'b0 } } ),
-    .gp_out()
+    .gp_in( '{ {28'b0, switches} } ),
+    .gp_out( gp_out )
 );
 
 wire spi_flash_dma_write;
@@ -523,7 +531,7 @@ spi_ctrl#(.MEM_DATA_WIDTH(CACHELINE_BITS)) spi_flash(
     .spi_ref_clock_i(board_clock),
     .irq(),
 
-    .debug(debug),
+ //   .debug(debug),
 
     .ctrl_cmd_valid_i(spi_enable),
     .ctrl_cmd_address_i(ctrl_dBus_cmd_payload_address[15:0]),
@@ -589,30 +597,5 @@ generate
     for(i=0; i<CACHELINE_BYTES; ++i)
         assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_SPI_FLASH][i] = spi_flash_dma_write;
 endgenerate
-
-///// 8 bit section
-
-freq_div_bus#() freq_div_6502(
-    .clock_i( ctrl_cpu_clock ),
-    .ctl_div_nom_i( 16'd75 ),
-    .ctl_div_denom_i( 16'd1 ),
-    .reset_i( 1'b0 )
-    );
-
-logic [31:0] last_pc = 0;
-always_ff@(posedge ctrl_cpu_clock) begin
-    if( inst_cache_port_cmd_valid_s[0] && inst_cache_port_cmd_ready_n[0] && !switches[0] ) begin
-        last_pc <= inst_cache_port_cmd_addr_s[0];
-    end
-end
-
-seg_display#(.FREQ_DIV(10000), .NUM_DIGITS(6), .SEG_ACTIVE_LOW(1)) numeric_display(
-    .clock_i(ctrl_cpu_clock),
-    .data_i(last_pc),
-    .point_i(0),
-
-    .segments_o(numeric_segments_n),
-    .enable_o(numeric_enable_n)
-);
 
 endmodule

@@ -22,7 +22,8 @@ module timer_int_ctrl#(
 
     // Control lines
     output logic        ctrl_timer_interrupt_o,
-    output logic        ctrl_ext_interrupt_o
+    output logic        ctrl_ext_interrupt_o,
+    input               ctrl_software_interrupt_i
 );
 
 /*
@@ -123,7 +124,7 @@ always_comb begin
         rsp_valid_o = 1'b1;
         case( pending_address )
             16'h0000: begin     // Halt
-                if(!wait_expired && !ctrl_timer_interrupt_o && !ctrl_ext_interrupt_o) begin
+                if(!wait_expired && !ctrl_timer_interrupt_o && !ctrl_ext_interrupt_o && !ctrl_software_interrupt_i) begin
                     rsp_valid_o = 1'b0;
                 end else begin
                     rsp_valid_o = 1'b1;

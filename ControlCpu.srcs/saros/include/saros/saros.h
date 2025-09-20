@@ -40,6 +40,13 @@ public:
     // Wake all threads on the list
     void wakeAllThreads( Kernel::Scheduler::ThreadQueue &queue );
 
+    void enableSoftwareInterrupt() const {
+        csr_read_set_bits<CSR::mie>( MIE__MSIE_MASK );
+    }
+    void disableSoftwareInterrupt() const {
+        csr_read_clr_bits<CSR::mie>( MIE__MSIE_MASK );
+    }
+
 private:
     void initIrq();
 };

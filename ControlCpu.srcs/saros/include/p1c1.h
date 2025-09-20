@@ -10,6 +10,10 @@ class P1C1 {
     volatile unsigned _producerIndex = 0, _consumerIndex = 0;
 
 public:
+    P1C1() = default;
+
+    P1C1( const P1C1 & ) = delete;
+    P1C1 &operator=( const P1C1 & ) = delete;
 
     bool isEmpty() const {
         return _producerIndex == _consumerIndex;

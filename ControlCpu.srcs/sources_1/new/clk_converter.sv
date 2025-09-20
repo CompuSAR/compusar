@@ -6,7 +6,6 @@ module clk_converter(
 
     output clk_ctrl_cpu,
     output clk_ddr,
-    output clk_ddr_180deg,
 
     output clkfb_out,
     input clkfb_in,
@@ -30,7 +29,6 @@ MMCME2_BASE#(
 
     .CLKOUT1(clk_ctrl_cpu),
     .CLKOUT2(clk_ddr),
-    .CLKOUT2B(clk_ddr_180deg),
 
     .PWRDWN(1'b0),
     .RST(reset),

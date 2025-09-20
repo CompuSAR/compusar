@@ -3,7 +3,8 @@
 .global switchOutCoop
 switchOutCoop:
     # The thread knows it is calling a function. Only store the callee saved registers
-    csrci  mstatus, 8           # Clear MIE bit to disable interrupts while switching
+    li t0, 8                    # MIE bit in MSTATUS
+    csrrc  x0, mstatus, t0      # Disable interrupts while switching
 
     sw ra, 0x74(tp)             # RA goes to the PC after restore
     sw sp, 0x04(tp)

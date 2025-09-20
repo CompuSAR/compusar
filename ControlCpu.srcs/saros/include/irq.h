@@ -25,4 +25,6 @@ void irq_external_unmask( uint32_t mask );
 extern "C"
 [[noreturn]] void trap_handler();
 
+extern void handleSoftwareInterrupt();
+
 #endif
