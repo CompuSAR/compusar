@@ -1,6 +1,7 @@
 # Linker script for Boot Loader stage 1
 
 MEM_BASE = 0x80000000;
+DDR_BASE = 0x90000000;
 CACHE_SIZE = 16K;
 
 MEMORY { preload : ORIGIN = MEM_BASE, LENGTH = CACHE_SIZE }
@@ -10,10 +11,8 @@ ENTRY(_start)
 SECTIONS
 {
     .text : AT(MEM_BASE) {
-        TEXT_START = .;
         start.o (.text*)
         * (.text*)
-        TEXT_END = .;
     } >preload
     .rodata : ALIGN(16) {
          *(.rodata*)
@@ -75,5 +74,5 @@ SECTIONS
     .comment : { *(.comment) } >discard
     .rela.text : { *(.rela.text) } > error
 
-    PROVIDE(DDR_MEMORY = MEM_BASE + 64K);
+    PROVIDE(DDR_MEMORY = DDR_BASE);
 }

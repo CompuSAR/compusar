@@ -32,30 +32,10 @@ void bl1_main() {
 
     uart_send("\nInitializing memory\n");
     ddr_init();
-    uart_send("Memory initialized.\n");
+    uart_send("Memory initialized. Starting test\n");
 
-//    if( (read_gpio(0) & 0xe) == 0xc ) {
-        // Keys 2 and 4 are pressed, 3 is not. Switch to memory check mode
-        test_mem();
-//    }
-
-    uart_send("Initializing SPI flash\n");
-
-    SPI_FLASH::init();
-
-    uart_send("Loading OS\n");
-    ElfReader::EntryPoint second_stage = ElfReader::load_os();
-
-    uart_send("OS loaded with entry point ");
-    print_hex(reinterpret_cast<uint32_t>(second_stage));
-    uart_send("\n");
-
-    // So that Vivado can write to the flash, if needed
-    SPI_FLASH::deinit();
-
-    second_stage();
-
-    uart_send("Second stage code unexpectedly returned\n");
+    test_mem();
+    uart_send("Memory test done. Halting\n");
 
     halt();
 }

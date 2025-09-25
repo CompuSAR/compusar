@@ -62,7 +62,12 @@ module io_block#(
     output logic passthrough_uart_enable,
     input passthrough_uart_req_ack,
     input passthrough_uart_rsp_valid,
-    input [31:0] passthrough_uart_rsp_data
+    input [31:0] passthrough_uart_rsp_data,
+
+    output logic passthrough_ddr_mem_enable,
+    input passthrough_ddr_mem_req_ack,
+    input passthrough_ddr_mem_rsp_valid,
+    input [31:0] passthrough_ddr_mem_rsp_data
 
     );
 
@@ -89,6 +94,7 @@ task default_state_current();
     req_ack = 1'b1;
     previous_address_next = address;
 
+    passthrough_ddr_mem_enable = 1'b0;
     passthrough_uart_enable = 1'b0;
     passthrough_ddr_enable = 1'b0;
     passthrough_ddr_ctrl_enable = 1'b0;
@@ -97,8 +103,12 @@ task default_state_current();
     passthrough_spi_enable = 1'b0;
 endtask
 
+function logic is_ddr_mem(logic [31:0]address);
+    is_ddr_mem = address[31:28] == 4'h8;
+endfunction
+
 function logic is_ddr(logic [31:0]address);
-    is_ddr = address[31:30] == 2'b10;
+    is_ddr = address[31:28] == 4'h9;
 endfunction
 
 function logic is_io(logic [31:0]address);
@@ -112,7 +122,10 @@ always_comb begin
     data_out = 32'bX;
 
     if( previous_valid ) begin
-        if( is_ddr(previous_address) ) begin
+        if( is_ddr_mem(previous_address) ) begin
+            data_out = passthrough_ddr_mem_rsp_data;
+            rsp_valid = passthrough_ddr_mem_rsp_valid;
+        end else if( is_ddr(previous_address) ) begin
             data_out = passthrough_ddr_data;
             rsp_valid = passthrough_ddr_rsp_valid;
         end else begin
@@ -155,7 +168,10 @@ always_comb begin
         previous_address_next = previous_address;
         req_ack = 1'b0;
     end else begin
-        if( is_ddr(address) ) begin
+        if( is_ddr_mem(address) ) begin
+            passthrough_ddr_mem_enable = address_valid;
+            req_ack = passthrough_ddr_mem_req_ack;
+        end else if( is_ddr(address) ) begin
             passthrough_ddr_enable = address_valid;
             req_ack = passthrough_ddr_req_ack;
         end else if(address_valid) begin

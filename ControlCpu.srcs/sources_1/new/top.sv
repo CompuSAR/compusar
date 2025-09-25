@@ -252,6 +252,11 @@ logic [31:0] gpio_rsp_data;
 logic uart_enable, uart_req_ack, uart_rsp_valid;
 logic [31:0] uart_rsp_data;
 
+wire ddr_mem_enable, ddr_mem_cmd_ready, ddr_mem_rsp_valid;
+wire [CACHELINE_BYTES-1:0] ddr_mem_write_mask;
+wire [CACHELINE_BITS-1:0] ddr_mem_write_data, ddr_mem_read_data;
+wire [31:0] ddr_mem_rsp_data;
+
 io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .clock(ctrl_cpu_clock),
 
@@ -292,7 +297,12 @@ io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .passthrough_uart_enable(uart_enable),
     .passthrough_uart_req_ack(uart_req_ack),
     .passthrough_uart_rsp_valid(uart_rsp_valid),
-    .passthrough_uart_rsp_data(uart_rsp_data)
+    .passthrough_uart_rsp_data(uart_rsp_data),
+
+    .passthrough_ddr_mem_enable(ddr_mem_enable),
+    .passthrough_ddr_mem_req_ack(ddr_mem_cmd_ready),
+    .passthrough_ddr_mem_rsp_valid(ddr_mem_rsp_valid),
+    .passthrough_ddr_mem_rsp_data(ddr_mem_rsp_data)
 );
 
 cache#(
@@ -355,6 +365,62 @@ cache#(
     .port_cmd_write_data_i(cache_port_cmd_write_data_s),
     .port_rsp_valid_o(cache_port_rsp_valid_n),
     .port_rsp_read_data_o(cache_port_rsp_read_data_n),
+
+    .backend_cmd_valid_o(),
+    .backend_cmd_addr_o(),
+    .backend_cmd_ready_i(1'b0),
+    .backend_cmd_write_o(),
+    .backend_cmd_write_data_o(),
+    .backend_rsp_valid_i(1'b0),
+    .backend_rsp_read_data_i()
+);
+
+bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) mem_width_adjuster(
+        .clock_i(ctrl_cpu_clock),
+        .in_cmd_valid_i(ddr_mem_enable),
+        .in_cmd_addr_i(ctrl_dBus_cmd_payload_address),
+        .in_cmd_write_mask_i(
+            convert_byte_write(
+                ctrl_dBus_cmd_payload_wr,
+                ctrl_dBus_cmd_payload_address[1:0],
+                ctrl_dBus_cmd_payload_size
+            )
+        ),
+        .in_cmd_write_data_i(ctrl_dBus_cmd_payload_data),
+        .in_rsp_read_data_o(ddr_mem_rsp_data),
+
+        .out_cmd_ready_i(ctrl_dBus_cmd_ready),
+        .out_cmd_write_mask_o(ddr_mem_write_mask),
+        .out_cmd_write_data_o(ddr_mem_write_data),
+        .out_rsp_valid_i(ddr_mem_rsp_valid),
+        .out_rsp_read_data_i(ddr_mem_read_data)
+    );
+
+cache#(
+    .CACHELINE_BITS(CACHELINE_BITS),
+    .NUM_CACHELINES(NUM_CACHELINES),
+    .BACKEND_SIZE_BYTES(DDR_MEM_SIZE),
+    .INIT_FILE("boot_loader.mem"),
+    .STATE_INIT("boot_loader_state.mem"),
+    .NUM_PORTS(1)
+) mem_cache(
+    .clock_i(ctrl_cpu_clock),
+
+    .ctrl_cmd_addr_i(),
+    .ctrl_cmd_valid_i(),
+    .ctrl_cmd_ready_o(),
+    .ctrl_cmd_write_i(),
+    .ctrl_cmd_data_i(),
+    .ctrl_rsp_valid_o(),
+    .ctrl_rsp_data_o(),
+
+    .port_cmd_valid_i('{ddr_mem_enable}),
+    .port_cmd_addr_i('{ctrl_dBus_cmd_payload_address}),
+    .port_cmd_ready_o('{ddr_mem_cmd_ready}),
+    .port_cmd_write_mask_i('{ddr_mem_write_mask}),
+    .port_cmd_write_data_i('{ddr_mem_write_data}),
+    .port_rsp_valid_o('{ddr_mem_rsp_valid}),
+    .port_rsp_read_data_o('{ddr_mem_read_data}),
 
     .backend_cmd_valid_o(ddr_data_cmd_valid),
     .backend_cmd_addr_o(ddr_data_cmd_address),
