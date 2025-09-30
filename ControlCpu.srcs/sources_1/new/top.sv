@@ -25,7 +25,7 @@ module top
     input board_clock,
     input nReset,
 
-    output leds[4],
+    output logic[3:0] leds = 4'b1111,
     input [3:0] switches,
 
     output logic[3:0] debug,
@@ -115,10 +115,11 @@ clk_converter clocks(
     .locked(clocks_locked)
 );
 
-localparam CACHE_PORTS_NUM = 3;
+localparam CACHE_SIZE_KB = 16;
+localparam CACHE_PORTS_NUM = 2;
 localparam CACHELINE_BITS = 128;
 localparam CACHELINE_BYTES = CACHELINE_BITS/8;
-localparam NUM_CACHELINES = 16*1024*8/CACHELINE_BITS;
+localparam NUM_CACHELINES = CACHE_SIZE_KB*1024*8/CACHELINE_BITS;
 localparam DDR_MEM_SIZE = 256*1024*1024;
 
 localparam INST_CACHE_NUM_CACHELINES = 1024*8/CACHELINE_BITS;
@@ -133,7 +134,6 @@ logic [CACHELINE_BITS-1:0]              cache_port_rsp_read_data_n[CACHE_PORTS_N
 
 localparam CACHE_PORT_IDX_DBUS = 0;
 localparam CACHE_PORT_IDX_IBUS = 1;
-localparam CACHE_PORT_IDX_SPI_FLASH = 2;
 
 logic                                   inst_cache_port_cmd_valid_s[0:0];
 logic [31:0]                            inst_cache_port_cmd_addr_s[0:0];
@@ -166,10 +166,6 @@ localparam UART_SEND_IRQ = 0;
 localparam UART_RECV_IRQ = 1;
 
 logic [31:0]    iob_ddr_read_data;
-
-
-assign leds[0] = !nReset || !clocks_locked;
-//assign leds[1] = gp_out[0][GPOUT0_6502_RESET];
 
 VexRiscv control_cpu(
     .clk(ctrl_cpu_clock),
@@ -340,6 +336,9 @@ cache#(
 
 assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_IBUS] = { CACHELINE_BYTES{1'b0} };
 
+wire memtest_ddr_cmd_valid, memtest_ddr_cmd_write;
+wire [31:0] memtest_ddr_cmd_addr;
+
 cache#(
     .CACHELINE_BITS(CACHELINE_BITS),
     .NUM_CACHELINES(NUM_CACHELINES),
@@ -366,10 +365,10 @@ cache#(
     .port_rsp_valid_o(cache_port_rsp_valid_n),
     .port_rsp_read_data_o(cache_port_rsp_read_data_n),
 
-    .backend_cmd_valid_o(),
-    .backend_cmd_addr_o(),
+    .backend_cmd_valid_o(memtest_ddr_cmd_valid),
+    .backend_cmd_addr_o(memtest_ddr_cmd_addr),
     .backend_cmd_ready_i(1'b0),
-    .backend_cmd_write_o(),
+    .backend_cmd_write_o(memtest_ddr_cmd_write),
     .backend_cmd_write_data_o(),
     .backend_rsp_valid_i(1'b0),
     .backend_rsp_read_data_i()
@@ -430,20 +429,6 @@ cache#(
     .backend_rsp_valid_i(ddr_data_rsp_valid),
     .backend_rsp_read_data_i(ddr_data_rsp_read_data)
 );
-
-logic leds_reg[4] = { 1'b1, 1'b1, 1'b1, 1'b1 };
-assign leds[1] = leds_reg[1];
-assign leds[2] = leds_reg[2];
-assign leds[3] = leds_reg[3];
-
-always_ff@(posedge ctrl_cpu_clock) begin
-    leds_reg[2] <= !ctrl_dBus_cmd_ready;
-
-    if( !leds_reg[1] && ctrl_dBus_rsp_valid )
-        leds_reg[1] <= 1'b1;
-    if( ctrl_dBus_cmd_valid && ctrl_dBus_cmd_ready && !ctrl_dBus_cmd_payload_wr )
-        leds_reg[1] <= 1'b0;
-end
 
 //-----------------------------------------------------------------
 // DDR Core + PHY
@@ -591,37 +576,6 @@ gpio(
     .gp_out( gp_out )
 );
 
-wire spi_flash_dma_write;
-spi_ctrl#(.MEM_DATA_WIDTH(CACHELINE_BITS)) spi_flash(
-    .cpu_clock_i(ctrl_cpu_clock),
-    .spi_ref_clock_i(board_clock),
-    .irq(),
-
- //   .debug(debug),
-
-    .ctrl_cmd_valid_i(spi_enable),
-    .ctrl_cmd_address_i(ctrl_dBus_cmd_payload_address[15:0]),
-    .ctrl_cmd_data_i(ctrl_dBus_cmd_payload_data),
-    .ctrl_cmd_write_i(ctrl_dBus_cmd_payload_wr),
-    .ctrl_cmd_ack_o(spi_req_ack),
-
-    .ctrl_rsp_valid_o(spi_rsp_valid),
-    .ctrl_rsp_data_o(spi_rsp_data),
-
-    .spi_cs_n_o(spi_cs_n),
-    .spi_dq_io(spi_dq),
-    .spi_clk_o(spi_clk),
-
-    .dma_cmd_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_SPI_FLASH]),
-    .dma_cmd_address_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_SPI_FLASH]),
-    .dma_cmd_data_o(cache_port_cmd_write_data_s[CACHE_PORT_IDX_SPI_FLASH]),
-    .dma_cmd_write_o(spi_flash_dma_write),
-    .dma_cmd_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_SPI_FLASH]),
-
-    .dma_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_SPI_FLASH]),
-    .dma_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_SPI_FLASH])
-);
-
 uart_ctrl#(.ClockDivider(SIM_MODE ? 10 : CTRL_CLOCK_HZ / UART_BAUD), .SimMode(SIM_MODE)) uart_ctrl(
     .clock( ctrl_cpu_clock ),
 
@@ -659,9 +613,37 @@ generate
         assign irq_lines[i] = 1'b0;
 endgenerate
 
-generate
-    for(i=0; i<CACHELINE_BYTES; ++i)
-        assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_SPI_FLASH][i] = spi_flash_dma_write;
-endgenerate
+logic[31:0] monitored_addr;
+seg_display#(
+    .FREQ_DIV(1000),
+    .NUM_DIGITS(6),
+    .SEG_ACTIVE_LOW(1)
+) segdisplay(
+    .clock_i(ctrl_cpu_clock),
+    .data_i(monitored_addr),
+    .point_i( 6'b000000 ),
+
+    .segments_o(numeric_segments_n),
+    .enable_o(numeric_enable_n)
+);
+
+localparam MON_IDX = CACHE_PORT_IDX_IBUS;
+always_ff@(posedge ctrl_cpu_clock) begin
+    leds[0] <= !cache_port_cmd_valid_s[MON_IDX];
+    leds[1] <= !cache_port_cmd_write_mask_s[MON_IDX]!=0;
+
+    if( cache_port_cmd_valid_s[MON_IDX] )
+        monitored_addr <= cache_port_cmd_addr_s[MON_IDX];
+end
+
+int blink_counter = 0;
+always_ff@(posedge board_clock) begin
+    blink_counter <= blink_counter-1;
+
+    if( blink_counter == 0 ) begin
+        leds[3] <= !leds[3];
+        blink_counter <= 50000000;
+    end
+end
 
 endmodule

@@ -104,11 +104,11 @@ task default_state_current();
 endtask
 
 function logic is_ddr_mem(logic [31:0]address);
-    is_ddr_mem = address[31:28] == 4'h8;
+    is_ddr_mem = address[31:28] == 4'h9;
 endfunction
 
 function logic is_ddr(logic [31:0]address);
-    is_ddr = address[31:28] == 4'h9;
+    is_ddr = address[31:28] == 4'h8;
 endfunction
 
 function logic is_io(logic [31:0]address);
