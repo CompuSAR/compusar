@@ -106,6 +106,14 @@ wire clk_ddr_dqs_w;
 wire clk_ref_w;
 wire clock_feedback;
 
+wire ctrl_cpu_reset;
+
+xpm_cdc_sync_rst reset_synchronizer(
+    .dest_rst(ctrl_cpu_reset),
+    .dest_clk(ctrl_cpu_clock),
+    .src_rst(nReset)
+);
+
 clk_converter clocks(
     .clk_in1(board_clock), .reset(1'b0),
     .clk_ctrl_cpu(ctrl_cpu_clock),
@@ -169,7 +177,7 @@ logic [31:0]    iob_ddr_read_data;
 
 VexRiscv control_cpu(
     .clk(ctrl_cpu_clock),
-    .reset(!nReset || !clocks_locked),
+    .reset(!ctrl_cpu_reset || !clocks_locked),
 
     .timerInterrupt(ctrl_timer_interrupt),
     .externalInterrupt(ctrl_ext_interrupt),
@@ -361,15 +369,6 @@ cache#(
     .backend_rsp_read_data_i(ddr_data_rsp_read_data)
 );
 
-always_ff@(posedge ctrl_cpu_clock) begin
-    leds_reg[2] <= !ctrl_dBus_cmd_ready;
-
-    if( !leds_reg[1] && ctrl_dBus_rsp_valid )
-        leds_reg[1] <= 1'b1;
-    if( ctrl_dBus_cmd_valid && ctrl_dBus_cmd_ready && !ctrl_dBus_cmd_payload_wr )
-        leds_reg[1] <= 1'b0;
-end
-
 //-----------------------------------------------------------------
 // DDR Core + PHY
 //-----------------------------------------------------------------
@@ -498,6 +497,14 @@ timer_int_ctrl#(.CLOCK_HZ(CTRL_CLOCK_HZ)) interrupt_controller(
 
 wire [31:0]gp_out[GPIO_OUT_PORTS];
 
+wire [3:0]buffered_switches;
+
+input_delay#(.NUM_BITS(4)) switches_delay(
+    .clock_i(ctrl_cpu_clock),
+    .in(switches),
+    .out(buffered_switches)
+);
+
 gpio#(
     .NUM_IN_PORTS(GPIO_IN_PORTS),
     .NUM_OUT_PORTS(GPIO_OUT_PORTS))
@@ -512,7 +519,7 @@ gpio(
     .rsp_data_o(gpio_rsp_data),
     .rsp_valid_o(gpio_rsp_valid),
 
-    .gp_in( '{ {28'b0, switches} } ),
+    .gp_in( '{ {28'b0, buffered_switches} } ),
     .gp_out( gp_out )
 );
 

@@ -1,14 +1,11 @@
 create_clock -period 20.000 [get_ports board_clock]
 set_property PACKAGE_PIN Y18 [get_ports board_clock]
+
 set_property IOSTANDARD LVCMOS33 [get_ports board_clock]
 
 set_property PACKAGE_PIN F20 [get_ports nReset]
 set_property IOSTANDARD LVCMOS33 [get_ports nReset]
 
-set_property PACKAGE_PIN F19 [get_ports {leds[0]}]
-set_property PACKAGE_PIN E21 [get_ports {leds[1]}]
-set_property PACKAGE_PIN D20 [get_ports {leds[2]}]
-set_property PACKAGE_PIN C20 [get_ports {leds[3]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {leds*}]
 
 set_property PACKAGE_PIN M13 [get_ports {switches[0]}]
@@ -67,13 +64,9 @@ set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 4 [current_design]
 set_property CONFIG_MODE SPIx4 [current_design]
 set_property BITSTREAM.CONFIG.CONFIGRATE 50 [current_design]
 
+set_false_path -from [get_ports {switches*}]
+set_false_path -from [get_ports nReset]
+set_false_path -from [get_ports uart_rx]
 
-create_clock -period 3.265 -name VIRTUAL_ddr_clock -waveform {0.000 1.633}
-
-set_output_delay -clock [get_clocks board_clock] -max -add_delay -1.500 [get_ports {spi_dq[*]}]
-#set_output_delay -clock [get_clocks board_clock] -max -add_delay 1.750 [get_ports {spi_dq[*]}]
-set_output_delay -clock [get_clocks board_clock] -min -add_delay 0 [get_ports spi_cs_n]
-set_output_delay -clock [get_clocks board_clock] -max -add_delay 0 [get_ports spi_cs_n]
-
-#set_input_delay -clock [get_clocks board_clock] -min -add_delay 2.300 [get_ports {spi_dq[*]}]
-#set_input_delay -clock [get_clocks board_clock] -max -add_delay 8.500 [get_ports {spi_dq[*]}]
+set_false_path -to [get_ports {uart_tx}]
+set_false_path -to [get_ports {leds*}]
