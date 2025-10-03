@@ -2,7 +2,8 @@
 
 module uart_ctrl#(
     parameter ClockDivider = 50,
-    parameter SimMode = 0
+    parameter SimMode = 0,
+    parameter InputDelay = 4
 )
 (
     input clock,
@@ -30,6 +31,15 @@ logic [7:0] uart_send_data, uart_recv_data, uart_recv_data_latched = 8'h00;
 logic uart_send_data_ready = 1'b0, uart_recv_data_ready;
 logic receive_ready;
 
+logic [InputDelay-1:0]input_buffer = {InputDelay{1'b1}};
+
+always_ff@(posedge clock) begin
+    input_buffer[0] <= uart_rx;
+
+    if( InputDelay>1 )
+        input_buffer[InputDelay-1:1] <= input_buffer[InputDelay-2:0];
+end
+
 always_comb begin
     if( !SimMode ) begin
         req_ack_o = intr_send_ready_o || req_addr_i!=16'h0;
@@ -53,7 +63,7 @@ uart_send(
 uart_recv#(.ClockDivider(ClockDivider))
 uart_recv(
     .clock(clock),
-    .input_bit(uart_rx),
+    .input_bit(input_buffer[InputDelay-1]),
 
     .data_out(uart_recv_data),
     .data_ready(uart_recv_data_ready),
