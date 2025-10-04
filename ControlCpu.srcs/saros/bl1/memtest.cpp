@@ -19,8 +19,8 @@ constexpr size_t PATTERN_MUL = 0x4c681767;
 void fill_memory() {
     uint32_t pattern = PATTERN_INIT;
 
-    for(size_t offset = 0; offset < MEM_SIZE; offset++) {
-        if( offset % 1024*1024 == 0 )
+    for(size_t offset = 0; offset < MEM_SIZE/sizeof(size_t); offset++) {
+        if( offset % (1024*1024/sizeof(size_t)) == 0 )
             uart_send('.');
 
         DDR_MEMORY[offset] = pattern;
@@ -32,8 +32,8 @@ void fill_memory() {
 void verify_memory() {
     uint32_t pattern = PATTERN_INIT;
 
-    for(size_t offset = 0; offset < MEM_SIZE; offset++) {
-        if( offset % 1024*1024 == 0 )
+    for(size_t offset = 0; offset < MEM_SIZE/sizeof(size_t); offset++) {
+        if( offset % (1024*1024/sizeof(size_t)) == 0 )
             uart_send('.');
 
         size_t read = DDR_MEMORY[offset];
