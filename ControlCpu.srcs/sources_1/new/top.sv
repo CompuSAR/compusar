@@ -396,6 +396,8 @@ assign ddr_data_cmd_ack = ddr_actual_ready && ( ddr_actual_data_valid || ! ddr_d
 assign ddr_actual_enable = ddr_data_cmd_valid && ddr_data_cmd_ack;
 assign ddr_actual_data_valid = ddr_actual_enable && ddr_data_cmd_write;
 
+assign ddr3_dm = 2'b00;
+
 mig_ddr_ctrl ddr_ctrl(
     .ui_clk( ctrl_cpu_clock ),
     .sys_clk_i( ddr_clock ),

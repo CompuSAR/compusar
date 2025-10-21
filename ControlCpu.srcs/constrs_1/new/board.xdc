@@ -70,3 +70,11 @@ set_false_path -from [get_ports uart_rx]
 
 set_false_path -to [get_ports uart_tx]
 set_false_path -to [get_ports leds*]
+
+
+############ DDR pins not covered by MIG #############
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dm[0]}]
+set_property PACKAGE_PIN AB1 [get_ports {ddr3_dm[0]}]
+
+set_property IOSTANDARD SSTL15 [get_ports {ddr3_dm[1]}]
+set_property PACKAGE_PIN W2 [get_ports {ddr3_dm[1]}]
