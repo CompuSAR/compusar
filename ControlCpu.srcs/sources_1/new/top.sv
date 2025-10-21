@@ -459,11 +459,22 @@ wire ddr_phy_data_transfer, ddr_phy_data_write, ddr_phy_write_level, ddr_phy_dqs
 wire [15:0] ddr_phy_dq_i[7:0], ddr_phy_dq_o[1:0];
 wire [31:0] ddr_phy_delay_inc;
 
-wire ddr_actual_enable, ddr_actual_ready, ddr_actual_data_valid, ddr_actual_data_ready;
+wire ddr_actual_enable, ddr_actual_ready, ddr_actual_data_ready;
+logic [127:0]ddr_actual_write_data;
+logic ddr_actual_data_valid = 1'b0;
 
-assign ddr_data_cmd_ack = ddr_actual_ready && ( ddr_actual_data_valid || ! ddr_data_cmd_write );
-assign ddr_actual_enable = ddr_data_cmd_valid && ddr_data_cmd_ack;
-assign ddr_actual_data_valid = ddr_actual_enable && ddr_data_cmd_write;
+assign ddr_data_cmd_ack = ddr_actual_ready && !ddr_actual_data_valid;
+assign ddr_actual_enable = ddr_data_cmd_valid && !ddr_actual_data_valid;
+
+always_ff@(posedge ctrl_cpu_clock) begin
+    if( ddr_data_cmd_valid && ddr_data_cmd_write && ddr_actual_ready && !ddr_actual_data_valid ) begin
+        ddr_actual_write_data <= ddr_cmd_write_data;
+        ddr_actual_data_valid <= 1'b1;
+    end
+    if( ddr_actual_data_valid && ddr_actual_data_ready ) begin
+        ddr_actual_data_valid <= 1'b0;
+    end
+end
 
 assign ddr3_dm = 2'b00;
 
@@ -474,18 +485,17 @@ mig_ddr_ctrl ddr_ctrl(
     .sys_rst( 1'b0 ),
 
     .app_en( ddr_actual_enable ),
+    .app_rdy( ddr_actual_ready ),
     .app_cmd( ddr_data_cmd_write ? 3'b000 : 3'b001 ),
     .app_addr( ddr_data_cmd_address[27:0] ),
-    .app_wdf_data( ddr_actual_data_valid ),
-    .app_wdf_end( 1'b1 ),
-    .app_wdf_wren( ddr_data_cmd_write ),
 
-    .app_rdy( ddr_actual_ready ),
+    .app_wdf_data( ddr_actual_write_data ),
+    .app_wdf_rdy( ddr_actual_data_ready ),
+    .app_wdf_end( 1'b1 ),
+    .app_wdf_wren( ddr_actual_data_valid ),
 
     .app_rd_data_valid( ddr_data_rsp_valid ),
     .app_rd_data( ddr_data_rsp_read_data ),
-
-    .app_wdf_rdy( ddr_actual_data_ready ),
 
     .app_ref_req( 1'b0 ),
     .app_zq_req( 1'b0 ),
