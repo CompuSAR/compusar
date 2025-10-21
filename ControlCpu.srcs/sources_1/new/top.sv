@@ -100,7 +100,7 @@ endfunction
 //-----------------------------------------------------------------
 logic ctrl_cpu_clock, clocks_locked;
 wire clk_w = ctrl_cpu_clock;
-wire ddr_clock;
+wire ddr_clock, ddr_ref_clock;
 wire rst_w = !clocks_locked;
 wire clk_ddr_dqs_w;
 wire clk_ref_w;
@@ -116,8 +116,9 @@ xpm_cdc_sync_rst reset_synchronizer(
 
 clk_converter clocks(
     .clk_in1(board_clock), .reset(1'b0),
-    .clk_ctrl_cpu(ctrl_cpu_clock),
+    .clk_ctrl_cpu(),
     .clk_ddr(ddr_clock),
+    .clk_ddr_ref(ddr_ref_clock),
     .clkfb_in(clock_feedback),
     .clkfb_out(clock_feedback),
     .locked(clocks_locked)
@@ -458,93 +459,53 @@ wire ddr_phy_data_transfer, ddr_phy_data_write, ddr_phy_write_level, ddr_phy_dqs
 wire [15:0] ddr_phy_dq_i[7:0], ddr_phy_dq_o[1:0];
 wire [31:0] ddr_phy_delay_inc;
 
-sddr_ctrl#(
-    .tRCD(5),                           // 13.75ns
-    .tRC(15),                           // 48.75ns
-    .tRP(5),                            // 13.75ns
-    .tRFC(49),                          // 160ns minimum
-    .tREFI(78*CTRL_CLOCK_HZ/10000000)   // 7.8us at CPU clock
-) ddr_ctrl(
-    .cpu_clock_i(ctrl_cpu_clock),
-    .ddr_clock_i(ddr_clock),
-    .ddr_reset_n_o(ddr_reset_n),
-    .ddr_phy_reset_n_o(ddr_phy_reset_n),
+wire ddr_actual_enable, ddr_actual_ready, ddr_actual_data_valid, ddr_actual_data_ready;
 
-    .ctrl_cmd_valid(ddr_ctrl_cmd_valid),
-    .ctrl_cmd_address(ctrl_dBus_cmd_payload_address[15:0]),
-    .ctrl_cmd_data(ctrl_dBus_cmd_payload_data),
-    .ctrl_cmd_write(ctrl_dBus_cmd_payload_wr),
-    .ctrl_cmd_ack(ddr_ctrl_cmd_ready),
-    .ctrl_rsp_valid(ddr_ctrl_rsp_valid),
-    .ctrl_rsp_data(ddr_ctrl_rsp_data),
+assign ddr_data_cmd_ack = ddr_actual_ready && ( ddr_actual_data_valid || ! ddr_data_cmd_write );
+assign ddr_actual_enable = ddr_data_cmd_valid && ddr_data_cmd_ack;
+assign ddr_actual_data_valid = ddr_actual_enable && ddr_data_cmd_write;
 
-    .data_cmd_valid(ddr_data_cmd_valid),
-    .data_cmd_ack(ddr_data_cmd_ack),
-    .data_cmd_data_i(ddr_cmd_write_data),
-    .data_cmd_address(ddr_data_cmd_address[27:0]),
-    .data_cmd_write(ddr_data_cmd_write),
-    .data_rsp_valid(ddr_data_rsp_valid),
-    .data_rsp_data_o(ddr_data_rsp_read_data),
+mig_ddr_ctrl ddr_ctrl(
+    .ui_clk( ctrl_cpu_clock ),
+    .sys_clk_i( ddr_clock ),
+    .clk_ref_i( ddr_ref_clock ),
+    .sys_rst( 1'b0 ),
 
-    .ddr3_cs_n_o(ddr_phy_cs_n),
-    .ddr3_cke_o(ddr_phy_cke),
-    .ddr3_ras_n_o(ddr_phy_ras_n),
-    .ddr3_cas_n_o(ddr_phy_cas_n),
-    .ddr3_we_n_o(ddr_phy_we_n),
-    .ddr3_ba_o(ddr_phy_ba),
-    .ddr3_addr_o(ddr_phy_addr),
-    .ddr3_odt_o(ddr_phy_odt),
-    .ddr3_dq_o(ddr_phy_dq_o),
-    .ddr3_dq_i(ddr_phy_dq_i),
+    .app_en( ddr_actual_enable ),
+    .app_cmd( ddr_data_cmd_write ? 3'b000 : 3'b001 ),
+    .app_addr( ddr_data_cmd_address[27:0] ),
+    .app_wdf_data( ddr_actual_data_valid ),
+    .app_wdf_end( 1'b1 ),
+    .app_wdf_wren( ddr_data_cmd_write ),
 
-    .data_transfer_o(ddr_phy_data_transfer),
-    .data_write_o(ddr_phy_data_write),
-    .write_level_o(ddr_phy_write_level),
-    .delay_inc_o(ddr_phy_delay_inc),
-    .dqs_out_o(ddr_phy_dqs_out)
+    .app_rdy( ddr_actual_ready ),
+
+    .app_rd_data_valid( ddr_data_rsp_valid ),
+    .app_rd_data( ddr_data_rsp_read_data ),
+
+    .app_wdf_rdy( ddr_actual_data_ready ),
+
+    .app_ref_req( 1'b0 ),
+    .app_zq_req( 1'b0 ),
+    .app_sr_req( 1'b0 ),
+
+    // DDR side
+    .ddr3_dq( ddr3_dq ),
+    .ddr3_dqs_n( ddr3_dqs_n ),
+    .ddr3_dqs_p( ddr3_dqs_p ),
+    .ddr3_addr( ddr3_addr ),
+    .ddr3_ba( ddr3_ba ),
+    .ddr3_cas_n( ddr3_cas_n ),
+    .ddr3_ck_n( ddr3_ck_n ),
+    .ddr3_ck_p( ddr3_ck_p ),
+    .ddr3_cke( ddr3_cke ),
+    .ddr3_cs_n( ddr3_cs_n ),
+    .ddr3_odt( ddr3_odt ),
+    .ddr3_ras_n( ddr3_ras_n ),
+    .ddr3_reset_n( ddr3_reset_n ),
+    .ddr3_we_n( ddr3_we_n )
 );
 
-sddr_phy_xilinx ddr_phy(
-     .in_cpu_clock_i(ctrl_cpu_clock)
-    ,.in_ddr_clock_i(ddr_clock)
-//     .in_ddr_clock_i(ctrl_cpu_clock)
-    ,.in_ddr_reset_n_i(ddr_reset_n)
-    ,.in_phy_reset_n_i(ddr_phy_reset_n)
-
-    ,.ctl_cs_n_i(ddr_phy_cs_n)
-    ,.ctl_odt_i(ddr_phy_odt)
-    ,.ctl_cke_i(ddr_phy_cke)
-    ,.ctl_ras_n_i(ddr_phy_ras_n)
-    ,.ctl_cas_n_i(ddr_phy_cas_n)
-    ,.ctl_we_n_i(ddr_phy_we_n)
-    ,.ctl_addr_i(ddr_phy_addr)
-    ,.ctl_ba_i(ddr_phy_ba)
-    ,.ctl_dq_i(ddr_phy_dq_o)
-    ,.ctl_dq_o(ddr_phy_dq_i)
-
-    ,.ctl_data_transfer_i(ddr_phy_data_transfer)
-    ,.ctl_data_write_i(ddr_phy_data_write)
-    ,.ctl_write_level_i(ddr_phy_write_level)
-    ,.ctl_delay_inc_i(ddr_phy_delay_inc)
-    ,.ctl_out_dqs_i(ddr_phy_dqs_out)
-
-    ,.ddr3_ck_p_o(ddr3_ck_p)
-    ,.ddr3_ck_n_o(ddr3_ck_n)
-    ,.ddr3_cs_n_o()
-    ,.ddr3_cke_o(ddr3_cke)
-    ,.ddr3_reset_n_o(ddr3_reset_n)
-    ,.ddr3_ras_n_o(ddr3_ras_n)
-    ,.ddr3_cas_n_o(ddr3_cas_n)
-    ,.ddr3_we_n_o(ddr3_we_n)
-    ,.ddr3_ba_o(ddr3_ba)
-    ,.ddr3_addr_o(ddr3_addr[13:0])
-    ,.ddr3_odt_o(ddr3_odt)
-    ,.ddr3_dm_o(ddr3_dm)
-    ,.ddr3_dq_io(ddr3_dq)
-    ,.ddr3_dqs_p_io(ddr3_dqs_p)
-    ,.ddr3_dqs_n_io(ddr3_dqs_n)
-    );
-assign ddr3_cs_n = 1'b0;
 
 timer_int_ctrl#(.CLOCK_HZ(CTRL_CLOCK_HZ)) interrupt_controller(
     .clock(ctrl_cpu_clock),
