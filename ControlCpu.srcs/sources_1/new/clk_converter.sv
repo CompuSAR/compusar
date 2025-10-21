@@ -44,8 +44,8 @@ wire pll_locked;
 PLLE2_BASE#(
     .CLKIN1_PERIOD(20.000),
     .DIVCLK_DIVIDE(1),
-    .CLKFBOUT_MULT(4),
-    .CLKOUT0_DIVIDE(1)  // 200MHz clock
+    .CLKFBOUT_MULT(16),
+    .CLKOUT0_DIVIDE(4)  // 200MHz clock
 ) pll(
     .CLKFBIN(pll_clk_fb),
     .CLKFBOUT(pll_clk_fb),
