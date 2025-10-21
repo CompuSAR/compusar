@@ -6,12 +6,15 @@ module clk_converter(
 
     output clk_ctrl_cpu,
     output clk_ddr,
+    output clk_ddr_ref,
 
     output clkfb_out,
     input clkfb_in,
 
     output locked
 );
+
+wire mmcm_locked;
 
 MMCME2_BASE#(
     .DIVCLK_DIVIDE(4),
@@ -32,7 +35,30 @@ MMCME2_BASE#(
 
     .PWRDWN(1'b0),
     .RST(reset),
-    .LOCKED(locked)
+    .LOCKED(mmcm_locked)
 );
+
+wire pll_clk_fb;
+wire pll_locked;
+
+PLLE2_BASE#(
+    .CLKIN1_PERIOD(20.000),
+    .DIVCLK_DIVIDE(1),
+    .CLKFBOUT_MULT(4),
+    .CLKOUT0_DIVIDE(1)  // 200MHz clock
+) pll(
+    .CLKFBIN(pll_clk_fb),
+    .CLKFBOUT(pll_clk_fb),
+
+    .CLKIN1(clk_in1),
+
+    .CLKOUT0(clk_ddr_ref),
+
+    .PWRDWN(1'b0),
+    .RST(reset),
+    .LOCKED(pll_locked)
+);
+
+assign locked = pll_locked && mmcm_locked;
 
 endmodule

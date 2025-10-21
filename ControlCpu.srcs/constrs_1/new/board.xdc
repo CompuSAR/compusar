@@ -64,9 +64,9 @@ set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 4 [current_design]
 set_property CONFIG_MODE SPIx4 [current_design]
 set_property BITSTREAM.CONFIG.CONFIGRATE 50 [current_design]
 
-set_false_path -from [get_ports {switches*}]
+set_false_path -from [get_ports switches*]
 set_false_path -from [get_ports nReset]
 set_false_path -from [get_ports uart_rx]
 
-set_false_path -to [get_ports {uart_tx}]
-set_false_path -to [get_ports {leds*}]
+set_false_path -to [get_ports uart_tx]
+set_false_path -to [get_ports leds*]
