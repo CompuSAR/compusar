@@ -7,6 +7,7 @@
 #include "reg.h"
 #include "uart.h"
 
+namespace {
 static constexpr uint32_t BankBits = 3;
 static constexpr uint32_t AddrBits = 14;
 
@@ -142,8 +143,10 @@ void write_mode_reg3(uint32_t mpr_rf, bool mprEnable) {
     reg_write_32( DdrDevice, DdrOverrideAddress, composeDdrAddress(3, value) );
     override_command(DdrCommands::ModeRegisterSet);
 }
+}
 
 void ddr_init() {
+#if 0
     // Reset EVERYTHING
     ddr_control(DdrCtrl_ResetAll);
     override_command(DdrCommands::NoOperation);         // Set CKE low
@@ -256,5 +259,6 @@ void ddr_init() {
     write_mode_reg3( 0, false );
     sleep_cycles(12);   // tMOD
     ddr_control(DdrCtrl_nMemReset|DdrCtrl_nPhyReset|DdrCtrl_Cke|DdrCtrl_nBypass);
+#endif
 }
 
