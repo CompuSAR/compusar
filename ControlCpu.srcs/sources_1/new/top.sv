@@ -25,7 +25,7 @@ module top
     input board_clock,
     input nReset,
 
-    output leds[4],
+    output logic[3:0] leds = 4'b1111,
     input [3:0] switches,
 
     output logic[3:0] debug,
@@ -166,10 +166,6 @@ localparam UART_SEND_IRQ = 0;
 localparam UART_RECV_IRQ = 1;
 
 logic [31:0]    iob_ddr_read_data;
-
-
-assign leds[0] = !nReset || !clocks_locked;
-//assign leds[1] = gp_out[0][GPOUT0_6502_RESET];
 
 VexRiscv control_cpu(
     .clk(ctrl_cpu_clock),
@@ -364,11 +360,6 @@ cache#(
     .backend_rsp_valid_i(ddr_data_rsp_valid),
     .backend_rsp_read_data_i(ddr_data_rsp_read_data)
 );
-
-logic leds_reg[4] = { 1'b1, 1'b1, 1'b1, 1'b1 };
-assign leds[1] = leds_reg[1];
-assign leds[2] = leds_reg[2];
-assign leds[3] = leds_reg[3];
 
 always_ff@(posedge ctrl_cpu_clock) begin
     leds_reg[2] <= !ctrl_dBus_cmd_ready;
@@ -597,5 +588,19 @@ generate
     for(i=0; i<CACHELINE_BYTES; ++i)
         assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_SPI_FLASH][i] = spi_flash_dma_write;
 endgenerate
+
+always_ff@(posedge ctrl_cpu_clock) begin
+    // leds[0] <= 
+end
+
+int blink_counter = 0;
+always_ff@(posedge board_clock) begin
+    blink_counter <= blink_counter-1;
+
+    if( blink_counter == 0 ) begin
+        leds[3] <= !leds[3];
+        blink_counter <= 50000000;
+    end
+end
 
 endmodule
