@@ -7,6 +7,10 @@ set_property PACKAGE_PIN F20 [get_ports nReset]
 set_property IOSTANDARD LVCMOS33 [get_ports nReset]
 
 set_property IOSTANDARD LVCMOS33 [get_ports {leds*}]
+set_property PACKAGE_PIN F19 [get_ports {leds[0]}]
+set_property PACKAGE_PIN E21 [get_ports {leds[1]}]
+set_property PACKAGE_PIN D20 [get_ports {leds[2]}]
+set_property PACKAGE_PIN C20 [get_ports {leds[3]}]
 
 set_property PACKAGE_PIN M13 [get_ports {switches[0]}]
 set_property PACKAGE_PIN K14 [get_ports {switches[1]}]
