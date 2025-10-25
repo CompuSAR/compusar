@@ -4,3 +4,6 @@
 [submodule "ControlCpu.srcs/simple_ddr_ctrl"]
 	path = ControlCpu.srcs/simple_ddr_ctrl
 	url = https://github.com/CompuSAR/simple_ddr_ctrl.git
+[submodule "ControlCpu.srcs/sa6502-sync"]
+	path = ControlCpu.srcs/sa6502-sync
+	url = https://github.com/CompuSAR/sar6502-sync.git

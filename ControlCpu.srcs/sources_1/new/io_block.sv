@@ -145,6 +145,7 @@ always_comb begin
                 8'h5: begin                     // Apple II pager
                     rsp_valid = passthrough_apple_pager_rsp_valid;
                     data_out = passthrough_apple_pager_rsp_data;
+                end
                 default: begin                  // Invalid memory access
                     rsp_valid = 1'b1;
                     rsp_error = 1'b1;
@@ -191,6 +192,7 @@ always_comb begin
                 8'h5: begin                // Apple II pager
                     passthrough_apple_pager_enable = 1'b1;
                     req_ack = passthrough_apple_pager_req_ack;
+                end
                 default: begin
                     // Bus error case. If it's a read, it's handled with the
                     // responses. If it's a write, we have no way to

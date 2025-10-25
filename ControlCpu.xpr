@@ -254,6 +254,105 @@
           <Attr Name="ScopedToCell" Val="mig_ddr_ctrl"/>
         </FileInfo>
       </File>
+      <File Path="$PSRCDIR/sources_1/imports/new/sar6502_sync.sv">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PSRCDIR/sa6502-sync/sar6502-sync.srcs/sources_1/new/sar6502_sync.sv"/>
+          <Attr Name="ImportTime" Val="1761390706"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/imports/new/alu.sv">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PSRCDIR/sa6502-sync/sar6502-sync.srcs/sources_1/new/alu.sv"/>
+          <Attr Name="ImportTime" Val="1761390706"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/imports/new/register.sv">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PSRCDIR/sa6502-sync/sar6502-sync.srcs/sources_1/new/register.sv"/>
+          <Attr Name="ImportTime" Val="1761390706"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/imports/new/adh_gen.sv">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PSRCDIR/sa6502-sync/sar6502-sync.srcs/sources_1/new/adh_gen.sv"/>
+          <Attr Name="ImportTime" Val="1761390706"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/imports/new/adl_gen.sv">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PSRCDIR/sa6502-sync/sar6502-sync.srcs/sources_1/new/adl_gen.sv"/>
+          <Attr Name="ImportTime" Val="1761390706"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/imports/new/processor_status.sv">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PSRCDIR/sa6502-sync/sar6502-sync.srcs/sources_1/new/processor_status.sv"/>
+          <Attr Name="ImportTime" Val="1761390706"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/imports/new/decoder.sv">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PSRCDIR/sa6502-sync/sar6502-sync.srcs/sources_1/new/decoder.sv"/>
+          <Attr Name="ImportTime" Val="1761390706"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/imports/new/ctl.sv">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PSRCDIR/sa6502-sync/sar6502-sync.srcs/sources_1/new/ctl.sv"/>
+          <Attr Name="ImportTime" Val="1761390706"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/imports/new/decoder_addr.vh">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PSRCDIR/sa6502-sync/sar6502-sync.srcs/sources_1/new/decoder_addr.vh"/>
+          <Attr Name="ImportTime" Val="1761390706"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+          <Attr Name="IsVisible" Val="1"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/imports/new/decimal_adjust.sv">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PSRCDIR/sa6502-sync/sar6502-sync.srcs/sources_1/new/decimal_adjust.sv"/>
+          <Attr Name="ImportTime" Val="1761390706"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="implementation"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+        </FileInfo>
+      </File>
+      <File Path="$PSRCDIR/sources_1/imports/new/decoder_ops.vh">
+        <FileInfo>
+          <Attr Name="ImportPath" Val="$PSRCDIR/sa6502-sync/sar6502-sync.srcs/sources_1/new/decoder_ops.vh"/>
+          <Attr Name="ImportTime" Val="1761390706"/>
+          <Attr Name="UsedIn" Val="synthesis"/>
+          <Attr Name="UsedIn" Val="simulation"/>
+          <Attr Name="IsVisible" Val="1"/>
+        </FileInfo>
+      </File>
       <Config>
         <Option Name="DesignMode" Val="RTL"/>
         <Option Name="TopModule" Val="top"/>
@@ -387,19 +486,19 @@
     </FileSet>
     <FileSet Name="display" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/display" RelGenDir="$PGENDIR/display">
       <Filter Type="Srcs"/>
-      <File Path="$PPRDIR/../sar_apple2/SarAppleII.srcs/display_sim/new/display_sim.sv">
+      <File Path="$PSRCDIR/display_sim/new/display_sim.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../sar_apple2/SarAppleII.srcs/display_sim/display_sim_behav.wcfg">
+      <File Path="$PSRCDIR/display_sim/display_sim_behav.wcfg">
         <FileInfo>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../sar_apple2/SarAppleII.srcs/display_sim/screen.mem">
+      <File Path="$PSRCDIR/display_sim/screen.mem">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="simulation"/>
@@ -425,14 +524,14 @@
     </FileSet>
     <FileSet Name="sim_RiscV" Type="SimulationSrcs" RelSrcDir="$PSRCDIR/sim_RiscV" RelGenDir="$PGENDIR/sim_RiscV">
       <Filter Type="Srcs"/>
-      <File Path="$PPRDIR/../sar_apple2/SarAppleII.srcs/sim_RiscV/new/sim_riscv.sv">
+      <File Path="$PSRCDIR/sim_RiscV/new/sim_riscv.sv">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PPRDIR/../sar_apple2/SarAppleII.srcs/sim_RiscV/sim_riscv_behav.wcfg">
+      <File Path="$PSRCDIR/sim_RiscV/sim_riscv_behav.wcfg">
         <FileInfo>
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
@@ -449,7 +548,7 @@
         <Option Name="PamSignalDriverFile" Val="xil_bypass_driver"/>
         <Option Name="PamPseudoTop" Val="pseudo_tb"/>
         <Option Name="SrcSet" Val="sources_1"/>
-        <Option Name="XSimWcfgFile" Val="$PPRDIR/../sar_apple2/SarAppleII.srcs/sim_RiscV/sim_riscv_behav.wcfg"/>
+        <Option Name="XSimWcfgFile" Val="$PSRCDIR/sim_RiscV/sim_riscv_behav.wcfg"/>
         <Option Name="CosimPdi" Val=""/>
         <Option Name="CosimPlatform" Val=""/>
         <Option Name="CosimElf" Val=""/>
@@ -491,12 +590,11 @@
     </Simulator>
   </Simulators>
   <Runs Version="1" Minor="22">
-    <Run Id="synth_1" Type="Ft3:Synth" SrcSet="sources_1" Part="xc7a35tfgg484-2" ConstrsSet="constrs_1" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="true" IncrementalCheckpoint="$PSRCDIR/utils_1/imports/synth_1/top.dcp" WriteIncrSynthDcp="false" State="current" Dir="$PRUNDIR/synth_1" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/synth_1" ParallelReportGen="true">
+    <Run Id="synth_1" Type="Ft3:Synth" SrcSet="sources_1" Part="xc7a35tfgg484-2" ConstrsSet="constrs_1" Description="Vivado Synthesis Defaults" AutoIncrementalCheckpoint="true" IncrementalCheckpoint="$PSRCDIR/utils_1/imports/synth_1/top.dcp" WriteIncrSynthDcp="false" State="current" IncludeInArchive="true" IsChild="false" AutoIncrementalDir="$PSRCDIR/utils_1/imports/synth_1" AutoRQSDir="$PSRCDIR/utils_1/imports/synth_1" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Vivado Synthesis Defaults" Flow="Vivado Synthesis 2024"/>
         <Step Id="synth_design"/>
       </Strategy>
-      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
       <ReportStrategy Name="Vivado Synthesis Default Reports" Flow="Vivado Synthesis 2024"/>
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
@@ -511,7 +609,7 @@
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
     </Run>
-    <Run Id="impl_1" Type="Ft2:EntireDesign" Part="xc7a35tfgg484-2" ConstrsSet="constrs_1" Description="To compensate for optimistic delay estimation, add extra delay cost to long distance and high fanout connections. low setting, least pessimistic)" AutoIncrementalCheckpoint="true" IncrementalCheckpoint="$PSRCDIR/utils_1/imports/impl_1/top_routed.dcp" WriteIncrSynthDcp="false" State="current" Dir="$PRUNDIR/impl_1" SynthRun="synth_1" IncludeInArchive="true" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/impl_1" LaunchOptions="-jobs 12 " AutoRQSDir="$PSRCDIR/utils_1/imports/impl_1" ParallelReportGen="true">
+    <Run Id="impl_1" Type="Ft2:EntireDesign" Part="xc7a35tfgg484-2" ConstrsSet="constrs_1" Description="To compensate for optimistic delay estimation, add extra delay cost to long distance and high fanout connections. low setting, least pessimistic)" AutoIncrementalCheckpoint="true" IncrementalCheckpoint="$PSRCDIR/utils_1/imports/impl_1/top_routed.dcp" WriteIncrSynthDcp="false" State="current" SynthRun="synth_1" IncludeInArchive="true" IsChild="false" GenFullBitstream="true" AutoIncrementalDir="$PSRCDIR/utils_1/imports/impl_1" LaunchOptions="-jobs 12 " AutoRQSDir="$PSRCDIR/utils_1/imports/impl_1" ParallelReportGen="true">
       <Strategy Version="1" Minor="2">
         <StratHandle Name="Performance_NetDelay_low" Flow="Vivado Implementation 2024"/>
         <Step Id="init_design"/>
@@ -532,7 +630,6 @@
         <Step Id="post_route_phys_opt_design"/>
         <Step Id="write_bitstream"/>
       </Strategy>
-      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
       <ReportStrategy Name="Vivado Implementation Default Reports" Flow="Vivado Implementation 2024"/>
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
@@ -550,7 +647,6 @@
         <Step Id="post_route_phys_opt_design"/>
         <Step Id="write_bitstream"/>
       </Strategy>
-      <GeneratedRun Dir="$PRUNDIR" File="gen_run.xml"/>
       <ReportStrategy Name="Vivado Implementation Default Reports" Flow="Vivado Implementation 2024"/>
       <Report Name="ROUTE_DESIGN.REPORT_METHODOLOGY" Enabled="1"/>
       <RQSFiles/>
