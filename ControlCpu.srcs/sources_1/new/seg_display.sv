@@ -29,7 +29,7 @@ module seg_display#(
     input clock_i,
 
     input [NUM_DIGITS*4-1:0] data_i,
-    input [$clog2(NUM_DIGITS)-1:0] point_i,
+    input [NUM_DIGITS-1:0] point_i,
 
     output logic [7:0] segments_o,
     output logic [NUM_DIGITS-1:0] enable_o = 0
@@ -64,6 +64,8 @@ end
 
 wire [NUM_DIGITS*4-1:0] masked_data;
 wire [3:0] current_input = masked_data[NUM_DIGITS*4-1:NUM_DIGITS*4-4];
+wire masked_point[NUM_DIGITS];
+wire current_point = masked_point[NUM_DIGITS-1];
 wire [NUM_DIGITS-1:0] interim_enable;
 
 genvar i;
@@ -71,17 +73,22 @@ genvar i;
 generate
 
 assign masked_data[3:0] = (current_digit==CURRENT_DIGIT_ZERO) ? data_i[3:0] : 4'b0000;
+assign masked_point[0] = (current_digit==CURRENT_DIGIT_ZERO) ? point_i[0] : 1'b0;
 
 for(i=1; i<NUM_DIGITS; ++i) begin
     assign masked_data[i*4+3:i*4] =
         (i==current_digit) ?
         data_i[i*4+3:i*4] :
         masked_data[i*4-1:i*4-4];
+
+    assign masked_point[i] =
+        (i==current_digit) ?
+        point_i[i] :
+        masked_point[i-1];
 end
 
 for(i=0; i<NUM_DIGITS; ++i) begin
     assign interim_enable[i] = (i==current_digit ? 1'b1 : 1'b0) ^ ENABLE_ACTIVE_LOW;
-    assign segments_o[0] = SEG_ACTIVE_LOW;
 end
 
 endgenerate
@@ -107,6 +114,8 @@ always_ff@(posedge clock_i) begin
         4'he: segments_o[7:1] <= 7'b1001111 ^ SEGMENT_XOR;
         4'hf: segments_o[7:1] <= 7'b1000111 ^ SEGMENT_XOR;
     endcase
+
+    segments_o[0] <= current_point ^ SEG_ACTIVE_LOW;
 
     enable_o <= interim_enable;
 end

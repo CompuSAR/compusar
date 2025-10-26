@@ -639,6 +639,7 @@ freq_div_bus#() freq_div_6502(
     .fast_cmd_ready_i( apple_io_req_ack )
     );
 
+wire apple_cpu_sync, apple_cpu_vector_pull, apple_cpu_memory_lock;
 sar6502_sync apple_cpu(
     .clock_i( ctrl_cpu_clock ),
 
@@ -653,7 +654,11 @@ sar6502_sync apple_cpu(
     .bus_req_ack_i( bus8_req_ack ),
     .bus_req_data_o( bus8_req_data ),
     .bus_rsp_valid_i( bus8_rsp_valid ),
-    .bus_rsp_data_i( bus8_rsp_data )
+    .bus_rsp_data_i( bus8_rsp_data ),
+
+    .sync_o( apple_cpu_sync ),
+    .vector_pull_o( apple_cpu_vector_pull ),
+    .memory_lock_o( apple_cpu_memory_lock )
 );
 
 apple_io apple_io_block(
@@ -723,5 +728,33 @@ apple_display(
 
     .uart_send_o(/*uart_tx*/ debug[0])
 );
+
+logic[4*6-1:0] debug_display_data = 24'hffffff;
+logic[5:0] debug_display_point = 6'b000000;
+
+seg_display#(.FREQ_DIV(10000), .NUM_DIGITS(6), .SEG_ACTIVE_LOW(1)) debug_display(
+    .clock_i(ctrl_cpu_clock),
+    .data_i(debug_display_data),
+    .point_i(debug_display_point),
+    .segments_o(numeric_segments_n),
+    .enable_o(numeric_enable_n)
+);
+
+logic debug_pending_req = 1'b0;
+always_ff@(posedge ctrl_cpu_clock) begin
+    if( bus8_req_valid && !bus8_req_write && apple_cpu_sync ) begin
+        debug_display_data[15:0] <= bus8_req_addr;
+        debug_pending_req <= 1'b1;
+    end
+
+    if( debug_pending_req == 1'b1 && bus8_rsp_valid ) begin
+        debug_display_data[23:16] = bus8_rsp_data;
+        debug_pending_req <= 1'b0;
+    end
+
+    if( bus8_req_valid && bus8_req_ack ) begin
+        debug_display_point <= debug_display_point + 1;
+    end
+end
 
 endmodule
