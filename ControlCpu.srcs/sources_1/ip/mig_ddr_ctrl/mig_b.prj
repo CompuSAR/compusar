@@ -23,7 +23,7 @@
 
   <Version>4.2</Version>
 
-  <SystemClock>Single-Ended</SystemClock>
+  <SystemClock>No Buffer</SystemClock>
 
   <ReferenceClock>No Buffer</ReferenceClock>
 
@@ -113,9 +113,6 @@
       <Pin IN_TERM="" IOSTANDARD="LVCMOS15" PADName="T3" SLEW="FAST" VCCAUX_IO="" name="ddr3_reset_n"/>
       <Pin IN_TERM="" IOSTANDARD="SSTL15" PADName="W6" SLEW="FAST" VCCAUX_IO="" name="ddr3_we_n"/>
     </PinSelection>
-    <System_Clock>
-      <Pin Bank="35" PADName="H3(SRCC_P)" name="sys_clk_i"/>
-    </System_Clock>
     <System_Control>
       <Pin Bank="Select Bank" PADName="No connect" name="sys_rst"/>
       <Pin Bank="Select Bank" PADName="No connect" name="init_calib_complete"/>
