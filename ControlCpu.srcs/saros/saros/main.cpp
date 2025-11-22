@@ -7,7 +7,6 @@
 #include <8bit_hook.h>
 
 extern void startup_function(void *) noexcept;
-extern void uart_echo(void *) noexcept;
 extern "C" void (*__init_array_start[])();
 extern "C" void (*__init_array_end)();
 
