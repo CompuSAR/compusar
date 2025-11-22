@@ -1,4 +1,4 @@
-PROJNAME=ControlCpu
+PROJNAME=CompuSar
 all: $(PROJNAME).srcs/saros/boot_loader_state.mem $(PROJNAME).gen/saros/saros.mcs $(PROJNAME).gen/saros/saros.mem
 
 $(PROJNAME).runs/$(PROJNAME).mcs:
