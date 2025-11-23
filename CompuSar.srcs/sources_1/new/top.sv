@@ -57,6 +57,12 @@ module top
     inout   wire    [1:0]   ddr3_dqs_n,
     inout   wire    [15:0]  ddr3_dq,
 
+    output wire TMDS_clk_n,
+    output wire TMDS_clk_p,
+    output wire[2:0] TMDS_data_n,
+    output wire[2:0] TMDS_data_p,
+    output wire[0:0] HDMI_OEN,
+
     output wire  [7:0] numeric_segments_n,
     output wire  [5:0] numeric_enable_n
 );
@@ -73,6 +79,10 @@ localparam CTRL_CLOCK_HZ = 75781250;
 localparam UART_BAUD = 115200;
 
 localparam GPIO_IN_PORTS=1, GPIO_OUT_PORTS=1;
+
+localparam GPIO_OUT0__DDR_RESET = 0;
+localparam GPIO_OUT0__DISPLAY32_RESET = 1;
+localparam GPIO_OUT0__DISPLAY8_RESET = 2;
 
 `ifdef SYNTHESIS
 wire spi_clk;
@@ -256,6 +266,8 @@ logic gpio_enable, gpio_req_ack, gpio_rsp_valid;
 logic [31:0] gpio_rsp_data;
 logic uart_enable, uart_req_ack, uart_rsp_valid;
 logic [31:0] uart_rsp_data;
+logic display_enable, display_req_ack, display_rsp_valid;
+logic [31:0] display_rsp_data;
 
 io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .clock(ctrl_cpu_clock),
@@ -297,7 +309,12 @@ io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .passthrough_uart_enable(uart_enable),
     .passthrough_uart_req_ack(uart_req_ack),
     .passthrough_uart_rsp_valid(uart_rsp_valid),
-    .passthrough_uart_rsp_data(uart_rsp_data)
+    .passthrough_uart_rsp_data(uart_rsp_data),
+
+    .passthrough_display_enable(display_enable),
+    .passthrough_display_req_ack(display_req_ack),
+    .passthrough_display_rsp_data(display_rsp_data),
+    .passthrough_display_rsp_valid(display_rsp_valid)
 );
 
 cache#(
@@ -368,6 +385,32 @@ cache#(
     .backend_cmd_write_data_o(ddr_cmd_write_data),
     .backend_rsp_valid_i(ddr_data_rsp_valid),
     .backend_rsp_read_data_i(ddr_data_rsp_read_data)
+);
+
+display display_ctrl(
+    .raw_clock_i(board_clock),
+    .ctrl_clock_i(ctrl_cpu_clock),
+    .reset_i(gp_out[0][GPIO_OUT0__DISPLAY32_RESET]),
+    .reset8_i(gp_out[0][GPIO_OUT0__DISPLAY8_RESET]),
+
+    .ctrl_req_valid_i(display_enable),
+    .ctrl_req_ack_o(display_req_ack),
+    .ctrl_req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
+    .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
+    .ctrl_rsp_valid_o(display_rsp_valid),
+    .ctrl_rsp_data_o(display_rsp_data),
+
+    .dma_req_valid_o(),
+    .dma_req_addr_o(),
+    .dma_req_ack_i(),
+    .dma_rsp_valid_i(),
+    .dma_rsp_data_i(),
+
+    .TMDS_clk_n,
+    .TMDS_clk_p,
+    .TMDS_data_n,
+    .TMDS_data_p,
+    .HDMI_OEN
 );
 
 //-----------------------------------------------------------------

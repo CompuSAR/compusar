@@ -1,0 +1,63 @@
+`timescale 1ns / 1ps
+
+module display# (
+    SOUTH_BUS_WIDTH = 128
+)(
+    input raw_clock_i,
+    input ctrl_clock_i,
+    input reset_i,
+    input reset8_i,
+
+    input ctrl_req_valid_i,
+    output ctrl_req_ack_o,
+    input [15:0] ctrl_req_addr_i,
+    input ctrl_req_write_i,
+    input [31:0] ctrl_req_data_i,
+    output ctrl_rsp_valid_o,
+    output [31:0] ctrl_rsp_data_o,
+
+    output logic dma_req_valid_o,
+    output logic [31:0] dma_req_addr_o,
+    input dma_req_ack_i,
+    input dma_rsp_valid_i,
+    input [SOUTH_BUS_WIDTH-1:0] dma_rsp_data_i,
+
+    output wire TMDS_clk_n,
+    output wire TMDS_clk_p,
+    output wire[2:0] TMDS_data_n,
+    output wire[2:0] TMDS_data_p,
+    output wire[0:0] HDMI_OEN
+);
+
+wire pixel_clk;
+
+hdmi_wrapper hdmi(
+    .raw_clock_i,
+    .clk_pixel_o(pixel_clk),
+    .clk_audio(1'b0),
+    .reset(1'b0),
+    .rgb( 24'hffff11 ),
+    //.audio_sample_word( '{ 16'h0, 16'h0 } ),
+
+    // These outputs go to your HDMI port
+    .TMDS_clk_n,
+    .TMDS_clk_p,
+    .TMDS_data_n,
+    .TMDS_data_p,
+
+    // All outputs below this line stay inside the FPGA
+    // They are used (by you) to pick the color each pixel should have
+    // i.e. always_ff @(posedge pixel_clk) rgb <= {8'd0, 8'(cx), 8'(cy)};
+    .cx(),
+    .cy(),
+
+    // The screen is at the upper left corner of the frame.
+    // 0,0 = 0,0 in video
+    // the frame includes extra space for sending auxiliary data
+    .frame_width(),
+    .frame_height(),
+    .screen_width(),
+    .screen_height()
+);
+
+endmodule
