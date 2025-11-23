@@ -37,7 +37,8 @@ hdmi_wrapper hdmi(
     .clk_audio(1'b0),
     .reset(1'b0),
     .rgb( 24'hffff11 ),
-    //.audio_sample_word( '{ 16'h0, 16'h0 } ),
+    .audio_sample_l( 16'h0000 ),
+    .audio_sample_r( 16'h0000 ),
 
     // These outputs go to your HDMI port
     .TMDS_clk_n,

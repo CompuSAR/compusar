@@ -17,7 +17,8 @@ ABI=-mabi=ilp32
 noinst_PROGRAMS=saros.elf
 
 saros_elf_SOURCES=main.cpp uart.cpp saros.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \
-                  start.s ../abort.cpp crt.cpp
+                  start.s ../abort.cpp display.cpp crt.cpp \
+                  assets/logo.cpp
 EXTRA_saros_elf_DEPENDENCIES=$(srcdir)/saros.ld kernel/libkernel.a
 saros_elf_LDFLAGS=-T $(srcdir)/saros.ld --orphan-handling=error
 saros_elf_LDADD=$(TOOLCHAIN_LIB_PATH)/libgcc.a $(TOOLCHAIN_PATH)/$(HOST_TRIPLET)/lib/libc.a kernel/libkernel.a
@@ -41,3 +42,7 @@ $(top_builddir)/roms/%_rom.s: $(top_srcdir)/roms/%.rom $(top_srcdir)/roms/assemb
 
 kernel/%:
 	$(MAKE) -C kernel "$*"
+
+assets/%.cpp assets/%.h: $(srcdir)/assets/%.png $(top_srcdir)/tools/png2source
+	mkdir -p assets
+	$(top_srcdir)/tools/png2source $< assets/$*.cpp

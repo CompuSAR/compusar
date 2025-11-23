@@ -7,7 +7,7 @@ module hdmi_wrapper(
     // synchronous reset back to 0,0
     input reset,
     input [23:0] rgb,
-    input [15:0] audio_sample_word [1:0],
+    input [15:0] audio_sample_l, audio_sample_r,
 
     // These outputs go to your HDMI port
     output wire TMDS_clk_n,
@@ -35,6 +35,11 @@ wire pll_locked, clk_feedback;
 
 wire tmds_clock;
 wire [2:0] tmds_data;
+
+wire [15:0] audio_samples[1:0];
+
+assign audio_samples[0] = audio_sample_l;
+assign audio_samples[1] = audio_sample_r;
 
 MMCME2_BASE#(
     .DIVCLK_DIVIDE(5),
@@ -66,7 +71,7 @@ hdmi#(
     .clk_audio(clk_audio),
     .reset(reset || !pll_locked),
     .rgb(rgb),
-    .audio_sample_word(audio_sample_word),
+    .audio_sample_word(audio_samples),
 
     .tmds(tmds_data),
     .tmds_clock(tmds_clock),
