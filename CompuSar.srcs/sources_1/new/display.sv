@@ -29,7 +29,34 @@ module display# (
     output wire[0:0] HDMI_OEN
 );
 
+/******************** CPU clock *********************/
+display_32bit display_32bit(
+    .ctrl_clock_i,
+    .reset_i,
+    .vsync_i(vertical_blank_cpu),
+
+    .dma_req_valid_o,
+    .dma_req_addr_o,
+    .dma_req_ack_i,
+    .dma_rsp_valid_i,
+    .dma_rsp_data_i
+);
+
+/******************** PIXEL clock *******************/
 wire pixel_clk;
+
+wire [9:0] cx, cy, frame_width, frame_height, screen_width, screen_height;
+wire vertical_blank_hdmi, vertical_blank_cpu;
+
+assign vertical_blank_hdmi = cy > screen_height || (cy == screen_height && cx >= screen_width);
+
+xpm_cdc_single(
+    .src_in(vertical_blank_hdmi),
+    .src_clk(pixel_clk),
+
+    .dest_out(vertical_blank_cpu),
+    .dest_clk(ctrl_clock_i)
+);
 
 hdmi_wrapper hdmi(
     .raw_clock_i,
@@ -49,16 +76,16 @@ hdmi_wrapper hdmi(
     // All outputs below this line stay inside the FPGA
     // They are used (by you) to pick the color each pixel should have
     // i.e. always_ff @(posedge pixel_clk) rgb <= {8'd0, 8'(cx), 8'(cy)};
-    .cx(),
-    .cy(),
+    .cx(cx),
+    .cy(cy),
 
     // The screen is at the upper left corner of the frame.
     // 0,0 = 0,0 in video
     // the frame includes extra space for sending auxiliary data
-    .frame_width(),
-    .frame_height(),
-    .screen_width(),
-    .screen_height()
+    .frame_width(frame_width),
+    .frame_height(frame_height),
+    .screen_width(screen_width),
+    .screen_height(screen_height)
 );
 
 endmodule

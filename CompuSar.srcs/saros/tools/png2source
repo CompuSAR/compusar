@@ -41,7 +41,7 @@ const Display::Bitmap {name} {{
         print("        ", file=outfile, end='')
         while row:
             if row[3] < 0x40:
-                print("0x81, ", file=outfile, end='')
+                print("0x84, ", file=outfile, end='')
             else:
                 byte = 0
                 if row[3] < 0xc0:
@@ -49,7 +49,7 @@ const Display::Bitmap {name} {{
 
                 byte |= (row[0]>>6) << 5    # Red
                 byte |= (row[1]>>5) << 2    # Green
-                byte |= (row[2]>>5)         # Blue
+                byte |= (row[2]>>6)         # Blue
 
                 print("0x{0:02x}, ".format(byte), file=outfile, end='')
 
