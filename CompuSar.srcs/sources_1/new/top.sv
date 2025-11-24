@@ -134,7 +134,7 @@ clk_converter clocks(
     .locked(clocks_locked)
 );
 
-localparam CACHE_PORTS_NUM = 3;
+localparam CACHE_PORTS_NUM = 4;
 localparam CACHELINE_BITS = 128;
 localparam CACHELINE_BYTES = CACHELINE_BITS/8;
 localparam NUM_CACHELINES = 16*1024*8/CACHELINE_BITS;
@@ -150,9 +150,10 @@ logic [CACHELINE_BITS-1:0]              cache_port_cmd_write_data_s[CACHE_PORTS_
 logic                                   cache_port_rsp_valid_n[CACHE_PORTS_NUM];
 logic [CACHELINE_BITS-1:0]              cache_port_rsp_read_data_n[CACHE_PORTS_NUM];
 
-localparam CACHE_PORT_IDX_DBUS = 0;
-localparam CACHE_PORT_IDX_IBUS = 1;
-localparam CACHE_PORT_IDX_SPI_FLASH = 2;
+localparam CACHE_PORT_IDX_DISPLAY = 0;
+localparam CACHE_PORT_IDX_DBUS = 1;
+localparam CACHE_PORT_IDX_IBUS = 2;
+localparam CACHE_PORT_IDX_SPI_FLASH = 3;
 
 logic                                   inst_cache_port_cmd_valid_s[0:0];
 logic [31:0]                            inst_cache_port_cmd_addr_s[0:0];
@@ -400,11 +401,11 @@ display display_ctrl(
     .ctrl_rsp_valid_o(display_rsp_valid),
     .ctrl_rsp_data_o(display_rsp_data),
 
-    .dma_req_valid_o(),
-    .dma_req_addr_o(),
-    .dma_req_ack_i(),
-    .dma_rsp_valid_i(),
-    .dma_rsp_data_i(),
+    .dma_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY]),
+    .dma_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY]),
+    .dma_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY]),
+    .dma_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY]),
+    .dma_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY]),
 
     .TMDS_clk_n,
     .TMDS_clk_p,
