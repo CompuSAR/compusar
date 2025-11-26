@@ -11,15 +11,20 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="18,261,985.925000 ns"></ZoomStartTime>
-      <ZoomEndTime time="18,265,915.925001 ns"></ZoomEndTime>
-      <Cursor1Time time="18,262,654.122000 ns"></Cursor1Time>
+      <ZoomStartTime time="15,283,113.007000 ns"></ZoomStartTime>
+      <ZoomEndTime time="15,287,337.007001 ns"></ZoomEndTime>
+      <Cursor1Time time="15,283,817.007000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="220"></NameColumnWidth>
-      <ValueColumnWidth column_width="217"></ValueColumnWidth>
+      <ValueColumnWidth column_width="213"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="55" />
+   <wave_markers>
+      <marker label="" time="15283236389000" />
+      <marker label="" time="15283817007000" />
+      <marker label="" time="17100084224000" />
+   </wave_markers>
    <wvobject type="array" fp_name="/sim_top/top_module/uart_ctrl/uart_send_data">
       <obj_property name="ElementShortName">uart_send_data[7:0]</obj_property>
       <obj_property name="ObjectShortName">uart_send_data[7:0]</obj_property>
@@ -164,14 +169,18 @@
    <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/display_32bit/display_x">
       <obj_property name="ElementShortName">display_x[9:0]</obj_property>
       <obj_property name="ObjectShortName">display_x[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/display_32bit/display_y">
       <obj_property name="ElementShortName">display_y[9:0]</obj_property>
       <obj_property name="ObjectShortName">display_y[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/display_32bit/vsync_i">
       <obj_property name="ElementShortName">vsync_i</obj_property>
       <obj_property name="ObjectShortName">vsync_i</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/display_32bit/reset_i">
       <obj_property name="ElementShortName">reset_i</obj_property>
@@ -205,13 +214,15 @@
       <obj_property name="ElementShortName">pixels32_ack</obj_property>
       <obj_property name="ObjectShortName">pixels32_ack</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/pixels32_y">
-      <obj_property name="ElementShortName">pixels32_y[9:0]</obj_property>
-      <obj_property name="ObjectShortName">pixels32_y[9:0]</obj_property>
-   </wvobject>
    <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/pixels32_x">
       <obj_property name="ElementShortName">pixels32_x[9:0]</obj_property>
       <obj_property name="ObjectShortName">pixels32_x[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/pixels32_y">
+      <obj_property name="ElementShortName">pixels32_y[9:0]</obj_property>
+      <obj_property name="ObjectShortName">pixels32_y[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/buf32">
       <obj_property name="ElementShortName">buf32[399:0]</obj_property>
@@ -232,10 +243,12 @@
    <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/buf32_x">
       <obj_property name="ElementShortName">buf32_x[9:0]</obj_property>
       <obj_property name="ObjectShortName">buf32_x[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/buf32_y">
       <obj_property name="ElementShortName">buf32_y[9:0]</obj_property>
       <obj_property name="ObjectShortName">buf32_y[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/aggregator/vsync">
       <obj_property name="ElementShortName">vsync</obj_property>

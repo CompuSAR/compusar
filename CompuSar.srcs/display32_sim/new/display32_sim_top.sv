@@ -57,8 +57,11 @@ always_ff@(posedge clock) begin
     end
 end
 
+logic [200-1:0] ack_delay = 200'b0;
+
 always_ff@(posedge clock) begin
-    pixels_ack <= pixels_ready;
+    ack_delay <= { pixels_ready, ack_delay[199:1] };
+    pixels_ack <= ack_delay[0];
 end
 
 display_32bit display(

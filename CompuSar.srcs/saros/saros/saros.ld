@@ -68,11 +68,6 @@ SECTIONS
          *(.data*)
     } >mem_rw
 
-    .apple2_rom : {
-        . = 0xd000;     # ROM start address in 16bit address space
-        __apple2_rom = .;
-        Apple2*_rom.o (.apple2_rom);
-    } >mem_16_rom
 
     /DISCARD/ : { *(.eh_frame) *(.note.GNU-stack) }
 

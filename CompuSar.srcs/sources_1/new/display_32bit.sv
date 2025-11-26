@@ -116,7 +116,7 @@ task ctrl_cycle();
         end
 
         // Pixels to convert
-        if( work_buffer_valid ) begin
+        if( work_buffer_valid && !work_pixels_valid ) begin
             for( i=0; i<PIXELS_BURST; ++i )
                 work_pixels[i] <= convert_pixel(work_buffer_indexed[i]);
 

@@ -63,7 +63,7 @@ always_ff@(posedge clock_i) begin
         buf32_fill <= buf32_fill - 1;
 
         // Shift the buffer down
-        buf32 <= { TRANSPARENT_PIXEL, buf32[NUM_PIXELS32 * 25 - 1:24] };
+        buf32 <= { TRANSPARENT_PIXEL, buf32[NUM_PIXELS32 * 25 - 1:25] };
     end
 end
 
