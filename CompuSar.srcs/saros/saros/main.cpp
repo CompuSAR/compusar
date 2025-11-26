@@ -2,6 +2,10 @@
 #include "irq.h"
 #include "format.h"
 
+#include "gpio.h"
+#include "display.h"
+#include "assets/logo.h"
+
 #include <saros/csr.h>
 #include <saros/saros.h>
 #include <8bit_hook.h>
@@ -19,6 +23,9 @@ int saros_main() {
         (*ptr)();
 
     uart_send("Second stage!\n");
+
+    Display::setDisplay(Bitmaps::logo, 12, 13);
+    write_gpio(0, 0xfffffffc);
 
     saros.init(std::span<Saros::Kernel::ThreadStack>( __thread_stacks_start, &__thread_stacks_end ));
     saros.run( startup_function, nullptr );

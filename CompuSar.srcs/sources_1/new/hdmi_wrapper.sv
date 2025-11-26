@@ -65,7 +65,7 @@ hdmi#(
     .VENDOR_NAME("CompuSAR"),
     .PRODUCT_DESCRIPTION({"Apple ][", 64'b0}),
     .SOURCE_DEVICE_INFORMATION(8'h08)
-) (
+) hdmi(
     .clk_pixel_x5(clk_pixel_x5),
     .clk_pixel(clk_pixel_o),
     .clk_audio(clk_audio),
@@ -94,6 +94,6 @@ end
 
 endgenerate
 
-OBUFDS ( .I(tmds_clock), .O(TMDS_clk_p), .OB(TMDS_clk_n) );
+OBUFDS tmds_clk_buf( .I(tmds_clock), .O(TMDS_clk_p), .OB(TMDS_clk_n) );
 
 endmodule

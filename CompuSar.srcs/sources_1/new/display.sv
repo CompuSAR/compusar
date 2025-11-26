@@ -17,6 +17,7 @@ module display# (
     output [31:0] ctrl_rsp_data_o,
 
     output logic dma_req_valid_o,
+    output [SOUTH_BUS_WIDTH/8-1:0] dma_req_write_mask_o,
     output logic [31:0] dma_req_addr_o,
     input dma_req_ack_i,
     input dma_rsp_valid_i,
@@ -29,11 +30,13 @@ module display# (
     output wire[0:0] HDMI_OEN
 );
 
+assign dma_req_write_mask_o = { SOUTH_BUS_WIDTH/8{1'b0} };
+
 /********************* CDC logic *******************/
 wire vertical_blank_hdmi, vertical_blank_cpu;
 wire pixel_clk;
 
-xpm_cdc_single(
+xpm_cdc_single cdc_vblank(
     .src_in(vertical_blank_hdmi),
     .src_clk(pixel_clk),
 

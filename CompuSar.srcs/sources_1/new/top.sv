@@ -397,11 +397,13 @@ display display_ctrl(
     .ctrl_req_valid_i(display_enable),
     .ctrl_req_ack_o(display_req_ack),
     .ctrl_req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
+    .ctrl_req_data_i(ctrl_dBus_cmd_payload_data),
     .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
     .ctrl_rsp_valid_o(display_rsp_valid),
     .ctrl_rsp_data_o(display_rsp_data),
 
     .dma_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY]),
+    .dma_req_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY]),
     .dma_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY]),
     .dma_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY]),
     .dma_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY]),

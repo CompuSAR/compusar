@@ -4,6 +4,6 @@
 
 namespace Display {
 
-void setDisplay(const Bitmap &sprite);
+void setDisplay(const Bitmap &sprite, uint16_t originX, uint16_t originY);
 
 } // namespace Display

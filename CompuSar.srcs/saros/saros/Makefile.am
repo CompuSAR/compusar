@@ -23,6 +23,8 @@ EXTRA_saros_elf_DEPENDENCIES=$(srcdir)/saros.ld kernel/libkernel.a
 saros_elf_LDFLAGS=-T $(srcdir)/saros.ld --orphan-handling=error
 saros_elf_LDADD=$(TOOLCHAIN_LIB_PATH)/libgcc.a $(TOOLCHAIN_PATH)/$(HOST_TRIPLET)/lib/libc.a kernel/libkernel.a
 
+main.$(OBJEXT): assets/logo.h
+
 saros.elf$(EXEEXT): $(saros_elf_OBJECTS) $(EXTRA_saros_elf_DEPENDENCIES)
 	$(HOST_TRIPLET)-ld $(LDFLAGS) $(AM_LDFLAGS) $(saros_elf_LDFLAGS) -melf32lriscv $(saros_elf_OBJECTS) -o "$@" $(saros_elf_LDADD)
 
