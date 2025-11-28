@@ -184,6 +184,7 @@ logic           ctrl_software_interrupt;
 logic [31:0]    irq_lines;
 localparam UART_SEND_IRQ = 0;
 localparam UART_RECV_IRQ = 1;
+localparam VSYNC_IRQ = 2;
 
 logic [31:0]    iob_ddr_read_data;
 
@@ -393,6 +394,7 @@ display display_ctrl(
     .ctrl_clock_i(ctrl_cpu_clock),
     .reset_i(gp_out[0][GPIO_OUT0__DISPLAY32_RESET]),
     .reset8_i(gp_out[0][GPIO_OUT0__DISPLAY8_RESET]),
+    .vsync_irq_o(irq_lines[VSYNC_IRQ]),
 
     .ctrl_req_valid_i(display_enable),
     .ctrl_req_ack_o(display_req_ack),
@@ -606,7 +608,7 @@ STARTUPE2 startup_cfg(
 
 genvar i;
 generate
-    for(i=2; i<32; ++i)
+    for(i=3; i<32; ++i)
         assign irq_lines[i] = 1'b0;
 endgenerate
 

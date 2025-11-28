@@ -18,6 +18,7 @@ void reset_timer_cycles();
 
 static constexpr uint32_t IrqExt__UartTxReady = 0x00000001;
 static constexpr uint32_t IrqExt__UartRxReady = 0x00000002;
+static constexpr uint32_t IrqExt__Vsync =       0x00000004;
 
 void irq_external_mask( uint32_t mask );
 void irq_external_unmask( uint32_t mask );

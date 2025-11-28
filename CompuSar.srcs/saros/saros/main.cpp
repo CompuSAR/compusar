@@ -24,9 +24,6 @@ int saros_main() {
 
     uart_send("Second stage!\n");
 
-    Display::setDisplay(Bitmaps::logo, 12, 13);
-    write_gpio(0, 0xfffffffc);
-
     saros.init(std::span<Saros::Kernel::ThreadStack>( __thread_stacks_start, &__thread_stacks_end ));
     saros.run( startup_function, nullptr );
     uart_send("Saros exit\n");
@@ -34,7 +31,37 @@ int saros_main() {
     halt();
 }
 
+void logoCrawl(void *) noexcept {
+    static constexpr uint16_t WIDTH = 640, HEIGHT = 480;
+    uint16_t x=120, y=17;
+    int dirx = 1, diry = 1;
+
+    Display::setDisplay(Bitmaps::logo, x, y);
+    write_gpio(0, 0xfffffffc);
+
+    irq_external_unmask( IrqExt__Vsync );
+
+    while(true) {
+        x+=dirx;
+        y+=diry;
+
+        if( x==WIDTH - Bitmaps::logo.width )
+            dirx = -1;
+        if( x==0 )
+            dirx = 1;
+        if( y==HEIGHT - Bitmaps::logo.height )
+            diry = -1;
+        if( y==0 )
+            diry = 1;
+
+        Display::vsyncSignal.wait();
+
+        Display::setDisplay(Bitmaps::logo, x, y);
+    }
+}
+
 void startup_function(void *) noexcept {
+    saros.createThread( logoCrawl, nullptr );
     start_8bit();
 }
 

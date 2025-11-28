@@ -7,6 +7,7 @@ module display# (
     input ctrl_clock_i,
     input reset_i,
     input reset8_i,
+    output vsync_irq_o,
 
     input ctrl_req_valid_i,
     output logic ctrl_req_ack_o = 1'b1,
@@ -29,6 +30,8 @@ module display# (
     output wire[2:0] TMDS_data_p,
     output wire[0:0] HDMI_OEN
 );
+
+assign HDMI_OEN = 1'b1;
 
 assign dma_req_write_mask_o = { SOUTH_BUS_WIDTH/8{1'b0} };
 
@@ -71,10 +74,16 @@ xpm_cdc_handshake#(
 /******************** CPU clock *********************/
 assign ctrl_rsp_data_o = 32'h0;
 
-logic [31:0] base_addr_reg, frame_height_width_reg, frame_start_reg;
+logic prev_vblank = 1'b0;
+logic [31:0] base_addr_reg, frame_height_width_reg, frame_start_reg, irqs = 32'h0;
+assign vsync_irq_o = irqs[0];
 
 always_ff@(posedge ctrl_clock_i) begin
     ctrl_rsp_valid_o <= 1'b0;
+
+    if( !prev_vblank && vertical_blank_cpu )
+        irqs[0] <= 1'b1;
+    prev_vblank <= vertical_blank_cpu;
 
     if( ctrl_req_valid_i && ctrl_req_ack_o ) begin
         if( ctrl_req_write_i ) begin
@@ -82,6 +91,7 @@ always_ff@(posedge ctrl_clock_i) begin
                 16'h0000: base_addr_reg <= ctrl_req_data_i;
                 16'h0004: frame_height_width_reg <= ctrl_req_data_i;
                 16'h0008: frame_start_reg <= ctrl_req_data_i;
+                16'h000c: irqs <= 32'h0;
             endcase
         end else begin
             ctrl_rsp_valid_o <= 1'b1;

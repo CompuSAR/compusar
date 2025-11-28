@@ -1,6 +1,7 @@
 #include <saros/kernel/scheduler.h>
 #include <saros/csr.h>
 
+#include "display.h"
 #include "format.h"
 #include "irq.h"
 #include "memory.h"
@@ -88,6 +89,8 @@ static void handleExternalInterrupt() {
         handle_uart_tx_ready_irq();
     if( (active_irqs & IrqExt__UartRxReady) != 0 )
         handle_uart_rx_ready_irq();
+    if( (active_irqs & IrqExt__Vsync) != 0 )
+        Display::handle_vsync_irq();
 }
 
 extern "C"
