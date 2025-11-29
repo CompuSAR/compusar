@@ -68,7 +68,6 @@ SECTIONS
          *(.data*)
     } >mem_rw
 
-
     /DISCARD/ : { *(.eh_frame) *(.note.GNU-stack) }
 
     .debug_info : { *(.debug_info) }

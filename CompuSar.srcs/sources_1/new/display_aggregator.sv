@@ -28,17 +28,20 @@ assign vsync = cy > screen_height || (cy == screen_height && cx >= screen_width)
 
 // TODO TRANSPARENT_PIXEL is currently set to just black. Update it when
 // introducing the 8 bit pixels
-localparam TRANSPARENT_PIXEL = 24'h0ffff11;
+localparam TRANSPARENT_PIXEL = 25'h0ffff11;
 
 logic [$clog2(NUM_PIXELS32+1)-1:0] buf32_fill = 0;
-logic [NUM_PIXELS32 * 25 - 1:0] buf32, fetch32;
+logic [NUM_PIXELS32 * 25 - 1:0] buf32 = { NUM_PIXELS32{TRANSPARENT_PIXEL} }, fetch32;
 logic [9:0] buf32_x, buf32_y, fetch32_x, fetch32_y;
 logic fetch32_valid = 1'b0, buf32_valid = 1'b0;
 
 wire [24:0] pixel32;
-assign pixel32 = buf32_valid ? buf32[24:0] : TRANSPARENT_PIXEL;
+assign pixel32 = buf32[24:0];
 
 always_ff@(posedge clock_i) begin
+    // Shift the buffer to the next pixel
+    buf32 <= { TRANSPARENT_PIXEL, buf32[NUM_PIXELS32 * 25 - 1:25] };
+
     // Read the incoming buffer if it's and us are ready
     if( !fetch32_valid && pixels32_valid && !pixels32_ack ) begin
         fetch32 <= pixels32;
@@ -59,7 +62,14 @@ always_ff@(posedge clock_i) begin
     if( buf32_fill == 0 )
         buf32_valid <= 1'b0;
 
-    if( buf32_fill == 0 && fetch32_valid && fetch32_y==cy && fetch32_x==cx+1 ) begin
+    if(
+        buf32_fill == 0 &&
+        fetch32_valid &&
+        (
+            fetch32_y==cy && fetch32_x==cx+1 ||
+            fetch32_y==cy+1 && fetch32_x==0 && cx==frame_width-1
+        )
+    ) begin
         buf32 <= fetch32;
         buf32_fill <= NUM_PIXELS32 - 1;
 
@@ -69,9 +79,6 @@ always_ff@(posedge clock_i) begin
 
     if( buf32_fill != 0 ) begin
         buf32_fill <= buf32_fill - 1;
-
-        // Shift the buffer down
-        buf32 <= { 25'hX, buf32[NUM_PIXELS32 * 25 - 1:25] };
     end
     
     rgb <= pixel32[23:0];

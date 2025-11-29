@@ -11,18 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="288,352.951 ns"></ZoomStartTime>
-      <ZoomEndTime time="288,640.752 ns"></ZoomEndTime>
-      <Cursor1Time time="288,592.785 ns"></Cursor1Time>
+      <ZoomStartTime time="746,599.037 ns"></ZoomStartTime>
+      <ZoomEndTime time="746,892.820 ns"></ZoomEndTime>
+      <Cursor1Time time="746,648.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="220"></NameColumnWidth>
-      <ValueColumnWidth column_width="217"></ValueColumnWidth>
+      <ValueColumnWidth column_width="213"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="33" />
-   <wave_markers>
-      <marker label="" time="288366124" />
-   </wave_markers>
    <wvobject type="logic" fp_name="/display32_sim_top/clock">
       <obj_property name="ElementShortName">clock</obj_property>
       <obj_property name="ObjectShortName">clock</obj_property>

@@ -72,8 +72,8 @@ display_32bit display(
     .frame_base_addr_i(32'h00000000),
     .frame_width_i(48),
     .frame_height_i(5),
-    .frame_start_x(13),
-    .frame_start_y(27),
+    .frame_start_x(0),
+    .frame_start_y(70),
 
     .pixels(pixels),
     .display_x(display_x),
