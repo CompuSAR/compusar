@@ -13,14 +13,14 @@ Follow the following steps to build the project:
 * Run `git submodule update --init --recursive` to get all dependent projects.
 
 ### Modifying the software
-* In the root of the project, run `make`. This will generate both the bootloader image (at `ControlCpu.srcs/saros/boot_loader_state.mem`) and an MCS file for the actual OS (at `ControlCpu.gen/saros/saros.mcs`).
+* In the root of the project, run `make`. This will generate both the bootloader image (at `CompuSar.srcs/saros/boot_loader_state.mem`) and an MCS file for the actual OS (at `CompuSar.gen/saros/saros.mcs`).
   * The bootloader image needs to be up to date before synthesizing the design, as it gets baked into the bit file.
   * The OS image can be flashed to the FPGA's configuration flash independently from the FPGA configuration.
-* Source files for the bootloader are under `ControlCpu.srcs/saros/bl1`
-* Source files for the OS are under `ControlCpu.srcs/saros/saros`
+* Source files for the bootloader are under `CompuSar.srcs/saros/bl1`
+* Source files for the OS are under `CompuSar.srcs/saros/saros`
 
 ### Building the FPGA image
-* Open the project from the `ControlCpu.xpr` file in the root of the source tree.
+* Open the project from the `CompuSar.xpr` file in the root of the source tree.
   * The project references a file called `top.dcp` under the "Utility sources" section. This is a generated file that is not checked into the source control. To build the project for the first time you'll need to delete the file from the project. Once deleted it will get recreated the first time you build. Vivado manages this file automatically, and there is nothing you'll need to do.
 * You can either generate an MCS and flash it to the board or use the hardware manager to load the bit file directly.
   * This only covers the hardware and bootloader.

@@ -1,7 +1,7 @@
-[submodule "ControlCpu.srcs/sources_1/uart"]
+[submodule "CompuSar.srcs/sources_1/uart"]
 	path = CompuSar.srcs/sources_1/uart
 	url = https://github.com/CompuSAR/uart
-[submodule "ControlCpu.srcs/simple_ddr_ctrl"]
+[submodule "CompuSar.srcs/simple_ddr_ctrl"]
 	path = CompuSar.srcs/simple_ddr_ctrl
 	url = https://github.com/CompuSAR/simple_ddr_ctrl.git
 [submodule "CompuSar.srcs/sources_1/hdmi"]
