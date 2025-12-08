@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="display32_sim_top_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="display32_sim_top" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="746,599.037 ns"></ZoomStartTime>
+      <ZoomEndTime time="746,892.820 ns"></ZoomEndTime>
+      <Cursor1Time time="746,648.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="220"></NameColumnWidth>
+      <ValueColumnWidth column_width="213"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="33" />
+   <wvobject type="logic" fp_name="/display32_sim_top/clock">
+      <obj_property name="ElementShortName">clock</obj_property>
+      <obj_property name="ObjectShortName">clock</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/reset">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/vsync">
+      <obj_property name="ElementShortName">vsync</obj_property>
+      <obj_property name="ObjectShortName">vsync</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/cx">
+      <obj_property name="ElementShortName">cx[9:0]</obj_property>
+      <obj_property name="ObjectShortName">cx[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/cy">
+      <obj_property name="ElementShortName">cy[9:0]</obj_property>
+      <obj_property name="ObjectShortName">cy[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/pixels">
+      <obj_property name="ElementShortName">pixels[399:0]</obj_property>
+      <obj_property name="ObjectShortName">pixels[399:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/pixels_indexed">
+      <obj_property name="ElementShortName">pixels_indexed[0:15][24:0]</obj_property>
+      <obj_property name="ObjectShortName">pixels_indexed[0:15][24:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/display_x">
+      <obj_property name="ElementShortName">display_x[9:0]</obj_property>
+      <obj_property name="ObjectShortName">display_x[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/display_y">
+      <obj_property name="ElementShortName">display_y[9:0]</obj_property>
+      <obj_property name="ObjectShortName">display_y[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/pixels_ready">
+      <obj_property name="ElementShortName">pixels_ready</obj_property>
+      <obj_property name="ObjectShortName">pixels_ready</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/pixels_ack">
+      <obj_property name="ElementShortName">pixels_ack</obj_property>
+      <obj_property name="ObjectShortName">pixels_ack</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/dma_req_valid">
+      <obj_property name="ElementShortName">dma_req_valid</obj_property>
+      <obj_property name="ObjectShortName">dma_req_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/dma_req_addr">
+      <obj_property name="ElementShortName">dma_req_addr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dma_req_addr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/dma_req_ack">
+      <obj_property name="ElementShortName">dma_req_ack</obj_property>
+      <obj_property name="ObjectShortName">dma_req_ack</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/dma_rsp_valid">
+      <obj_property name="ElementShortName">dma_rsp_valid</obj_property>
+      <obj_property name="ObjectShortName">dma_rsp_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/dma_rsp_data">
+      <obj_property name="ElementShortName">dma_rsp_data[127:0]</obj_property>
+      <obj_property name="ObjectShortName">dma_rsp_data[127:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/display/dma_fetch_in_progress">
+      <obj_property name="ElementShortName">dma_fetch_in_progress</obj_property>
+      <obj_property name="ObjectShortName">dma_fetch_in_progress</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/display/fetch_buffer_valid">
+      <obj_property name="ElementShortName">fetch_buffer_valid</obj_property>
+      <obj_property name="ObjectShortName">fetch_buffer_valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/display/work_buffer_valid">
+      <obj_property name="ElementShortName">work_buffer_valid</obj_property>
+      <obj_property name="ObjectShortName">work_buffer_valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/display/work_pixels_valid">
+      <obj_property name="ElementShortName">work_pixels_valid</obj_property>
+      <obj_property name="ObjectShortName">work_pixels_valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/display/pixels_ready">
+      <obj_property name="ElementShortName">pixels_ready</obj_property>
+      <obj_property name="ObjectShortName">pixels_ready</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/display/pixels_ack">
+      <obj_property name="ElementShortName">pixels_ack</obj_property>
+      <obj_property name="ObjectShortName">pixels_ack</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/display/display_done">
+      <obj_property name="ElementShortName">display_done</obj_property>
+      <obj_property name="ObjectShortName">display_done</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/rgb">
+      <obj_property name="ElementShortName">rgb[23:0]</obj_property>
+      <obj_property name="ObjectShortName">rgb[23:0]</obj_property>
+      <obj_property name="CustomSignalColor">#800000</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/aggregator/pixels32_valid">
+      <obj_property name="ElementShortName">pixels32_valid</obj_property>
+      <obj_property name="ObjectShortName">pixels32_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/aggregator/pixels32">
+      <obj_property name="ElementShortName">pixels32[399:0]</obj_property>
+      <obj_property name="ObjectShortName">pixels32[399:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/aggregator/pixels32_x">
+      <obj_property name="ElementShortName">pixels32_x[9:0]</obj_property>
+      <obj_property name="ObjectShortName">pixels32_x[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/aggregator/pixels32_y">
+      <obj_property name="ElementShortName">pixels32_y[9:0]</obj_property>
+      <obj_property name="ObjectShortName">pixels32_y[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/aggregator/buf32_fill">
+      <obj_property name="ElementShortName">buf32_fill[4:0]</obj_property>
+      <obj_property name="ObjectShortName">buf32_fill[4:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/aggregator/buf32">
+      <obj_property name="ElementShortName">buf32[399:0]</obj_property>
+      <obj_property name="ObjectShortName">buf32[399:0]</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/aggregator/buf32_x">
+      <obj_property name="ElementShortName">buf32_x[9:0]</obj_property>
+      <obj_property name="ObjectShortName">buf32_x[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display32_sim_top/aggregator/buf32_y">
+      <obj_property name="ElementShortName">buf32_y[9:0]</obj_property>
+      <obj_property name="ObjectShortName">buf32_y[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display32_sim_top/aggregator/pixels32_ack">
+      <obj_property name="ElementShortName">pixels32_ack</obj_property>
+      <obj_property name="ObjectShortName">pixels32_ack</obj_property>
+   </wvobject>
+</wave_config>

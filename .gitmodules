@@ -1,9 +1,12 @@
 [submodule "ControlCpu.srcs/sources_1/uart"]
-	path = ControlCpu.srcs/sources_1/uart
+	path = CompuSar.srcs/sources_1/uart
 	url = https://github.com/CompuSAR/uart
 [submodule "ControlCpu.srcs/simple_ddr_ctrl"]
-	path = ControlCpu.srcs/simple_ddr_ctrl
+	path = CompuSar.srcs/simple_ddr_ctrl
 	url = https://github.com/CompuSAR/simple_ddr_ctrl.git
-[submodule "ControlCpu.srcs/sa6502-sync"]
-	path = ControlCpu.srcs/sa6502-sync
+[submodule "CompuSar.srcs/sources_1/hdmi"]
+	path = CompuSar.srcs/sources_1/hdmi
+	url = https://github.com/hdl-util/hdmi.git
+[submodule "CompuSar.srcs/sa6502-sync"]
+	path = CompuSar.srcs/sa6502-sync
 	url = https://github.com/CompuSAR/sar6502-sync.git

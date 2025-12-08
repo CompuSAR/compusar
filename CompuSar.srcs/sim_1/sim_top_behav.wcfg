@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="sim_top_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="sim_top" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="15,283,113.007000 ns"></ZoomStartTime>
+      <ZoomEndTime time="15,287,337.007001 ns"></ZoomEndTime>
+      <Cursor1Time time="15,283,817.007000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="220"></NameColumnWidth>
+      <ValueColumnWidth column_width="213"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="55" />
+   <wave_markers>
+      <marker label="" time="15283236389000" />
+      <marker label="" time="15283817007000" />
+      <marker label="" time="17100084224000" />
+   </wave_markers>
+   <wvobject type="array" fp_name="/sim_top/top_module/uart_ctrl/uart_send_data">
+      <obj_property name="ElementShortName">uart_send_data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">uart_send_data[7:0]</obj_property>
+      <obj_property name="Radix">ASCIIRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/board_clock">
+      <obj_property name="ElementShortName">board_clock</obj_property>
+      <obj_property name="ObjectShortName">board_clock</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/ctrl_cpu_clock">
+      <obj_property name="ElementShortName">ctrl_cpu_clock</obj_property>
+      <obj_property name="ObjectShortName">ctrl_cpu_clock</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/ctrl_cpu_reset">
+      <obj_property name="ElementShortName">ctrl_cpu_reset</obj_property>
+      <obj_property name="ObjectShortName">ctrl_cpu_reset</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/inst_cache_port_cmd_ready_n">
+      <obj_property name="ElementShortName">inst_cache_port_cmd_ready_n[0:0]</obj_property>
+      <obj_property name="ObjectShortName">inst_cache_port_cmd_ready_n[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/inst_cache_port_cmd_addr_s">
+      <obj_property name="ElementShortName">inst_cache_port_cmd_addr_s[0:0][31:0]</obj_property>
+      <obj_property name="ObjectShortName">inst_cache_port_cmd_addr_s[0:0][31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/control_cpu/RegFilePlugin_regFile">
+      <obj_property name="ElementShortName">RegFilePlugin_regFile[0:31][31:0]</obj_property>
+      <obj_property name="ObjectShortName">RegFilePlugin_regFile[0:31][31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/ctrl_dBus_cmd_valid">
+      <obj_property name="ElementShortName">ctrl_dBus_cmd_valid</obj_property>
+      <obj_property name="ObjectShortName">ctrl_dBus_cmd_valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/ctrl_dBus_cmd_ready">
+      <obj_property name="ElementShortName">ctrl_dBus_cmd_ready</obj_property>
+      <obj_property name="ObjectShortName">ctrl_dBus_cmd_ready</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/ctrl_dBus_cmd_payload_address">
+      <obj_property name="ElementShortName">ctrl_dBus_cmd_payload_address[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ctrl_dBus_cmd_payload_address[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/ctrl_dBus_cmd_payload_wr">
+      <obj_property name="ElementShortName">ctrl_dBus_cmd_payload_wr</obj_property>
+      <obj_property name="ObjectShortName">ctrl_dBus_cmd_payload_wr</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/ctrl_dBus_cmd_payload_data">
+      <obj_property name="ElementShortName">ctrl_dBus_cmd_payload_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ctrl_dBus_cmd_payload_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/ctrl_dBus_rsp_valid">
+      <obj_property name="ElementShortName">ctrl_dBus_rsp_valid</obj_property>
+      <obj_property name="ObjectShortName">ctrl_dBus_rsp_valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/ctrl_dBus_rsp_error">
+      <obj_property name="ElementShortName">ctrl_dBus_rsp_error</obj_property>
+      <obj_property name="ObjectShortName">ctrl_dBus_rsp_error</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/ctrl_dBus_rsp_data">
+      <obj_property name="ElementShortName">ctrl_dBus_rsp_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ctrl_dBus_rsp_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/spi_flash_cs">
+      <obj_property name="ElementShortName">spi_flash_cs</obj_property>
+      <obj_property name="ObjectShortName">spi_flash_cs</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/spi_flash_dq">
+      <obj_property name="ElementShortName">spi_flash_dq[3:0]</obj_property>
+      <obj_property name="ObjectShortName">spi_flash_dq[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/ctrl_req_valid_i">
+      <obj_property name="ElementShortName">ctrl_req_valid_i</obj_property>
+      <obj_property name="ObjectShortName">ctrl_req_valid_i</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/base_addr_reg">
+      <obj_property name="ElementShortName">base_addr_reg[31:0]</obj_property>
+      <obj_property name="ObjectShortName">base_addr_reg[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/frame_height_width_reg">
+      <obj_property name="ElementShortName">frame_height_width_reg[31:0]</obj_property>
+      <obj_property name="ObjectShortName">frame_height_width_reg[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/frame_start_reg">
+      <obj_property name="ElementShortName">frame_start_reg[31:0]</obj_property>
+      <obj_property name="ObjectShortName">frame_start_reg[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/dma_req_valid_o">
+      <obj_property name="ElementShortName">dma_req_valid_o</obj_property>
+      <obj_property name="ObjectShortName">dma_req_valid_o</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/dma_req_ack_i">
+      <obj_property name="ElementShortName">dma_req_ack_i</obj_property>
+      <obj_property name="ObjectShortName">dma_req_ack_i</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/dma_req_addr_o">
+      <obj_property name="ElementShortName">dma_req_addr_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dma_req_addr_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/dma_req_write_mask_o">
+      <obj_property name="ElementShortName">dma_req_write_mask_o[15:0]</obj_property>
+      <obj_property name="ObjectShortName">dma_req_write_mask_o[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/dma_rsp_valid_i">
+      <obj_property name="ElementShortName">dma_rsp_valid_i</obj_property>
+      <obj_property name="ObjectShortName">dma_rsp_valid_i</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/dma_rsp_data_i">
+      <obj_property name="ElementShortName">dma_rsp_data_i[127:0]</obj_property>
+      <obj_property name="ObjectShortName">dma_rsp_data_i[127:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/display_32bit/display_done">
+      <obj_property name="ElementShortName">display_done</obj_property>
+      <obj_property name="ObjectShortName">display_done</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/display_32bit/fetch_addr">
+      <obj_property name="ElementShortName">fetch_addr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">fetch_addr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/display_32bit/dma_fetch_in_progress">
+      <obj_property name="ElementShortName">dma_fetch_in_progress</obj_property>
+      <obj_property name="ObjectShortName">dma_fetch_in_progress</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/display_32bit/fetch_buffer_valid">
+      <obj_property name="ElementShortName">fetch_buffer_valid</obj_property>
+      <obj_property name="ObjectShortName">fetch_buffer_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/display_32bit/fetch_buffer">
+      <obj_property name="ElementShortName">fetch_buffer[127:0]</obj_property>
+      <obj_property name="ObjectShortName">fetch_buffer[127:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/display_32bit/pixels_ready">
+      <obj_property name="ElementShortName">pixels_ready</obj_property>
+      <obj_property name="ObjectShortName">pixels_ready</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/display_32bit/pixels_ack">
+      <obj_property name="ElementShortName">pixels_ack</obj_property>
+      <obj_property name="ObjectShortName">pixels_ack</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/display_32bit/pixels">
+      <obj_property name="ElementShortName">pixels[399:0]</obj_property>
+      <obj_property name="ObjectShortName">pixels[399:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/display_32bit/display_x">
+      <obj_property name="ElementShortName">display_x[9:0]</obj_property>
+      <obj_property name="ObjectShortName">display_x[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/display_32bit/display_y">
+      <obj_property name="ElementShortName">display_y[9:0]</obj_property>
+      <obj_property name="ObjectShortName">display_y[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/display_32bit/vsync_i">
+      <obj_property name="ElementShortName">vsync_i</obj_property>
+      <obj_property name="ObjectShortName">vsync_i</obj_property>
+      <obj_property name="CustomSignalColor">#00FFFF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/display_32bit/reset_i">
+      <obj_property name="ElementShortName">reset_i</obj_property>
+      <obj_property name="ObjectShortName">reset_i</obj_property>
+      <obj_property name="CustomSignalColor">#FF0000</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/aggregator/clock_i">
+      <obj_property name="ElementShortName">clock_i</obj_property>
+      <obj_property name="ObjectShortName">clock_i</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/cx">
+      <obj_property name="ElementShortName">cx[9:0]</obj_property>
+      <obj_property name="ObjectShortName">cx[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/cy">
+      <obj_property name="ElementShortName">cy[9:0]</obj_property>
+      <obj_property name="ObjectShortName">cy[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/aggregator/pixels32_valid">
+      <obj_property name="ElementShortName">pixels32_valid</obj_property>
+      <obj_property name="ObjectShortName">pixels32_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/pixels32">
+      <obj_property name="ElementShortName">pixels32[399:0]</obj_property>
+      <obj_property name="ObjectShortName">pixels32[399:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/aggregator/pixels32_ack">
+      <obj_property name="ElementShortName">pixels32_ack</obj_property>
+      <obj_property name="ObjectShortName">pixels32_ack</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/pixels32_x">
+      <obj_property name="ElementShortName">pixels32_x[9:0]</obj_property>
+      <obj_property name="ObjectShortName">pixels32_x[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/pixels32_y">
+      <obj_property name="ElementShortName">pixels32_y[9:0]</obj_property>
+      <obj_property name="ObjectShortName">pixels32_y[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/buf32">
+      <obj_property name="ElementShortName">buf32[399:0]</obj_property>
+      <obj_property name="ObjectShortName">buf32[399:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/aggregator/buf32_current">
+      <obj_property name="ElementShortName">buf32_current</obj_property>
+      <obj_property name="ObjectShortName">buf32_current</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/buf32_fill">
+      <obj_property name="ElementShortName">buf32_fill[4:0]</obj_property>
+      <obj_property name="ObjectShortName">buf32_fill[4:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/aggregator/buf32_valid">
+      <obj_property name="ElementShortName">buf32_valid</obj_property>
+      <obj_property name="ObjectShortName">buf32_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/buf32_x">
+      <obj_property name="ElementShortName">buf32_x[9:0]</obj_property>
+      <obj_property name="ObjectShortName">buf32_x[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/buf32_y">
+      <obj_property name="ElementShortName">buf32_y[9:0]</obj_property>
+      <obj_property name="ObjectShortName">buf32_y[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/display_ctrl/aggregator/vsync">
+      <obj_property name="ElementShortName">vsync</obj_property>
+      <obj_property name="ObjectShortName">vsync</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/display_ctrl/aggregator/rgb">
+      <obj_property name="ElementShortName">rgb[23:0]</obj_property>
+      <obj_property name="ObjectShortName">rgb[23:0]</obj_property>
+   </wvobject>
+</wave_config>
