@@ -323,7 +323,7 @@ io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .passthrough_display_enable(display_enable),
     .passthrough_display_req_ack(display_req_ack),
     .passthrough_display_rsp_data(display_rsp_data),
-    .passthrough_display_rsp_valid(display_rsp_valid)
+    .passthrough_display_rsp_valid(display_rsp_valid),
 
     .passthrough_apple_pager_enable(apple_pager_enable),
     .passthrough_apple_pager_req_ack(apple_pager_req_ack),
@@ -422,9 +422,9 @@ display display_ctrl(
     .ctrl_rsp_valid_o(display_rsp_valid),
     .ctrl_rsp_data_o(display_rsp_data),
 
-    .dma_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY]),
-    .dma_req_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY]),
-    .dma_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY]),
+    //.dma_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY]),
+    //.dma_req_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY]),
+    //.dma_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY]),
     .dma_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY]),
     .dma_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY]),
     .dma_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY]),

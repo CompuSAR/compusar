@@ -31,37 +31,7 @@ int saros_main() {
     halt();
 }
 
-void logoCrawl(void *) noexcept {
-    static constexpr uint16_t WIDTH = 640, HEIGHT = 480;
-    uint16_t x=120, y=17;
-    int dirx = 1, diry = 1;
-
-    Display::setDisplay(Bitmaps::logo, x, y);
-    reset_gpio_bits(0, GPIO0__DISPLAY32_RESET | GPIO0__DDR_RESET);
-
-    irq_external_unmask( IrqExt__Vsync );
-
-    while(true) {
-        x+=dirx;
-        y+=diry;
-
-        if( x==WIDTH - Bitmaps::logo.width )
-            dirx = -1;
-        if( x==0 )
-            dirx = 1;
-        if( y==HEIGHT - Bitmaps::logo.height )
-            diry = -1;
-        if( y==0 )
-            diry = 1;
-
-        Display::vsyncSignal.wait();
-
-        Display::setDisplay(Bitmaps::logo, x, y);
-    }
-}
-
 void startup_function(void *) noexcept {
-    saros.createThread( logoCrawl, nullptr );
     start_8bit();
 }
 

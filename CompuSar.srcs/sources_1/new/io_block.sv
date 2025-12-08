@@ -157,11 +157,12 @@ always_comb begin
                 8'h5: begin                     // Display controller
                     rsp_valid = passthrough_display_rsp_valid;
                     data_out = passthrough_display_rsp_data;
-                8'h10: begin                    // Apple II pager
+                end
+                8'h80: begin                    // Apple II pager
                     rsp_valid = passthrough_apple_pager_rsp_valid;
                     data_out = passthrough_apple_pager_rsp_data;
                 end
-                8'h11: begin                    // Apple II IO
+                8'h81: begin                    // Apple II IO
                     rsp_valid = passthrough_apple_io_rsp_valid;
                     data_out = passthrough_apple_io_rsp_data;
                 end
@@ -211,11 +212,12 @@ always_comb begin
                 8'h5: begin                 // Display controller
                     passthrough_display_enable = 1'b1;
                     req_ack = passthrough_display_req_ack;
-                8'h10: begin               // Apple II pager
+                end
+                8'h80: begin               // Apple II pager
                     passthrough_apple_pager_enable = 1'b1;
                     req_ack = passthrough_apple_pager_req_ack;
                 end
-                8'h11: begin               // Apple II io
+                8'h81: begin               // Apple II io
                     passthrough_apple_io_enable = 1'b1;
                     req_ack = passthrough_apple_io_req_ack;
                 end

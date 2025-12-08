@@ -31,7 +31,7 @@ constexpr size_t IO_TAPEIN      = 0x60;
 constexpr size_t IO_PADDL0      = 0x64;
 constexpr size_t IO_PTRIG       = 0x70;
 
-constexpr uint32_t PagerDeviceNum = 5;
+constexpr uint32_t PagerDeviceNum = 0x80;
 
 constexpr uint32_t Pager_MainBank = 0x0000;
 constexpr uint32_t Pager_IoBank = 0x0004;
@@ -40,7 +40,7 @@ constexpr uint32_t Pager_BanksEF = 0x000c;
 constexpr uint32_t Pager_WriteOffset = 0x0800;
 constexpr uint32_t Pager_IoOp = 0x1000;
 
-constexpr uint32_t IoDeviceNum = 6;
+constexpr uint32_t IoDeviceNum = 0x81;
 
 constexpr uint32_t Io_Event = 0x0000;
 
@@ -127,7 +127,7 @@ void start_8bit() {
 
     // Take 6502, the clock divider and display out of reset
     uart_send("Start the Apple II\n");
-    write_gpio(0, 0xfffffff8);
+    reset_gpio_bits(0, GPIO0__6502_RESET | GPIO0__FREQ_DIV_RESET | GPIO0__DISPLAY8_RESET);
 }
 
 union IoOp {
