@@ -32,8 +32,13 @@ always_ff@(posedge clock_i) begin
     rsp_data_o <= rsp_data_next;
     rsp_valid_o <= !req_write_i && req_valid_i;
 
-    if( req_valid_i && req_write_i )
-        gp_out_value[req_addr_i] <= req_data_i;
+    if( req_valid_i && req_write_i && req_addr_i[13:0]<NUM_IN_PORTS ) begin
+        casex(req_addr_i[15:14])
+            2'b0x: gp_out_value[req_addr_i[13:0]] <= req_data_i;                                        // Set value
+            2'b10: gp_out_value[req_addr_i[13:0]] <= req_data_i | gp_out_value[req_addr_i[13:0]];       // Set bits
+            2'b11: gp_out_value[req_addr_i[13:0]] <= req_data_i & ~gp_out_value[req_addr_i[13:0]];      // Reset bits
+        endcase
+    end
 end
 
 always_ff@(posedge clock_i) begin
