@@ -31,4 +31,9 @@ module display_8bit# (
     input pixel_ack
 );
 
+assign pixel_valid = 1'b0;
+
+always_ff@(posedge ctrl_clock_i) begin
+end
+
 endmodule
