@@ -5,24 +5,31 @@ module display# (
 )(
     input raw_clock_i,
     input ctrl_clock_i,
-    input reset_i,
+    input reset32_i,
     input reset8_i,
     output vsync_irq_o,
 
     input ctrl_req_valid_i,
-    output logic ctrl_req_ack_o = 1'b1,
+    output ctrl_req_ack_o,
     input [15:0] ctrl_req_addr_i,
     input ctrl_req_write_i,
     input [31:0] ctrl_req_data_i,
     output logic ctrl_rsp_valid_o,
     output [31:0] ctrl_rsp_data_o,
 
-    output logic dma_req_valid_o,
-    output [SOUTH_BUS_WIDTH/8-1:0] dma_req_write_mask_o,
-    output logic [31:0] dma_req_addr_o,
-    input dma_req_ack_i,
-    input dma_rsp_valid_i,
-    input [SOUTH_BUS_WIDTH-1:0] dma_rsp_data_i,
+    output logic dma32_req_valid_o,
+    output [SOUTH_BUS_WIDTH/8-1:0] dma32_req_write_mask_o,
+    output logic [31:0] dma32_req_addr_o,
+    input dma32_req_ack_i,
+    input dma32_rsp_valid_i,
+    input [SOUTH_BUS_WIDTH-1:0] dma32_rsp_data_i,
+
+    output logic dma8_req_valid_o,
+    output [SOUTH_BUS_WIDTH/8-1:0] dma8_req_write_mask_o,
+    output logic [31:0] dma8_req_addr_o,
+    input dma8_req_ack_i,
+    input dma8_rsp_valid_i,
+    input [SOUTH_BUS_WIDTH-1:0] dma8_rsp_data_i,
 
     output wire TMDS_clk_n,
     output wire TMDS_clk_p,
@@ -33,10 +40,12 @@ module display# (
 
 assign HDMI_OEN = 1'b1;
 
-assign dma_req_write_mask_o = { SOUTH_BUS_WIDTH/8{1'b0} };
+assign dma32_req_write_mask_o = { SOUTH_BUS_WIDTH/8{1'b0} };
+assign dma8_req_write_mask_o = { SOUTH_BUS_WIDTH/8{1'b0} };
 
 /********************* CDC logic *******************/
 wire vertical_blank_hdmi, vertical_blank_cpu;
+wire vertical_sync_hdmi, vertical_sync_cpu;
 wire pixel_clk;
 
 xpm_cdc_single cdc_vblank(
@@ -47,29 +56,19 @@ xpm_cdc_single cdc_vblank(
     .dest_clk(ctrl_clock_i)
 );
 
+xpm_cdc_single cdc_vsync(
+    .src_in(vertical_sync_hdmi),
+    .src_clk(pixel_clk),
+
+    .dest_out(vertical_sync_cpu),
+    .dest_clk(ctrl_clock_i)
+);
+
 localparam DISPLAY32_PIXEL_BITS = SOUTH_BUS_WIDTH/8 * 25;       // 25 bits per pixel
 localparam CDC_PIXELS32_WIDTH =
     DISPLAY32_PIXEL_BITS
     + 10                        // X coordinate
     + 10;                       // Y coordinate
-
-wire [CDC_PIXELS32_WIDTH-1:0] pixels32_cdc_ctrl, pixels32_cdc_hdmi;
-wire pixels32_cdc_valid_ctrl, pixels32_cdc_valid_hdmi;
-wire pixels32_cdc_ack_ctrl, pixels32_cdc_ack_hdmi;
-
-xpm_cdc_handshake#(
-    .WIDTH( CDC_PIXELS32_WIDTH )
-) pixels32_cdc(
-    .src_clk( ctrl_clock_i ),
-    .src_in( pixels32_cdc_ctrl ),
-    .src_send( pixels32_cdc_valid_ctrl ),
-    .src_rcv( pixels32_cdc_ack_ctrl ),
-
-    .dest_clk( pixel_clk ),
-    .dest_out( pixels32_cdc_hdmi ),
-    .dest_req( pixels32_cdc_valid_hdmi ),
-    .dest_ack( pixels32_cdc_ack_hdmi )
-);
 
 /******************** CPU clock *********************/
 assign ctrl_rsp_data_o = 32'h0;
@@ -87,7 +86,7 @@ always_ff@(posedge ctrl_clock_i) begin
 
     if( ctrl_req_valid_i && ctrl_req_ack_o ) begin
         if( ctrl_req_write_i ) begin
-            casex( ctrl_req_addr_i )
+            case( ctrl_req_addr_i )
                 16'h0000: base_addr_reg <= ctrl_req_data_i;
                 16'h0004: frame_height_width_reg <= ctrl_req_data_i;
                 16'h0008: frame_start_reg <= ctrl_req_data_i;
@@ -99,10 +98,15 @@ always_ff@(posedge ctrl_clock_i) begin
     end
 end
 
+logic pixel32_valid, pixel32_ack;
+logic [9:0] pixel32_x, pixel32_y;
+logic [24:0] pixel32_data;
+
 display_32bit display_32bit(
     .ctrl_clock_i,
-    .reset_i,
-    .vsync_i(vertical_blank_cpu),
+    .reset_i(reset32_i),
+    .vblank_i(vertical_blank_cpu),
+    .vsync_i(vertical_sync_cpu),
 
     .frame_base_addr_i(base_addr_reg),
     .frame_height_i(frame_height_width_reg[25:16]),
@@ -110,26 +114,57 @@ display_32bit display_32bit(
     .frame_start_x(frame_start_reg[9:0]),
     .frame_start_y(frame_start_reg[25:16]),
 
-    .pixels(pixels32_cdc_ctrl[DISPLAY32_PIXEL_BITS-1:0]),
-    .display_x(pixels32_cdc_ctrl[DISPLAY32_PIXEL_BITS+9:DISPLAY32_PIXEL_BITS]),
-    .display_y(pixels32_cdc_ctrl[DISPLAY32_PIXEL_BITS+19:DISPLAY32_PIXEL_BITS+10]),
-    .pixels_ready(pixels32_cdc_valid_ctrl),
-    .pixels_ack(pixels32_cdc_ack_ctrl),
+    .dma_req_valid_o(dma32_req_valid_o),
+    .dma_req_addr_o(dma32_req_addr_o),
+    .dma_req_ack_i(dma32_req_ack_i),
+    .dma_rsp_valid_i(dma32_rsp_valid_i),
+    .dma_rsp_data_i(dma32_rsp_data_i),
 
-    .dma_req_valid_o,
-    .dma_req_addr_o,
-    .dma_req_ack_i,
-    .dma_rsp_valid_i,
-    .dma_rsp_data_i
+    .pixel_clock_i(pixel_clk),
+
+    .pixel_valid(pixel32_valid),
+    .pixel(pixel32_data),
+    .pixel_x(pixel32_x),
+    .pixel_y(pixel32_y),
+    .pixel_ack(pixel32_ack)
+);
+
+logic pixel8_valid, pixel8_ack;
+logic [9:0] pixel8_x, pixel8_y;
+logic [24:0] pixel8_data;
+
+display_8bit display_8bit(
+    .ctrl_clock_i,
+    .reset_i(reset8_i),
+    .vblank_i(vertical_blank_cpu),
+    .vsync_i(vertical_sync_cpu),
+
+    .ctrl_req_valid_i( ctrl_req_valid_i && ctrl_req_addr_i[15] ),
+    .ctrl_req_addr_i,
+    .ctrl_req_write_i,
+    .ctrl_req_data_i,
+    .ctrl_req_ack_o(ctrl_req_ack_o),    // Only the 8 bit controller may signal not ready
+
+    .dma_req_valid_o(dma8_req_valid_o),
+    .dma_req_addr_o(dma8_req_addr_o),
+    .dma_req_ack_i(dma8_req_ack_i),
+    .dma_rsp_valid_i(dma8_rsp_valid_i),
+    .dma_rsp_data_i(dma8_rsp_data_i),
+
+    .pixel_clock_i(pixel_clk),
+
+    .pixel_valid(pixel8_valid),
+    .pixel(pixel8_data),
+    .pixel_x(pixel8_x),
+    .pixel_y(pixel8_y),
+    .pixel_ack(pixel8_ack)
 );
 
 /******************** PIXEL clock *******************/
 wire [9:0] cx, cy, frame_width, frame_height, screen_width, screen_height;
 wire [23:0] rgb;
 
-display_aggregator#(
-    .NUM_PIXELS32(SOUTH_BUS_WIDTH/8)
-) aggregator(
+display_aggregator aggregator(
     .clock_i( pixel_clk ),
 
     .cx( cx ),
@@ -139,13 +174,20 @@ display_aggregator#(
     .frame_width( frame_width ),
     .frame_height( frame_height ),
 
-    .vsync( vertical_blank_hdmi ),
+    .vsync( vertical_sync_hdmi ),
+    .vblank( vertical_blank_hdmi ),
 
-    .pixels32_valid( pixels32_cdc_valid_hdmi ),
-    .pixels32( pixels32_cdc_hdmi[DISPLAY32_PIXEL_BITS-1:0] ),
-    .pixels32_x( pixels32_cdc_hdmi[DISPLAY32_PIXEL_BITS+9:DISPLAY32_PIXEL_BITS] ),
-    .pixels32_y( pixels32_cdc_hdmi[DISPLAY32_PIXEL_BITS+19:DISPLAY32_PIXEL_BITS+10] ),
-    .pixels32_ack( pixels32_cdc_ack_hdmi ),
+    .pixel32_valid,
+    .pixel32(pixel32_data),
+    .pixel32_x,
+    .pixel32_y,
+    .pixel32_ack,
+
+    .pixel8_valid,
+    .pixel8(pixel8_data),
+    .pixel8_x,
+    .pixel8_y,
+    .pixel8_ack,
 
     .rgb(rgb)
 );

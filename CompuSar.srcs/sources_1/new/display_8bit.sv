@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module display_32bit#(
+module display_8bit# (
     SOUTH_BUS_WIDTH = 128
 )(
     // Ctrl clock signals
@@ -9,12 +9,11 @@ module display_32bit#(
     input vblank_i,
     input vsync_i,
 
-    input [31:0] frame_base_addr_i,
-    input [9:0] frame_width_i,
-    input [9:0] frame_height_i,
-
-    input [9:0] frame_start_x,
-    input [9:0] frame_start_y,
+    input ctrl_req_valid_i,
+    output logic ctrl_req_ack_o = 1'b1,
+    input [15:0] ctrl_req_addr_i,
+    input ctrl_req_write_i,
+    input [31:0] ctrl_req_data_i,
 
     output logic dma_req_valid_o = 1'b0,
     output logic [31:0] dma_req_addr_o,
@@ -31,10 +30,5 @@ module display_32bit#(
     output [9:0] pixel_y,
     input pixel_ack
 );
-
-localparam PIXELS_BURST = SOUTH_BUS_WIDTH/8;
-localparam TRANSPARENT_PIXEL = { 1'b1, 8'h00, 8'b00100100, 8'h00 };
-
-
 
 endmodule
