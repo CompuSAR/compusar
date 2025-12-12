@@ -136,7 +136,7 @@ clk_converter clocks(
     .locked(clocks_locked)
 );
 
-localparam CACHE_PORTS_NUM = 5;
+localparam CACHE_PORTS_NUM = 6;
 localparam CACHELINE_BITS = 128;
 localparam CACHELINE_BYTES = CACHELINE_BITS/8;
 localparam NUM_CACHELINES = 16*1024*8/CACHELINE_BITS;
@@ -152,11 +152,12 @@ logic [CACHELINE_BITS-1:0]              cache_port_cmd_write_data_s[CACHE_PORTS_
 logic                                   cache_port_rsp_valid_n[CACHE_PORTS_NUM];
 logic [CACHELINE_BITS-1:0]              cache_port_rsp_read_data_n[CACHE_PORTS_NUM];
 
-localparam CACHE_PORT_IDX_DISPLAY = 0;
-localparam CACHE_PORT_IDX_6502 = 1;
-localparam CACHE_PORT_IDX_DBUS = 2;
-localparam CACHE_PORT_IDX_IBUS = 3;
-localparam CACHE_PORT_IDX_SPI_FLASH = 4;
+localparam CACHE_PORT_IDX_DISPLAY8 = 0;
+localparam CACHE_PORT_IDX_DISPLAY32 = 1;
+localparam CACHE_PORT_IDX_6502 = 2;
+localparam CACHE_PORT_IDX_DBUS = 3;
+localparam CACHE_PORT_IDX_IBUS = 4;
+localparam CACHE_PORT_IDX_SPI_FLASH = 5;
 
 logic                                   inst_cache_port_cmd_valid_s[0:0];
 logic [31:0]                            inst_cache_port_cmd_addr_s[0:0];
@@ -410,7 +411,7 @@ cache#(
 display display_ctrl(
     .raw_clock_i(board_clock),
     .ctrl_clock_i(ctrl_cpu_clock),
-    .reset_i(gp_out[0][GPIO_OUT0__DISPLAY32_RESET]),
+    .reset32_i(gp_out[0][GPIO_OUT0__DISPLAY32_RESET]),
     .reset8_i(gp_out[0][GPIO_OUT0__DISPLAY8_RESET]),
     .vsync_irq_o(irq_lines[VSYNC_IRQ]),
 
@@ -422,12 +423,19 @@ display display_ctrl(
     .ctrl_rsp_valid_o(display_rsp_valid),
     .ctrl_rsp_data_o(display_rsp_data),
 
-    //.dma_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY]),
-    //.dma_req_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY]),
-    //.dma_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY]),
-    .dma_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY]),
-    .dma_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY]),
-    .dma_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY]),
+    .dma32_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY32]),
+    .dma32_req_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY32]),
+    .dma32_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY32]),
+    .dma32_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY32]),
+    .dma32_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY32]),
+    .dma32_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY32]),
+
+    //.dma8_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY8]),
+    //.dma8_req_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY8]),
+    //.dma8_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY8]),
+    .dma8_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY8]),
+    .dma8_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY8]),
+    .dma8_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY8]),
 
     .TMDS_clk_n,
     .TMDS_clk_p,
@@ -759,17 +767,17 @@ apple_pager pager(
 
 assign cache_port_cmd_addr_s[CACHE_PORT_IDX_6502] = bus8_paged_req_addr;
 
-assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY] = { CACHELINE_BYTES{1'b0} };
+assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY8] = { CACHELINE_BYTES{1'b0} };
 display_serial#(.CLOCK_SPEED(CTRL_CLOCK_HZ), .TEXT_PAGE_ADDR(32'h81010400))
 apple_display(
     .clock_i(ctrl_cpu_clock),
     .reset_i(gp_out[0][GPIO_OUT0__DISPLAY8_RESET]),
 
-    .req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY]),
-    .req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY]),
-    .req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY]),
-    .rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY]),
-    .rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY]),
+    .req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY8]),
+    .req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY8]),
+    .req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY8]),
+    .rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY8]),
+    .rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY8]),
 
     .uart_send_o(/*uart_tx*/ debug[0])
 );

@@ -1,8 +1,6 @@
 `timescale 1ns / 1ps
 
-module display_aggregator#(
-    NUM_PIXELS32 = 16
-)(
+module display_aggregator(
     input clock_i,
 
     input [9:0] cx,
@@ -12,76 +10,115 @@ module display_aggregator#(
     input [9:0] frame_width,
     input [9:0] frame_height,
 
+    output vblank,
     output vsync,
 
-    input pixels32_valid,
-    input [NUM_PIXELS32 * 25 - 1:0] pixels32,
-    input [9:0] pixels32_x,
-    input [9:0] pixels32_y,
-    output logic pixels32_ack = 1'b0,
+    input pixel32_valid,
+    input [24:0] pixel32,
+    input [9:0] pixel32_x,
+    input [9:0] pixel32_y,
+    output pixel32_ack,
+
+    input pixel8_valid,
+    input [23:0] pixel8,
+    input [9:0] pixel8_x,
+    input [9:0] pixel8_y,
+    output pixel8_ack,
 
     output logic[23:0] rgb
 );
 
+localparam VSYNC_LINES = 2;
+
 // TODO maybe use just the y criteria?
-assign vsync = cy > screen_height || (cy == screen_height && cx >= screen_width);
+assign vblank = cy > screen_height || (cy == screen_height && cx >= screen_width);
+assign vsync = cy >= frame_height - VSYNC_LINES;
 
-// TODO TRANSPARENT_PIXEL is currently set to just black. Update it when
-// introducing the 8 bit pixels
-localparam TRANSPARENT_PIXEL = 25'h0ffff11;
+// A pixel color we special-case for fully transparent
+localparam TRANSPARENT_PIXEL = 25'h1002400;
+localparam BACKGROUND_COLOR = 24'h000000;
 
-logic [$clog2(NUM_PIXELS32+1)-1:0] buf32_fill = 0;
-logic [NUM_PIXELS32 * 25 - 1:0] buf32 = { NUM_PIXELS32{TRANSPARENT_PIXEL} }, fetch32;
-logic [9:0] buf32_x, buf32_y, fetch32_x, fetch32_y;
-logic fetch32_valid = 1'b0, buf32_valid = 1'b0;
+logic [24:0] active_pixel32;
+logic [23:0] active_pixel8;
+logic [9:0] combined_red, combined_green, combined_blue;
 
-wire [24:0] pixel32;
-assign pixel32 = buf32[24:0];
+always_comb begin
+    combined_red = { active_pixel32[23:16], 2'b00 } + { 1'b0, active_pixel32[23:16], 1'b0 } + { 2'b00, active_pixel8[23:16] };
+    combined_green = { active_pixel32[15:8], 2'b00 } + { 1'b0, active_pixel32[15:8], 1'b0 } + { 2'b00, active_pixel8[15:8] };
+    combined_blue = { active_pixel32[7:0], 2'b00 } + { 1'b0, active_pixel32[7:0], 1'b0 } + { 2'b00, active_pixel8[7:0] };
+
+    if( !active_pixel32[24] ) begin
+        rgb = active_pixel32[23:0];
+    end else if( active_pixel32 == TRANSPARENT_PIXEL ) begin
+        rgb = active_pixel8;
+    end else begin
+        rgb = { combined_red[9:2], combined_green[9:2], combined_blue[9:2] };
+    end
+end
+
+logic [24:0] buffered_pixel32;
+logic [23:0] buffered_pixel8;
+logic buffered_pixel32_valid = 1'b0, buffered_pixel8_valid = 1'b0;
+logic [9:0] buffered32_x, buffered32_y, buffered8_x, buffered8_y;
+
+// Indicates whether the pixel is consumed by the current cycle
+logic shift32, shift8;
+
+always_comb begin
+    shift32 = 1'b0;
+    active_pixel32 = TRANSPARENT_PIXEL;
+
+    if( buffered_pixel32_valid ) begin
+        if( buffered32_x == cx && buffered32_y == cy ) begin
+            shift32 = 1'b1;
+            active_pixel32 = buffered_pixel32;
+        end else if( !vblank && (buffered32_y<cy || (buffered32_y==cy && buffered32_x<cx)) ) begin
+            shift32 = 1'b1;
+            active_pixel32 = TRANSPARENT_PIXEL;
+        end
+    end
+end
+
+always_comb begin
+    shift8 = 1'b0;
+    active_pixel8 = BACKGROUND_COLOR;
+
+    if( buffered_pixel8_valid ) begin
+        if( buffered8_x == cx && buffered8_y == cy ) begin
+            shift8 = 1'b1;
+            active_pixel8 = buffered_pixel8;
+        end else if( !vblank && (buffered8_y<cy || (buffered8_y==cy && buffered8_x<cx)) ) begin
+            shift8 = 1'b1;
+            active_pixel8 =BACKGROUND_COLOR;
+        end
+    end
+end
+
+assign pixel32_ack = shift32 || !buffered_pixel32_valid;
+assign pixel8_ack = shift8 || !buffered_pixel8_valid;
 
 always_ff@(posedge clock_i) begin
-    // Shift the buffer to the next pixel
-    buf32 <= { TRANSPARENT_PIXEL, buf32[NUM_PIXELS32 * 25 - 1:25] };
+    if( shift32 )
+        buffered_pixel32_valid <= 1'b0;
 
-    // Read the incoming buffer if it's and us are ready
-    if( !fetch32_valid && pixels32_valid && !pixels32_ack ) begin
-        fetch32 <= pixels32;
-        fetch32_x <= pixels32_x;
-        fetch32_y <= pixels32_y;
-        fetch32_valid <= 1'b1;
-        pixels32_ack <= 1'b1;
+    if( shift8 )
+        buffered_pixel8_valid <= 1'b0;
+
+    // Buffer new value logic must be after clearing the old value, as both
+    // can happen in the same cycle
+    if( pixel32_valid && pixel32_ack ) begin
+        buffered_pixel32_valid <= 1'b1;
+        buffered_pixel32 <= pixel32;
+        buffered32_x <= pixel32_x;
+        buffered32_y <= pixel32_y;
     end
 
-    if( pixels32_ack && !pixels32_valid )
-        pixels32_ack <= 1'b0;
-    
-    // Discard stale buffers
-    if( fetch32_valid && !vsync && (fetch32_y < cy || (fetch32_y == cy && fetch32_x < cx)) ) begin
-        fetch32_valid <= 1'b0;
+    if( pixel8_valid && pixel8_ack ) begin
+        buffered_pixel8_valid <= 1'b1;
+        buffered_pixel8 <= pixel8;
+        buffered8_x <= pixel8_x;
+        buffered8_y <= pixel8_y;
     end
-
-    if( buf32_fill == 0 )
-        buf32_valid <= 1'b0;
-
-    if(
-        buf32_fill == 0 &&
-        fetch32_valid &&
-        (
-            fetch32_y==cy && fetch32_x==cx+1 ||
-            fetch32_y==cy+1 && fetch32_x==0 && cx==frame_width-1
-        )
-    ) begin
-        buf32 <= fetch32;
-        buf32_fill <= NUM_PIXELS32 - 1;
-
-        fetch32_valid <= 1'b0;
-        buf32_valid <= 1'b1;
-    end
-
-    if( buf32_fill != 0 ) begin
-        buf32_fill <= buf32_fill - 1;
-    end
-    
-    rgb <= pixel32[23:0];
 end
 
 endmodule
