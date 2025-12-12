@@ -11,9 +11,9 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="39,998,240.000 ns"></ZoomStartTime>
-      <ZoomEndTime time="40,000,352.001 ns"></ZoomEndTime>
-      <Cursor1Time time="40,000,000.000 ns"></Cursor1Time>
+      <ZoomStartTime time="16,622,094.190 ns"></ZoomStartTime>
+      <ZoomEndTime time="16,624,206.191 ns"></ZoomEndTime>
+      <Cursor1Time time="16,622,446.190 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="220"></NameColumnWidth>
@@ -147,10 +147,14 @@
    <wvobject type="logic" fp_name="/display_sim_top/display/display_32bit/vblank_i">
       <obj_property name="ElementShortName">vblank_i</obj_property>
       <obj_property name="ObjectShortName">vblank_i</obj_property>
+      <obj_property name="CustomSignalColor">#FF0000</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/display_sim_top/display/display_32bit/vsync_i">
       <obj_property name="ElementShortName">vsync_i</obj_property>
       <obj_property name="ObjectShortName">vsync_i</obj_property>
+      <obj_property name="CustomSignalColor">#FF0000</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/display_sim_top/display/display_32bit/display_done">
       <obj_property name="ElementShortName">display_done</obj_property>
