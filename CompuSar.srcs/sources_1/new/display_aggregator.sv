@@ -32,11 +32,11 @@ localparam VSYNC_LINES = 2;
 
 // TODO maybe use just the y criteria?
 assign vblank = cy > screen_height || (cy == screen_height && cx >= screen_width);
-assign vsync = cy >= screen_height - VSYNC_LINES;
+assign vsync = cy >= frame_height - VSYNC_LINES;
 
 // A pixel color we special-case for fully transparent
 localparam TRANSPARENT_PIXEL = 25'h1002400;
-localparam BACKGROUND_COLOR = 24'h000000;
+localparam BACKGROUND_COLOR = 24'hffff11;
 
 logic [24:0] active_pixel32;
 logic [23:0] active_pixel8;
@@ -107,7 +107,7 @@ always_ff@(posedge clock_i) begin
     // Buffer new value logic must be after clearing the old value, as both
     // can happen in the same cycle
     if( pixel32_valid && pixel32_ack ) begin
-        buffered_pixel8_valid <= 1'b1;
+        buffered_pixel32_valid <= 1'b1;
         buffered_pixel32 <= pixel32;
         buffered32_x <= pixel32_x;
         buffered32_y <= pixel32_y;

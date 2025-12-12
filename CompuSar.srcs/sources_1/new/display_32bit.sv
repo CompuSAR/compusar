@@ -26,7 +26,7 @@ module display_32bit#(
     // Pixel clock signals
     input pixel_clock_i,
 
-    output logic pixel_valid,
+    output pixel_valid,
     output logic [24:0] pixel,
     output logic [COORDINATE_WIDTH-1:0] pixel_x,
     output logic [COORDINATE_WIDTH-1:0] pixel_y,
@@ -155,6 +155,7 @@ xpm_cdc_handshake#(
     .dest_ack(cdc_ack_hdmi)
 );
 
+assign pixel_valid = frame_data_out_valid;
 always_ff@(posedge pixel_clock_i) begin
     if( pixel_valid && pixel_ack ) begin
         // Successfully sent a pixel out
@@ -166,7 +167,6 @@ always_ff@(posedge pixel_clock_i) begin
 
         if( frame_out_fill==1 ) begin
             frame_data_out_valid <= 1'b0;
-            pixel_valid <= 1'b0;
         end
     end
 
@@ -177,10 +177,10 @@ always_ff@(posedge pixel_clock_i) begin
         display_x_out <= display_x_hdmi;
         display_y_out <= display_y_hdmi;
         frame_data_out_valid <= 1'b1;
-        frame_data_cdc_hdmi <= 1'b0;
+        frame_data_cdc_hdmi_valid <= 1'b0;
     end
 
-    if( !frame_data_cdc_hdmi_valid && cdc_send_hdmi ) begin
+    if( !frame_data_cdc_hdmi_valid && cdc_send_hdmi && !cdc_ack_hdmi ) begin
         cdc_ack_hdmi <= 1'b1;
         frame_data_cdc_hdmi_valid <= 1'b1;
         frame_data_cdc_hdmi <= cdc_frame_data;
@@ -188,7 +188,7 @@ always_ff@(posedge pixel_clock_i) begin
         display_y_hdmi <= cdc_frame_y;
     end
 
-    if( cdc_send_hdmi && cdc_ack_hdmi )
+    if( !cdc_send_hdmi && cdc_ack_hdmi )
         cdc_ack_hdmi <= 1'b0;
 end
 
