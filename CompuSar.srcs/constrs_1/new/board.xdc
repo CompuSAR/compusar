@@ -19,16 +19,13 @@ set_property PACKAGE_PIN L13 [get_ports {switches[3]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {switches*}]
 
 set_property PACKAGE_PIN F16 [get_ports {debug[0]}]
-# Route to another pin, as we're taking over it for the uart keyboard input
-#set_property PACKAGE_PIN F18 [get_ports {debug[1]}]
-set_property PACKAGE_PIN E18 [get_ports {debug[1]}]
+set_property PACKAGE_PIN F18 [get_ports {debug[1]}]
 set_property PACKAGE_PIN E19 [get_ports {debug[2]}]
 set_property PACKAGE_PIN D17 [get_ports {debug[3]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {debug}]
 
 # Temporarily diverted to the auxilary UART
-#set_property PACKAGE_PIN G15 [get_ports uart_rx]
-set_property PACKAGE_PIN F18 [get_ports uart_rx]
+set_property PACKAGE_PIN G15 [get_ports uart_rx]
 set_property IOSTANDARD LVCMOS33 [get_ports uart_rx]
 
 set_property PACKAGE_PIN G16 [get_ports uart_tx]

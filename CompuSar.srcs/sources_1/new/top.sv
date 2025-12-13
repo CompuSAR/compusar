@@ -430,9 +430,9 @@ display display_ctrl(
     .dma32_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY32]),
     .dma32_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY32]),
 
-    //.dma8_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY8]),
-    //.dma8_req_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY8]),
-    //.dma8_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY8]),
+    .dma8_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY8]),
+    .dma8_req_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY8]),
+    .dma8_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY8]),
     .dma8_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY8]),
     .dma8_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY8]),
     .dma8_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY8]),
@@ -766,21 +766,6 @@ apple_pager pager(
 );
 
 assign cache_port_cmd_addr_s[CACHE_PORT_IDX_6502] = bus8_paged_req_addr;
-
-assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY8] = { CACHELINE_BYTES{1'b0} };
-display_serial#(.CLOCK_SPEED(CTRL_CLOCK_HZ), .TEXT_PAGE_ADDR(32'h81010400))
-apple_display(
-    .clock_i(ctrl_cpu_clock),
-    .reset_i(gp_out[0][GPIO_OUT0__DISPLAY8_RESET]),
-
-    .req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY8]),
-    .req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY8]),
-    .req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY8]),
-    .rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY8]),
-    .rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY8]),
-
-    .uart_send_o(/*uart_tx*/ debug[0])
-);
 
 logic[4*6-1:0] debug_display_data = 24'hffffff;
 logic[5:0] debug_display_point = 6'b000000;
