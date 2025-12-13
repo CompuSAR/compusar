@@ -36,13 +36,17 @@ module display_32bit#(
 localparam PIXELS_BURST = SOUTH_BUS_WIDTH/8;
 localparam TRANSPARENT_PIXEL = { 1'b1, 8'h00, 8'b00100100, 8'h00 };
 
-logic [SOUTH_BUS_WIDTH-1:0] frame_data_dma, frame_data_cdc_cpu, frame_data_cdc_hdmi, frame_data_out;
-logic frame_data_dma_valid = 1'b0, frame_data_cdc_cpu_valid = 1'b0, frame_data_cdc_hdmi_valid = 1'b0, frame_data_out_valid = 1'b0;
+localparam PIPELINE_STAGES = 4;
+
+localparam PIPELINE_DMA = 0;
+localparam PIPELINE_CDC_CPU = 1;
+localparam PIPELINE_HDMI = 2;
+localparam PIPELINE_OUT = 3;
+
+logic [SOUTH_BUS_WIDTH-1:0] frame_data[PIPELINE_STAGES];
+logic [PIPELINE_STAGES-1:0] frame_data_valid = 0;
+logic [COORDINATE_WIDTH-1:0] frame_x[PIPELINE_STAGES], frame_y[PIPELINE_STAGES];
 logic dma_req_sent = 1'b0;
-logic [COORDINATE_WIDTH-1:0]    display_x_base, display_y_base,
-                                display_x_cpu, display_y_cpu,
-                                display_x_hdmi, display_y_hdmi,
-                                display_x_out, display_y_out;
 logic [COORDINATE_WIDTH-1:0] current_x, current_y, frame_width, frame_height;
 logic [$clog2(PIXELS_BURST)-1:0] frame_out_fill;
 
@@ -54,44 +58,39 @@ logic display_done = 1'b1;      // Start as idle until vsync
 
 task do_reset();
     display_done <= 1'b1;
-    frame_data_dma_valid <= 1'b0;
-    frame_data_cdc_cpu_valid <= 1'b0;
+    frame_data_valid[PIPELINE_DMA] <= 1'b0;
+    frame_data_valid[PIPELINE_CDC_CPU] <= 1'b0;
     dma_req_sent <= 1'b0;
 
     frame_width <= frame_width_i;
     frame_height <= frame_height_i;
     dma_req_addr_o <= frame_base_addr_i;
-    display_x_base <= frame_start_x;
-    display_y_base <= frame_start_y;
+    frame_x[PIPELINE_DMA] <= frame_start_x;
+    frame_y[PIPELINE_DMA] <= frame_start_y;
     current_x <= 0;
     current_y <= 0;
-
-    // The following are not reset as they are on a different clock, and it's
-    // not worth the trouble
-    //frame_data_cdc_hdmi_valid <= 1'b0;
-    //frame_data_out_valid <= 1'b0;
 endtask
 
 task do_cpu_cycle();
     if( cdc_send_cpu && cdc_ack_cpu ) begin
         // CDC acked
         cdc_send_cpu <= 1'b0;
-        frame_data_cdc_cpu_valid <= 1'b0;
+        frame_data_valid[PIPELINE_CDC_CPU] <= 1'b0;
     end
 
-    if( frame_data_cdc_cpu_valid && !cdc_ack_cpu ) begin
+    if( frame_data_valid[PIPELINE_CDC_CPU] && !cdc_ack_cpu ) begin
         // Send to CDC
         cdc_send_cpu <= 1'b1;
     end
 
-    if( !frame_data_cdc_cpu_valid && frame_data_dma_valid ) begin
+    if( !frame_data_valid[PIPELINE_CDC_CPU] && frame_data_valid[PIPELINE_DMA] ) begin
         // Handle result of DMA
-        frame_data_cdc_cpu_valid <= 1'b1;
-        frame_data_cdc_cpu <= frame_data_dma;
-        display_x_cpu <= display_x_base + current_x;
-        display_y_cpu <= display_y_base + current_y;
+        frame_data_valid[PIPELINE_CDC_CPU] <= 1'b1;
+        frame_data[PIPELINE_CDC_CPU] <= frame_data[PIPELINE_DMA];
+        frame_x[PIPELINE_CDC_CPU] <= frame_x[PIPELINE_DMA] + current_x;
+        frame_y[PIPELINE_CDC_CPU] <= frame_y[PIPELINE_DMA] + current_y;
 
-        frame_data_dma_valid <= 1'b0;
+        frame_data_valid[PIPELINE_DMA] <= 1'b0;
         dma_req_addr_o <= dma_req_addr_o + PIXELS_BURST;
 
         // Advance coordinates
@@ -107,8 +106,8 @@ task do_cpu_cycle();
 
     if( dma_rsp_valid_i && dma_req_sent ) begin
         // Response to DMA request
-        frame_data_dma <= dma_rsp_data_i;
-        frame_data_dma_valid <= 1'b1;
+        frame_data[PIPELINE_DMA] <= dma_rsp_data_i;
+        frame_data_valid[PIPELINE_DMA] <= 1'b1;
 
         dma_req_sent <= 1'b0;
     end
@@ -117,7 +116,7 @@ task do_cpu_cycle();
         dma_req_valid_o <= 1'b0;
     end
 
-    if( !frame_data_dma_valid && !dma_req_sent && !display_done ) begin
+    if( !frame_data_valid[PIPELINE_DMA] && !dma_req_sent && !display_done ) begin
         dma_req_valid_o <= 1'b1;
         dma_req_sent <= 1'b1;
     end
@@ -145,7 +144,7 @@ xpm_cdc_handshake#(
     .SIM_ASSERT_CHK(1)
 ) pixel_data_cdc(
     .src_clk(ctrl_clock_i),
-    .src_in({display_x_cpu, display_y_cpu, frame_data_cdc_cpu}),
+    .src_in({frame_x[PIPELINE_CDC_CPU], frame_y[PIPELINE_CDC_CPU], frame_data[PIPELINE_CDC_CPU]}),
     .src_send(cdc_send_cpu),
     .src_rcv(cdc_ack_cpu),
 
@@ -155,37 +154,37 @@ xpm_cdc_handshake#(
     .dest_ack(cdc_ack_hdmi)
 );
 
-assign pixel_valid = frame_data_out_valid;
+assign pixel_valid = frame_data_valid[PIPELINE_OUT];
 always_ff@(posedge pixel_clock_i) begin
     if( pixel_valid && pixel_ack ) begin
         // Successfully sent a pixel out
 
         // Shift all pixels
-        frame_data_out <= { 8'hXX, frame_data_out[SOUTH_BUS_WIDTH-1:8] };
+        frame_data[PIPELINE_OUT] <= { 8'hXX, frame_data[PIPELINE_OUT][SOUTH_BUS_WIDTH-1:8] };
         frame_out_fill <= frame_out_fill - 1;
-        display_x_out <= display_x_out + 1;
+        frame_x[PIPELINE_OUT] <= frame_x[PIPELINE_OUT] + 1;
 
         if( frame_out_fill==1 ) begin
-            frame_data_out_valid <= 1'b0;
+            frame_data_valid[PIPELINE_OUT] <= 1'b0;
         end
     end
 
-    if( frame_data_cdc_hdmi_valid && (!frame_data_out_valid || frame_out_fill==1) ) begin
+    if( frame_data_valid[PIPELINE_HDMI] && (!frame_data_valid[PIPELINE_OUT] || frame_out_fill==1) ) begin
         // Advance the CDC buffer to the output
-        frame_data_out <= frame_data_cdc_hdmi;
+        frame_data[PIPELINE_OUT] <= frame_data[PIPELINE_HDMI];
         frame_out_fill <= PIXELS_BURST;
-        display_x_out <= display_x_hdmi;
-        display_y_out <= display_y_hdmi;
-        frame_data_out_valid <= 1'b1;
-        frame_data_cdc_hdmi_valid <= 1'b0;
+        frame_x[PIPELINE_OUT] <= frame_x[PIPELINE_HDMI];
+        frame_y[PIPELINE_OUT] <= frame_y[PIPELINE_HDMI];
+        frame_data_valid[PIPELINE_OUT] <= 1'b1;
+        frame_data_valid[PIPELINE_HDMI] <= 1'b0;
     end
 
-    if( !frame_data_cdc_hdmi_valid && cdc_send_hdmi && !cdc_ack_hdmi ) begin
+    if( !frame_data_valid[PIPELINE_HDMI] && cdc_send_hdmi && !cdc_ack_hdmi ) begin
         cdc_ack_hdmi <= 1'b1;
-        frame_data_cdc_hdmi_valid <= 1'b1;
-        frame_data_cdc_hdmi <= cdc_frame_data;
-        display_x_hdmi <= cdc_frame_x;
-        display_y_hdmi <= cdc_frame_y;
+        frame_data_valid[PIPELINE_HDMI] <= 1'b1;
+        frame_data[PIPELINE_HDMI] <= cdc_frame_data;
+        frame_x[PIPELINE_HDMI] <= cdc_frame_x;
+        frame_y[PIPELINE_HDMI] <= cdc_frame_y;
     end
 
     if( !cdc_send_hdmi && cdc_ack_hdmi )
@@ -193,13 +192,13 @@ always_ff@(posedge pixel_clock_i) begin
 end
 
 always_comb begin
-    pixel[24] = frame_data_out[7];                                                                              // Transparency
-    pixel[23:16] = {frame_data_out[6:5], frame_data_out[6:5], frame_data_out[6:5], frame_data_out[6:5]};        // Red
-    pixel[15:8] = {frame_data_out[4:2], frame_data_out[4:2], frame_data_out[4:3]};                              // Green
-    pixel[7:0] = {frame_data_out[1:0], frame_data_out[1:0], frame_data_out[1:0], frame_data_out[1:0]};          // Blue
+    pixel[24] = frame_data[PIPELINE_OUT][7];                                                                              // Transparency
+    pixel[23:16] = {frame_data[PIPELINE_OUT][6:5], frame_data[PIPELINE_OUT][6:5], frame_data[PIPELINE_OUT][6:5], frame_data[PIPELINE_OUT][6:5]};        // Red
+    pixel[15:8] = {frame_data[PIPELINE_OUT][4:2], frame_data[PIPELINE_OUT][4:2], frame_data[PIPELINE_OUT][4:3]};                              // Green
+    pixel[7:0] = {frame_data[PIPELINE_OUT][1:0], frame_data[PIPELINE_OUT][1:0], frame_data[PIPELINE_OUT][1:0], frame_data[PIPELINE_OUT][1:0]};          // Blue
 
-    pixel_x = display_x_out;
-    pixel_y = display_y_out;
+    pixel_x = frame_x[PIPELINE_OUT];
+    pixel_y = frame_y[PIPELINE_OUT];
 end
 
 endmodule
