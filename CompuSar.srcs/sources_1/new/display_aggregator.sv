@@ -36,7 +36,8 @@ assign vsync = cy >= frame_height - VSYNC_LINES;
 
 // A pixel color we special-case for fully transparent
 localparam TRANSPARENT_PIXEL = 25'h1002400;
-localparam BACKGROUND_COLOR = 24'h000000;
+//localparam BACKGROUND_COLOR = 24'h000000;
+localparam BACKGROUND_COLOR = 24'hffff11;
 
 logic [24:0] active_pixel32;
 logic [23:0] active_pixel8;

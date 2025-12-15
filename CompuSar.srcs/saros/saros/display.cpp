@@ -7,8 +7,6 @@ namespace Display {
 Saros::Sync::Signal vsyncSignal;
 
 namespace {
-static constexpr uint32_t DeviceId = 5;
-
 static constexpr uint32_t Reg__BaseAddr =               0x0000;
 static constexpr uint32_t Reg__FrameHeightWidth =       0x0004;
 static constexpr uint32_t Reg__FrameStart =             0x0008;

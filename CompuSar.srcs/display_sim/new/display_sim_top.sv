@@ -95,6 +95,7 @@ display display(
     .HDMI_OEN()
 );
 
+/*
 initial begin
     reset32 = 1'b1;
     reset8 = 1'b1;
@@ -131,14 +132,87 @@ initial begin
 
     reset32 = 1'b0;
 end
+*/
+
+initial begin
+    reset8 = 1'b1;
+
+    ctrl_req_valid = 1'b0;
+
+    // Initialize the display
+    @(posedge cpu_clock);
+    @(posedge cpu_clock);
+
+    @(negedge cpu_clock);
+    ctrl_req_valid = 1'b1;
+    ctrl_req_addr = 16'h8000;           // Base fetch addr1
+    ctrl_req_data = 32'h00000400;
+    ctrl_req_write = 1'b1;
+    do
+        @(posedge cpu_clock);
+    while( !ctrl_req_ack );
+
+    @(negedge cpu_clock);
+    ctrl_req_addr = 16'h8004;           // Base fetch addr split 1
+    ctrl_req_data = 32'h00000400;
+    ctrl_req_write = 1'b1;
+    do
+        @(posedge cpu_clock);
+    while( !ctrl_req_ack );
+
+    @(negedge cpu_clock);
+    ctrl_req_addr = 16'h8010;           // y and x display location
+    ctrl_req_data = 8<<16 | 5;
+    do
+        @(posedge cpu_clock);
+    while( !ctrl_req_ack );
+
+    @(negedge cpu_clock);
+    ctrl_req_addr = 16'h8014;           // display mode
+    ctrl_req_data = 32'h00000011;       // Text mode all the way through
+    do
+        @(posedge cpu_clock);
+    while( !ctrl_req_ack );
+
+    @(negedge cpu_clock);
+    ctrl_req_addr = 16'hf000;           // Char rom char 0 top
+    ctrl_req_data = 32'haa55aa55;
+    do
+        @(posedge cpu_clock);
+    while( !ctrl_req_ack );
+
+    @(negedge cpu_clock);
+    ctrl_req_addr = 16'hf001;           // Char rom char 0 bottom
+    ctrl_req_data = 32'haa55aa55;
+    do
+        @(posedge cpu_clock);
+    while( !ctrl_req_ack );
+
+    ctrl_req_valid = 1'b0;
+
+    repeat(7) @(posedge cpu_clock);
+
+    reset8 = 1'b0;
+end
 
 always_ff@(posedge cpu_clock) begin
     dma32_rsp_valid = 1'b0;
 
     if( dma32_req_valid && dma32_req_ack ) begin
         if( dma32_req_write == 0 ) begin
-            dma32_rsp_valid = 1'b1;
-            dma32_rsp_data = memory[dma32_req_addr[31:4]];
+            dma32_rsp_valid <= 1'b1;
+            dma32_rsp_data <= memory[dma32_req_addr[31:4]];
+        end
+    end
+end
+
+always_ff@(posedge cpu_clock) begin
+    dma8_rsp_valid <= 1'b0;
+
+    if( dma8_req_valid && dma8_req_ack ) begin
+        if( dma8_req_write == 0 ) begin
+            dma8_rsp_valid <= 1'b1;
+            dma8_rsp_data <= memory[dma8_req_addr[31:4]];
         end
     end
 end
