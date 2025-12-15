@@ -1,5 +1,4 @@
-#include <stdint.h>
-#include <string.h>
+#include <apple2.h>
 
 #include "8bit_hook.h"
 #include "gpio.h"
@@ -8,9 +7,11 @@
 
 #include <saros/saros.h>
 
+#include <string.h>
+
+using namespace Apple2;
+
 namespace {
-constexpr uint32_t ROMS_BASE = 0x8100'0000;
-constexpr uint32_t BANK0_BASE = 0x8101'0000;
 
 constexpr size_t IO_BASE = 0xc000;
 

@@ -18,7 +18,7 @@ noinst_PROGRAMS=saros.elf
 
 saros_elf_SOURCES=main.cpp uart.cpp saros.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \
                   start.s ../abort.cpp display.cpp crt.cpp \
-                  apple2.cpp roms/Apple2_Plus_rom.s
+                  apple2.cpp apple2_display.cpp roms/Apple2_Plus_rom.s roms/charset_us_bin.s
 EXTRA_saros_elf_DEPENDENCIES=$(srcdir)/saros.ld kernel/libkernel.a
 saros_elf_LDFLAGS=-T $(srcdir)/saros.ld --orphan-handling=error
 saros_elf_LDADD=$(TOOLCHAIN_LIB_PATH)/libgcc.a $(TOOLCHAIN_PATH)/$(HOST_TRIPLET)/lib/libc.a kernel/libkernel.a
@@ -32,15 +32,6 @@ saros.bin: saros.elf$(EXEEXT)
 	cp $< $@.tmp
 	$(HOST_TRIPLET)-strip $@.tmp
 	mv $@.tmp $@
-
-$(top_srcdir)/roms/%.rom:
-	wget 'https://github.com/AppleWin/AppleWin/raw/refs/heads/master/resource/$*.rom' -O '$@'.tmp
-	mv '$@.tmp' '$@'
-.PRECIOUS: $(srcdir)/roms/%.rom
-
-$(top_builddir)/roms/%_rom.s: $(top_srcdir)/roms/%.rom $(top_srcdir)/roms/assemblify
-	mkdir -p $(top_builddir)/roms
-	$(top_srcdir)/roms/assemblify --section '.apple2_rom' '$<' '$@'
 
 kernel/%:
 	$(MAKE) -C kernel "$*"
@@ -57,3 +48,7 @@ $(srcdir)/roms/%.rom:
 roms/%_rom.s: $(srcdir)/roms/%.rom $(srcdir)/roms/assemblify
 	mkdir -p roms
 	$(srcdir)/roms/assemblify --section '.apple2_rom' '$<' '$@'
+
+roms/%_bin.s: $(srcdir)/roms/%.bin $(srcdir)/roms/assemblify
+	mkdir -p roms
+	$(srcdir)/roms/assemblify --section '.charset' '$<' '$@'
