@@ -644,6 +644,7 @@ generate
 endgenerate
 
 always_ff@(posedge ctrl_cpu_clock) begin
+    leds[0] <= gp_out[0][GPIO_OUT0__DISPLAY8_RESET];
     leds[1] <= gp_out[0][GPIO_OUT0__6502_RESET];
 end
 
