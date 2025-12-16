@@ -52,3 +52,7 @@ roms/%_rom.s: $(srcdir)/roms/%.rom $(srcdir)/roms/assemblify
 roms/%_bin.s: $(srcdir)/roms/%.bin $(srcdir)/roms/assemblify
 	mkdir -p roms
 	$(srcdir)/roms/assemblify --section .rodata --align 16 --symbol '$*' '$<' '$@'
+
+roms/%_bin.s: $(srcdir)/roms/%_rev7.bin $(srcdir)/roms/assemblify
+	mkdir -p roms
+	$(srcdir)/roms/assemblify --section .rodata --reverse7 --align 16 --symbol '$*' '$<' '$@'
