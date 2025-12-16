@@ -51,4 +51,4 @@ roms/%_rom.s: $(srcdir)/roms/%.rom $(srcdir)/roms/assemblify
 
 roms/%_bin.s: $(srcdir)/roms/%.bin $(srcdir)/roms/assemblify
 	mkdir -p roms
-	$(srcdir)/roms/assemblify --section '.charset' '$<' '$@'
+	$(srcdir)/roms/assemblify --section .rodata --align 16 --symbol '$*' '$<' '$@'

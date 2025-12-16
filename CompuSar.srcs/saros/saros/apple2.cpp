@@ -1,5 +1,7 @@
 #include <apple2.h>
 
+#include <apple2_display.h>
+
 #include "8bit_hook.h"
 #include "gpio.h"
 #include "reg.h"
@@ -78,6 +80,7 @@ private:
 } lastKey;
 
 void uartHandler(void *) noexcept {
+    uart_send("Keyboard handling thread started\n");
     while(true) {
         uint32_t ch = uart_recv_char();
 
@@ -118,7 +121,10 @@ void start_8bit() {
     memset(reinterpret_cast<void *>(ROMS_BASE + IO_SLOTS_ROM_BASE), 0xff, 256*7 + 256*8);
     memset(reinterpret_cast<void *>(ROMS_BASE + IO_BASE), 0x00, 256);
 
-    // Fill main memory with junk
+    Display::initDisplay(Display::charset_us);
+
+    // Fill main memory with junk so it registers as a cold boot
+    uart_send("Seed memory\n");
     for( auto ptr = reinterpret_cast<uint32_t *>(BANK0_BASE); ptr != reinterpret_cast<uint32_t *>(BANK0_BASE + 64*1024); ++ptr )
         *ptr = 0xff00ff00;
 
@@ -126,9 +132,9 @@ void start_8bit() {
 
     saros.enableSoftwareInterrupt();
 
-    // Take 6502, the clock divider and display out of reset
+    // Take the 6502 and the clock divider out of reset
     uart_send("Start the Apple II\n");
-    reset_gpio_bits(0, GPIO0__6502_RESET | GPIO0__FREQ_DIV_RESET | GPIO0__DISPLAY8_RESET);
+    reset_gpio_bits(0, GPIO0__6502_RESET | GPIO0__FREQ_DIV_RESET);
 }
 
 union IoOp {

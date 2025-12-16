@@ -44,11 +44,6 @@ SECTIONS
         *(.rodata*)
     } >readonly
 
-    .charset : ALIGN(16) {
-        charsetUs = .;
-        charset_us_bin.o (.charset);
-    } >readonly
-
     # Must be last section in the read only memory
     # All s* sections need to be grouped together.
     .srodata : ALIGN(16) {

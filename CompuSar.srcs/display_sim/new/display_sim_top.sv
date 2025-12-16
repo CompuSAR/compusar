@@ -176,14 +176,14 @@ initial begin
 
     @(negedge cpu_clock);
     ctrl_req_addr = 16'hf000;           // Char rom char 0 top
-    ctrl_req_data = 32'haa55aa55;
+    ctrl_req_data = 32'h01020408;
     do
         @(posedge cpu_clock);
     while( !ctrl_req_ack );
 
     @(negedge cpu_clock);
-    ctrl_req_addr = 16'hf001;           // Char rom char 0 bottom
-    ctrl_req_data = 32'haa55aa55;
+    ctrl_req_addr = 16'hf004;           // Char rom char 0 bottom
+    ctrl_req_data = 32'h10204080;
     do
         @(posedge cpu_clock);
     while( !ctrl_req_ack );

@@ -21,12 +21,12 @@ enum class DisplayPage {
 using CharSet = std::array< CharBitmap, 128 >;
 
 namespace {
-    extern "C" const CharSet charsetUs;
+    extern "C" const CharSet charset_us;
 }
 
-void initDisplay(const CharSet *charset);
+void initDisplay(const CharSet &charset);
 
-void loadCharset(const CharSet *charset);
+void loadCharset(const CharSet &charset);
 
 void textMode(DisplayPage page, bool mode_80col);
 

@@ -33,7 +33,7 @@ module display_8bit# (
 );
 
 localparam PIXEL_ON_COLOR = 24'hffffff;
-localparam PIXEL_OFF_COLOR = 24'h000000;
+localparam PIXEL_OFF_COLOR = 24'h111111;
 
 // Registers
 
@@ -55,17 +55,17 @@ logic charrom_read_enable;
 
 always_comb begin
     charrom_read_enable = frame_char_lookup_fill!=0;
-charrom_read_addr = {1'b0, frame_data[PIPELINE_CHAR_LOOKUP][7:0], frame_char_lookup_line};
+charrom_read_addr = {2'b0, frame_data[PIPELINE_CHAR_LOOKUP][6:0], frame_char_lookup_line};
 end
 
 character_rom character_rom(
-    .clka(pixel_clock_i),
+    .clka(ctrl_clock_i),
     .addra(charrom_write_addr),
     .dina(charrom_write_data),
     .ena(charrom_write_enable),
     .wea(1'b1),
 
-    .clkb(pixel_clock_i),
+    .clkb(ctrl_clock_i),
     .addrb(charrom_read_addr),
     .doutb(charrom_read_data),
     .enb(charrom_read_enable)
@@ -90,7 +90,7 @@ always_ff@(posedge ctrl_clock_i) begin
             16'h8014: display_mode <= ctrl_req_data_i;
             16'hfxxx: begin
                 charrom_write_data <= ctrl_req_data_i;
-                charrom_write_addr <= ctrl_req_addr_i;
+                charrom_write_addr <= ctrl_req_addr_i[11:2];
                 charrom_write_enable <= 1'b1;
             end
         endcase
@@ -342,7 +342,7 @@ always_comb begin
     pixel_y = frame_y_out;
 end
 
-always_ff@(pixel_clock_i) begin
+always_ff@(posedge pixel_clock_i) begin
     if( frame_data_out_valid && pixel_ack ) begin
         frame_data_out <= { 1'bX, frame_data_out[BUFFER_PIXELS-1:1] };
         frame_data_out_fill <= frame_data_out_fill - 1;

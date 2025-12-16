@@ -1,9 +1,12 @@
 #include <apple2_display.h>
 
 #include <apple2.h>
+
 #include <display.h>
+#include <format.h>
 #include <gpio.h>
 #include <reg.h>
+#include <uart.h>
 
 using Display::DeviceId;
 
@@ -29,7 +32,7 @@ static constexpr uint16_t BaseAddr_Text2 = 0x0800;
 static constexpr uint16_t BaseAddr_Hgr1 = 0x2000;
 static constexpr uint16_t BaseAddr_Hgr2 = 0x4000;
 
-void initDisplay(const CharSet *charset) {
+void initDisplay(const CharSet &charset) {
     static constexpr uint32_t DISPLAY_RES_X = 640;
     static constexpr uint32_t DISPLAY_RES_Y = 480;
     static constexpr uint32_t APPLE_RES_X = 40 * 7 * 2; // 40 chars, 7 pixels per char, double pixels = 560
@@ -45,12 +48,14 @@ void initDisplay(const CharSet *charset) {
     loadCharset(charset);
 
     reset_gpio_bits(0, GPIO0__DISPLAY8_RESET);
+
+    uart_send("Display started\n");
 }
 
-void loadCharset(const CharSet *charset) {
+void loadCharset(const CharSet &charset) {
     uint32_t offset = Reg__CharRomBase;
 
-    for(auto &charDef : *charset) {
+    for(auto &charDef : charset) {
         reg_write_32( DeviceId, offset, charDef.raw[0] );
         offset += sizeof(uint32_t);
         reg_write_32( DeviceId, offset, charDef.raw[1] );

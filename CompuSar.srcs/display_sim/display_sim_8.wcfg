@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="16,618,831.218 ns"></ZoomStartTime>
-      <ZoomEndTime time="16,623,304.718 ns"></ZoomEndTime>
-      <Cursor1Time time="16,622,559.134 ns"></Cursor1Time>
+      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="2,128.001 ns"></ZoomEndTime>
+      <Cursor1Time time="112.166 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="220"></NameColumnWidth>
-      <ValueColumnWidth column_width="201"></ValueColumnWidth>
+      <ValueColumnWidth column_width="197"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="53" />
+   <WVObjectSize size="65" />
    <wvobject type="logic" fp_name="/display_sim_top/cpu_clock">
       <obj_property name="ElementShortName">cpu_clock</obj_property>
       <obj_property name="ObjectShortName">cpu_clock</obj_property>
@@ -120,6 +120,22 @@
       <obj_property name="ElementShortName">base_display_y[9:0]</obj_property>
       <obj_property name="ObjectShortName">base_display_y[9:0]</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/display_sim_top/display/display_8bit/charrom_write_addr">
+      <obj_property name="ElementShortName">charrom_write_addr[11:0]</obj_property>
+      <obj_property name="ObjectShortName">charrom_write_addr[11:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display_sim_top/display/display_8bit/charrom_write_data">
+      <obj_property name="ElementShortName">charrom_write_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">charrom_write_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display_sim_top/display/display_8bit/charrom_write_enable">
+      <obj_property name="ElementShortName">charrom_write_enable</obj_property>
+      <obj_property name="ObjectShortName">charrom_write_enable</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display_sim_top/display/display_8bit/character_rom/inst/\native_mem_module.blk_mem_gen_v8_4_11_inst /memory">
+      <obj_property name="ElementShortName">memory[0:4095][7:0]</obj_property>
+      <obj_property name="ObjectShortName">memory[0:4095][7:0]</obj_property>
+   </wvobject>
    <wvobject type="array" fp_name="/display_sim_top/display/display_8bit/current_x">
       <obj_property name="ElementShortName">current_x[9:0]</obj_property>
       <obj_property name="ObjectShortName">current_x[9:0]</obj_property>
@@ -153,6 +169,18 @@
    <wvobject type="array" fp_name="/display_sim_top/display/display_8bit/frame_y">
       <obj_property name="ElementShortName">frame_y[0:4][9:0]</obj_property>
       <obj_property name="ObjectShortName">frame_y[0:4][9:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display_sim_top/display/display_8bit/charrom_read_addr">
+      <obj_property name="ElementShortName">charrom_read_addr[11:0]</obj_property>
+      <obj_property name="ObjectShortName">charrom_read_addr[11:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display_sim_top/display/display_8bit/charrom_read_data">
+      <obj_property name="ElementShortName">charrom_read_data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">charrom_read_data[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display_sim_top/display/display_8bit/charrom_read_enable">
+      <obj_property name="ElementShortName">charrom_read_enable</obj_property>
+      <obj_property name="ObjectShortName">charrom_read_enable</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/display_sim_top/display/hdmi/clk_pixel_o">
       <obj_property name="ElementShortName">clk_pixel_o</obj_property>
@@ -209,10 +237,34 @@
    <wvobject type="array" fp_name="/display_sim_top/display/aggregator/pixel8_x">
       <obj_property name="ElementShortName">pixel8_x[9:0]</obj_property>
       <obj_property name="ObjectShortName">pixel8_x[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/display_sim_top/display/aggregator/pixel8_y">
       <obj_property name="ElementShortName">pixel8_y[9:0]</obj_property>
       <obj_property name="ObjectShortName">pixel8_y[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display_sim_top/display/aggregator/shift8">
+      <obj_property name="ElementShortName">shift8</obj_property>
+      <obj_property name="ObjectShortName">shift8</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display_sim_top/display/aggregator/buffered_pixel8">
+      <obj_property name="ElementShortName">buffered_pixel8[23:0]</obj_property>
+      <obj_property name="ObjectShortName">buffered_pixel8[23:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display_sim_top/display/aggregator/buffered8_x">
+      <obj_property name="ElementShortName">buffered8_x[9:0]</obj_property>
+      <obj_property name="ObjectShortName">buffered8_x[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/display_sim_top/display/aggregator/buffered8_y">
+      <obj_property name="ElementShortName">buffered8_y[9:0]</obj_property>
+      <obj_property name="ObjectShortName">buffered8_y[9:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/display_sim_top/display/aggregator/buffered_pixel8_valid">
+      <obj_property name="ElementShortName">buffered_pixel8_valid</obj_property>
+      <obj_property name="ObjectShortName">buffered_pixel8_valid</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/display_sim_top/display/aggregator/rgb">
       <obj_property name="ElementShortName">rgb[23:0]</obj_property>
