@@ -33,7 +33,7 @@ module display_8bit# (
 );
 
 localparam PIXEL_ON_COLOR = 24'hffffff;
-localparam PIXEL_OFF_COLOR = 24'h111111;
+localparam PIXEL_OFF_COLOR = 24'h000000;
 
 // Registers
 
@@ -50,12 +50,41 @@ logic [11:0] charrom_write_addr;
 logic charrom_write_enable = 1'b0;
 
 logic [11:0] charrom_read_addr;
-logic [7:0] charrom_read_data;
+logic [7:0] charrom_read_data, charrom_read_data_inversed;
 logic charrom_read_enable;
+logic inverse_char = 1'b0, next_inverse_char;
+logic signed [5:0] flash_counter = 0;
 
+localparam FLASH_COUNTER_LOW = -14;
+localparam FLASH_COUNTER_HIGH = 14;
+
+assign charrom_read_data_inversed = charrom_read_data ^ (inverse_char ? 7'b1111111 : 7'b0000000);
+
+logic [7:0] current_char, lookup_char;
 always_comb begin
     charrom_read_enable = frame_char_lookup_fill!=0;
-charrom_read_addr = {2'b0, frame_data[PIPELINE_CHAR_LOOKUP][6:0], frame_char_lookup_line};
+    current_char = frame_data[PIPELINE_CHAR_LOOKUP][7:0];
+
+    casex(current_char[7:6])
+        2'b00: begin
+            lookup_char = { 2'b00, current_char[5:0] };
+            next_inverse_char = 1'b1;
+        end
+        2'b01: begin
+            lookup_char = { 2'b00, current_char[5:0] };
+            next_inverse_char = flash_counter[4];
+        end
+        2'b1x: begin
+            lookup_char = { 1'b0, current_char[6:0] };
+            next_inverse_char = 1'b0;
+        end
+    endcase
+
+    charrom_read_addr = {1'b0, lookup_char, frame_char_lookup_line};
+end
+
+always_ff@(posedge ctrl_clock_i) begin
+    inverse_char <= next_inverse_char;
 end
 
 character_rom character_rom(
@@ -263,7 +292,7 @@ task do_cpu_cycle();
 
     if( frame_data_valid[PIPELINE_CHAR_LOOKUP] && !frame_char_lookup_fill[3] ) begin
         // We have the lookup results ready
-        frame_data[PIPELINE_CDC_CPU] <= { charrom_read_data, frame_data[PIPELINE_CDC_CPU][REQ_BUS_BITS-1:8] };
+        frame_data[PIPELINE_CDC_CPU] <= { charrom_read_data_inversed, frame_data[PIPELINE_CDC_CPU][REQ_BUS_BITS-1:8] };
 
         if( frame_char_lookup_fill==0 ) begin
             frame_data_valid[PIPELINE_CHAR_LOOKUP] <= 1'b0;
@@ -292,8 +321,13 @@ always_ff@(posedge ctrl_clock_i) begin
     else
         do_cpu_cycle();
 
-    if( vsync_i && !prev_vsync )
+    if( vsync_i && !prev_vsync ) begin
         screen_pos_vert <= 0;
+
+        flash_counter <= flash_counter + 1;
+        if( flash_counter==FLASH_COUNTER_HIGH )
+            flash_counter <= FLASH_COUNTER_LOW;
+    end
 end
 
 xpm_cdc_handshake#(
