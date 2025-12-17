@@ -54,6 +54,7 @@ logic [7:0] charrom_read_data, charrom_read_data_inversed;
 logic charrom_read_enable;
 logic inverse_char = 1'b0, next_inverse_char;
 logic signed [5:0] flash_counter = 0;
+logic interlace_counter = 1'b0;
 
 localparam FLASH_COUNTER_LOW = -14;
 localparam FLASH_COUNTER_HIGH = 14;
@@ -221,7 +222,7 @@ task do_reset();
     screen_pos_horiz <= 0;
     screen_pos_vert <= SCREEN_LINES;    // Marks display_done until we're out of reset
     frame_x[PIPELINE_DMA] <= base_display_x;
-    frame_y[PIPELINE_DMA] <= base_display_y;
+    frame_y[PIPELINE_DMA] <= base_display_y + interlace_counter;
     screen_third_bias <= 0;
 
     frame_data_valid[PIPELINE_DMA] <= 1'b0;
@@ -327,6 +328,7 @@ always_ff@(posedge ctrl_clock_i) begin
         flash_counter <= flash_counter + 1;
         if( flash_counter==FLASH_COUNTER_HIGH )
             flash_counter <= FLASH_COUNTER_LOW;
+        interlace_counter <= ~interlace_counter;
     end
 end
 
