@@ -32,6 +32,8 @@ module display_8bit# (
     input pixel_ack
 );
 
+enum { SCANLINES, INTERLACE, DOUBLE, SQUISH } DisplayMethod = DOUBLE;
+
 localparam PIXEL_ON_COLOR = 24'hffffff;
 localparam PIXEL_OFF_COLOR = 24'h000000;
 
@@ -162,7 +164,7 @@ localparam PIXELS_PER_BYTE = 7;
 localparam FETCH_PIXELS = REQ_BUS_BYTES*PIXELS_PER_BYTE*2;
 
 // Skip every other line
-localparam Y_SPACING = 2;
+localparam Y_SPACING = (DisplayMethod==DOUBLE || DisplayMethod==SQUISH) ? 1 : 2;
 
 logic [REQ_BUS_BITS-1:0] frame_data[PIPELINE_STAGES], pixel_cdc_data;
 logic [PIPELINE_STAGES-1:0] frame_data_valid = 0;
@@ -175,19 +177,20 @@ logic [COORDINATE_WIDTH-1:0] current_x, current_y;
 
 localparam SCREEN_LINE_BYTES = 40;
 localparam SCREEN_LINES = 24 * 8;
+localparam SCREEN_LINES_VALUE = SCREEN_LINES << 1;      // With line doubling
 logic [$clog2(3*SCREEN_LINE_BYTES+1)-1:0] screen_third_bias;    // Byte offset a result of the third of the screen we're in
 logic [$clog2(SCREEN_LINE_BYTES)-1:0] screen_pos_horiz;
-logic [$clog2(SCREEN_LINES)-1:0] screen_pos_vert = SCREEN_LINES;
+logic [$clog2(SCREEN_LINES_VALUE+1)-1:0] screen_pos_vert = SCREEN_LINES_VALUE;
 
 wire [2:0] screen_pos_line_in_char;
-assign screen_pos_line_in_char = screen_pos_vert[2:0];
+assign screen_pos_line_in_char = screen_pos_vert[3:1];
 wire [2:0] screen_pos_char_line_in_third;
-assign screen_pos_char_line_in_third = screen_pos_vert[5:3];
+assign screen_pos_char_line_in_third = screen_pos_vert[6:4];
 wire [1:0] screen_pos_third;
-assign screen_pos_third = screen_pos_vert[7:6];
+assign screen_pos_third = screen_pos_vert[8:7];
 
 wire display_done;
-assign display_done = screen_pos_vert == SCREEN_LINES;
+assign display_done = screen_pos_vert == SCREEN_LINES_VALUE;
 
 logic [31:0] dma_addr_offset;
 
@@ -220,9 +223,9 @@ task do_reset();
     current_x <= 0;
     current_y <= 0;
     screen_pos_horiz <= 0;
-    screen_pos_vert <= SCREEN_LINES;    // Marks display_done until we're out of reset
+    screen_pos_vert <= SCREEN_LINES_VALUE;    // Marks display_done until we're out of reset
     frame_x[PIPELINE_DMA] <= base_display_x;
-    frame_y[PIPELINE_DMA] <= base_display_y + interlace_counter;
+    frame_y[PIPELINE_DMA] <= base_display_y + (DisplayMethod == INTERLACE ? interlace_counter : 0);
     screen_third_bias <= 0;
 
     frame_data_valid[PIPELINE_DMA] <= 1'b0;
@@ -238,11 +241,11 @@ task advance_addr();
     if( screen_pos_horiz == SCREEN_LINE_BYTES - REQ_BUS_BYTES ) begin
         // Next line
         screen_pos_horiz <= 0;
-        screen_pos_vert <= screen_pos_vert + 1;
+        screen_pos_vert <= screen_pos_vert + (DisplayMethod==DOUBLE ? 1 : 2);
         current_x <= 0;
         current_y <= current_y + Y_SPACING;
 
-        if( screen_pos_vert[5:0] == 6'h3f ) begin
+        if( screen_pos_vert[6:0] == 7'h7f || (screen_pos_vert[6:0] == 7'h7e && DisplayMethod!=DOUBLE) ) begin
             // We're switching a third
             screen_third_bias <= screen_third_bias + SCREEN_LINE_BYTES;
         end
