@@ -1,0 +1,40 @@
+#!/usr/bin/python3
+
+import sys
+
+def print_row_helper(row, range):
+    print("  ", end='')
+
+    for bit in range:
+        if (row & (1<<bit)) != 0:
+            print("#", end='')
+        else:
+            print(".", end='')
+
+def print_row_lsb(row):
+    print_row_helper(row, range(0,8))
+
+def print_row_msb(row):
+    print_row_helper(row, range(7,-1,-1))
+
+charromfile = sys.argv[1]
+with open(charromfile, mode='rb') as charrom:
+    currentchar = 0
+    chardata = [b'1']
+    while True:
+        chardata = charrom.read(8)
+
+        if len(chardata)!=8:
+            break
+
+        print(f"{currentchar:02x}")
+        currentchar = currentchar+1
+
+        for row in chardata:
+            print_row_lsb(row)
+            print_row_msb(row)
+            print_row_lsb(~row)
+            print_row_msb(~row)
+            print()
+
+        print()
