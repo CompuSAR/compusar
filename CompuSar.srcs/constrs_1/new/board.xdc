@@ -39,6 +39,15 @@ set_property PACKAGE_PIN P21 [get_ports {spi_dq[2]}]
 set_property PACKAGE_PIN R21 [get_ports {spi_dq[3]}]
 set_property IOSTANDARD LVCMOS33 [get_ports spi_*]
 
+set_property PACKAGE_PIN N15 [get_ports sd_clk]
+set_property PACKAGE_PIN P15 [get_ports sd_cmd]
+set_property PACKAGE_PIN P16 [get_ports sd_data[0]]
+set_property PACKAGE_PIN R17 [get_ports sd_data[1]]
+set_property PACKAGE_PIN N14 [get_ports sd_data[2]]
+set_property PACKAGE_PIN N13 [get_ports sd_data[3]]
+set_property PACKAGE_PIN R16 [get_ports sd_card_detect_n]
+set_property IOSTANDARD LVCMOS33 [get_ports sd_*]
+
 ############ Numeric display ############
 set_property PACKAGE_PIN H4 [get_ports {numeric_segments_n[0]}]
 set_property PACKAGE_PIN K3 [get_ports {numeric_segments_n[1]}]
@@ -71,6 +80,7 @@ set_property BITSTREAM.CONFIG.CONFIGRATE 50 [current_design]
 set_false_path -from [get_ports switches*]
 set_false_path -from [get_ports nReset]
 set_false_path -from [get_ports uart_rx]
+set_false_path -from [get_ports sd_card_detect_n]
 
 set_false_path -to [get_ports uart_tx]
 set_false_path -to [get_ports leds*]

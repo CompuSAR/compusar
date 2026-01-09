@@ -40,6 +40,12 @@ module top
     output                  spi_clk,
 `endif
 
+    // SD card
+    inout                   sd_cmd,
+    inout [3:0]             sd_data,
+    output                  sd_clk,
+    input                   sd_card_detect_n,
+
     // DDR3 SDRAM
     output  wire            ddr3_reset_n,
     output  wire    [0:0]   ddr3_cke,
