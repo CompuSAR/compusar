@@ -33,20 +33,34 @@ initial begin
     end
 end
 
-logic reset=1'b0, valid=1'b0, value;
-logic [6:0] current_crc;
+logic reset=1'b0, valid7=1'b0, valid16=1'b0, value;
+logic [6:0] current_crc7;
+logic [15:0] current_crc16;
 
 crc#(
     .CRC_BITS(7),
     .INIT_VALUE(7'b0),
     .POLYNOM(7'b0001001)
-) crc(
+) crc7(
     .clock_i(clock),
     .reset_i(reset),
-    .bit_valid_i(valid),
+    .bit_valid_i(valid7),
     .bit_i(value),
 
-    .crc_o(current_crc)
+    .crc_o(current_crc7)
+);
+
+crc#(
+    .CRC_BITS(16),
+    .INIT_VALUE(7'b0),
+    .POLYNOM(16'b0001000000100001)
+) crc16(
+    .clock_i(clock),
+    .reset_i(reset),
+    .bit_valid_i(valid16),
+    .bit_i(value),
+
+    .crc_o(current_crc16)
 );
 
 // These sample calculations are from the SD simplified specs
@@ -56,7 +70,7 @@ logic [39:0] test_value = 40'b0001000100000000000000000000100100000000; // CRC s
 
 initial begin
     reset = 1'b1;
-    valid = 1'b0;
+    valid7 = 1'b0;
 
     @(posedge clock);
     @(posedge clock);
@@ -68,11 +82,29 @@ initial begin
 
     for( int i=0; i<40; ++i ) begin
         @(negedge clock);
-        valid = 1'b1;
+        valid7 = 1'b1;
         value = test_value[39-i];
     end
 
-    @(negedge clock) valid = 1'b0;
+    @(negedge clock) valid7 = 1'b0;
+
+    @(posedge clock);
+    @(posedge clock);
+    reset = 1'b1;
+    @(posedge clock);
+    @(posedge clock);
+    @(posedge clock);
+    reset = 1'b0;
+    @(posedge clock);
+
+    for( int i=0; i<512*8; ++i ) begin
+        @(negedge clock);
+        valid16 = 1'b1;
+        value = 1'b1;
+    end
+    @(negedge clock) valid16 = 1'b0;
+
+    // According to the SD specs, CRC should be 16'h7fa1;
 end
 
 endmodule
