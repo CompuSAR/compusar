@@ -33,18 +33,21 @@ saros.bin: saros.elf$(EXEEXT)
 	$(HOST_TRIPLET)-strip $@.tmp
 	mv $@.tmp $@
 
-$(top_srcdir)/roms/%.rom:
-	wget 'https://github.com/AppleWin/AppleWin/raw/refs/heads/master/resource/$*.rom' -O '$@'.tmp
-	mv '$@.tmp' '$@'
-.PRECIOUS: $(srcdir)/roms/%.rom
-
-$(top_builddir)/roms/%_rom.s: $(top_srcdir)/roms/%.rom $(top_srcdir)/roms/assemblify
-	mkdir -p $(top_builddir)/roms
-	$(top_srcdir)/roms/assemblify --section '.apple2_rom' '$<' '$@'
-
 kernel/%:
 	$(MAKE) -C kernel "$*"
 
 assets/%.cpp assets/%.h: $(srcdir)/assets/%.png $(top_srcdir)/tools/png2source
 	mkdir -p assets
 	$(top_srcdir)/tools/png2source $< assets/$*.cpp
+
+roms/%_rom.s: $(srcdir)/roms/%.rom $(srcdir)/roms/assemblify
+	mkdir -p roms
+	$(srcdir)/roms/assemblify --section '.apple2_rom' '$<' '$@'
+
+roms/%_bin.s: $(srcdir)/roms/%.bin $(srcdir)/roms/assemblify
+	mkdir -p roms
+	$(srcdir)/roms/assemblify --section .rodata --align 16 --symbol '$*' '$<' '$@'
+
+roms/%_bin.s: $(srcdir)/roms/%_rev7.bin $(srcdir)/roms/assemblify
+	mkdir -p roms
+	$(srcdir)/roms/assemblify --section .rodata --reverse7 --align 16 --symbol '$*' '$<' '$@'

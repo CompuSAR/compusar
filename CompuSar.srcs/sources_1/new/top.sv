@@ -73,8 +73,6 @@ localparam SIM_MODE = 0;
 localparam SIM_MODE = 1;
 `endif
 
-//localparam CTRL_CLOCK_HZ = 101041667;
-//localparam CTRL_CLOCK_HZ = 86607143;
 localparam CTRL_CLOCK_HZ = 75781250;
 localparam UART_BAUD = 115200;
 
@@ -524,8 +522,6 @@ timer_int_ctrl#(.CLOCK_HZ(CTRL_CLOCK_HZ)) interrupt_controller(
     .ctrl_software_interrupt_i(ctrl_software_interrupt)
 );
 
-wire [31:0]gp_out[GPIO_OUT_PORTS];
-
 wire [3:0]buffered_switches;
 
 input_delay#(.NUM_BITS(4)) switches_delay(
@@ -533,6 +529,8 @@ input_delay#(.NUM_BITS(4)) switches_delay(
     .in(switches),
     .out(buffered_switches)
 );
+
+wire [31:0]gp_out[GPIO_OUT_PORTS];
 
 gpio#(
     .NUM_IN_PORTS(GPIO_IN_PORTS),
