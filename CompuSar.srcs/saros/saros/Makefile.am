@@ -5,6 +5,8 @@ AM_CXXFLAGS=$(ARCH) $(ABI)
 AM_CFLAGS=$(ARCH) $(ABI)
 AM_CPPFLAGS=-I$(top_srcdir)/include -DSAROS
 
+ASSEMBLIFY=$(top_srcdir)/tools/assemblify
+
 REMOVED_SECTIONS=
 TOOLCHAIN_PATH=/opt/riscv
 TOOLCHAIN_LIB_PATH=$(TOOLCHAIN_PATH)/lib/gcc/$(HOST_TRIPLET)/14.2.0
@@ -45,14 +47,14 @@ $(srcdir)/roms/%.rom:
 	mv '$@.tmp' '$@'
 .PRECIOUS: $(srcdir)/roms/%.rom
 
-roms/%_rom.s: $(srcdir)/roms/%.rom $(srcdir)/roms/assemblify
+roms/%_rom.s: $(srcdir)/roms/%.rom $(ASSEMBLIFY)
 	mkdir -p roms
-	$(srcdir)/roms/assemblify --section '.apple2_rom' '$<' '$@'
+	$(ASSEMBLIFY) --section '.apple2_rom' '$<' '$@'
 
-roms/%_bin.s: $(srcdir)/roms/%.bin $(srcdir)/roms/assemblify
+roms/%_bin.s: $(srcdir)/roms/%.bin $(ASSEMBLIFY)
 	mkdir -p roms
-	$(srcdir)/roms/assemblify --section .rodata --align 16 --symbol '$*' '$<' '$@'
+	$(ASSEMBLIFY) --section .rodata --align 16 --symbol '$*' '$<' '$@'
 
-roms/%_bin.s: $(srcdir)/roms/%_rev7.bin $(srcdir)/roms/assemblify
+roms/%_bin.s: $(srcdir)/roms/%_rev7.bin $(ASSEMBLIFY)
 	mkdir -p roms
-	$(srcdir)/roms/assemblify --section .rodata --reverse7 --align 16 --symbol '$*' '$<' '$@'
+	$(ASSEMBLIFY) --section .rodata --reverse7 --align 16 --symbol '$*' '$<' '$@'
