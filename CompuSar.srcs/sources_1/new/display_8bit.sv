@@ -32,7 +32,8 @@ module display_8bit# (
     input pixel_ack
 );
 
-enum { SCANLINES, INTERLACE, DOUBLE, SQUISH } DisplayMethod = DOUBLE;
+const enum { SCANLINES, INTERLACE, DOUBLE, SQUISH } dummy_var = DOUBLE;
+localparam DisplayMethod = DOUBLE;
 
 localparam PIXEL_ON_COLOR = 24'hffffff;
 localparam PIXEL_OFF_COLOR = 24'h000000;

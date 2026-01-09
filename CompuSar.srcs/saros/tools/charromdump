@@ -27,10 +27,11 @@ with open(charromfile, mode='rb') as charrom:
         if len(chardata)!=8:
             break
 
-        print(f"{currentchar:02x}")
+        print(f"{currentchar:02x}:")
         currentchar = currentchar+1
 
         for row in chardata:
+            print(f"{row:02x}  ", end='')
             print_row_lsb(row)
             print_row_msb(row)
             print_row_lsb(~row)
