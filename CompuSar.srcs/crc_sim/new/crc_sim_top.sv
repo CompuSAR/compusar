@@ -1,0 +1,78 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 01/09/2026 07:21:52 PM
+// Design Name: 
+// Module Name: crc_sim_top
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module crc_sim_top(
+    );
+
+logic clock;
+
+initial begin
+    clock = 1'b0;
+    forever begin
+        #20 clock = 1'b1;
+        #20 clock = 1'b0;
+    end
+end
+
+logic reset=1'b0, valid=1'b0, value;
+logic [6:0] current_crc;
+
+crc#(
+    .CRC_BITS(7),
+    .INIT_VALUE(7'b0),
+    .POLYNOM(7'b0001001)
+) crc(
+    .clock_i(clock),
+    .reset_i(reset),
+    .bit_valid_i(valid),
+    .bit_i(value),
+
+    .crc_o(current_crc)
+);
+
+// These sample calculations are from the SD simplified specs
+//logic [39:0] test_value = 40'b0100000000000000000000000000000000000000; // CRC should be 1001010
+//logic [39:0] test_value = 40'b0101000100000000000000000000000000000000; // CRC should be 0101010
+logic [39:0] test_value = 40'b0001000100000000000000000000100100000000; // CRC should be 0110011
+
+initial begin
+    reset = 1'b1;
+    valid = 1'b0;
+
+    @(posedge clock);
+    @(posedge clock);
+
+    reset = 1'b0;
+
+    @(posedge clock);
+    @(posedge clock);
+
+    for( int i=0; i<40; ++i ) begin
+        @(negedge clock);
+        valid = 1'b1;
+        value = test_value[39-i];
+    end
+
+    @(negedge clock) valid = 1'b0;
+end
+
+endmodule
