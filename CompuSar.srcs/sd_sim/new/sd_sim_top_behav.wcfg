@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="sd_sim_top_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="sd_sim_top" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="2,753.800 ns"></ZoomStartTime>
+      <ZoomEndTime time="2,918.501 ns"></ZoomEndTime>
+      <Cursor1Time time="2,820.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="148"></NameColumnWidth>
+      <ValueColumnWidth column_width="81"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="13" />
+   <wvobject type="logic" fp_name="/sd_sim_top/sd_clk_default">
+      <obj_property name="ElementShortName">sd_clk_default</obj_property>
+      <obj_property name="ObjectShortName">sd_clk_default</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd_clk_high">
+      <obj_property name="ElementShortName">sd_clk_high</obj_property>
+      <obj_property name="ObjectShortName">sd_clk_high</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/ctrl_clk">
+      <obj_property name="ElementShortName">ctrl_clk</obj_property>
+      <obj_property name="ObjectShortName">ctrl_clk</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/req_valid">
+      <obj_property name="ElementShortName">req_valid</obj_property>
+      <obj_property name="ObjectShortName">req_valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/req_ack">
+      <obj_property name="ElementShortName">req_ack</obj_property>
+      <obj_property name="ObjectShortName">req_ack</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/req_write">
+      <obj_property name="ElementShortName">req_write</obj_property>
+      <obj_property name="ObjectShortName">req_write</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/rsp_valid">
+      <obj_property name="ElementShortName">rsp_valid</obj_property>
+      <obj_property name="ObjectShortName">rsp_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/req_addr">
+      <obj_property name="ElementShortName">req_addr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">req_addr[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/req_data">
+      <obj_property name="ElementShortName">req_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">req_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/rsp_data">
+      <obj_property name="ElementShortName">rsp_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rsp_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd_cmd_drive">
+      <obj_property name="ElementShortName">sd_cmd_drive</obj_property>
+      <obj_property name="ObjectShortName">sd_cmd_drive</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd_cmd_pin">
+      <obj_property name="ElementShortName">sd_cmd_pin</obj_property>
+      <obj_property name="ObjectShortName">sd_cmd_pin</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd_clock">
+      <obj_property name="ElementShortName">sd_clock</obj_property>
+      <obj_property name="ObjectShortName">sd_clock</obj_property>
+   </wvobject>
+</wave_config>
