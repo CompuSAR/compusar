@@ -102,17 +102,29 @@ BUFGMUX clock_switcher(
 );
 assign sd_clk_o = sd_clk;
 
-enum { CMD_IDLE, CMD_SEND_CMD, CMD_SEND_CRC } cmd_state = CMD_IDLE;
+enum {
+    CMD_IDLE = 4'b1000, CMD_SEND_CMD = 4'b0001, CMD_SEND_CRC = 4'b0010, CMD_RECV_PENDING = 4'b1001, CMD_RECV,
+    CMD_RECV_CRC, CMD_RECV_STOP, CMD_RECV_ERR
+ } cmd_state = CMD_IDLE;
+
+localparam CMD_PAYLOAD_SIZE = 40;
+localparam REPLY_PAYLOAD_SIZE = 128 + 6;
+localparam REPLY_WAIT_CYCLES = 20;
+
 wire cmd_crc_reset, cmd_crc_valid;
 logic [31:0] cmd_args_sd;
-logic [39:0] cmd_io_buffer;
-logic [$clog2(40+1)-1:0] cmd_io_buffer_fill;
+logic [5:0] last_cmd_sd;
+logic [1:0] reply_type_sd;
+logic [REPLY_PAYLOAD_SIZE-1:0] cmd_io_buffer;
+logic [$clog2(REPLY_PAYLOAD_SIZE+1)-1:0] cmd_io_buffer_fill;
 
-assign cmd_crc_reset = cmd_state==CMD_IDLE;
-assign cmd_crc_valid = cmd_state==CMD_SEND_CMD;
+assign cmd_crc_reset = cmd_state==CMD_IDLE || cmd_state==CMD_RECV_PENDING;
+assign cmd_crc_valid = cmd_state==CMD_SEND_CMD || cmd_state==CMD_RECV;
 
 localparam CMD_CRC_BITS = 7;
 logic [CMD_CRC_BITS-1:0] cmd_crc_value;
+localparam CMD_REPLY_BITS = 48 - CMD_CRC_BITS - 1;
+localparam CMD_CMD_BITS = 40;
 
 localparam START_BIT = 1'b0;
 localparam STOP_BIT = 1'b1;
@@ -127,44 +139,103 @@ task handle_cmd_idle();
                 cmd_state <= CMD_SEND_CMD;
                 cmd_io_buffer <= { START_BIT, 1'b1, cmd_cdc_data[5:0], cmd_args_sd };
                 cmd_io_buffer_fill <= 39;
+                last_cmd_sd <= cmd_cdc_data[5:0];
+                reply_type_sd <= cmd_cdc_data[9:8];
             end
         endcase
     end
 endtask
 
 task handle_send_cmd();
+    cmd_io_buffer[CMD_CMD_BITS-1:0] <= {cmd_io_buffer[CMD_CMD_BITS-2:0], 1'bX};
+    cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
+
     if( cmd_io_buffer_fill==0 ) begin
         cmd_state <= CMD_SEND_CRC;
-        cmd_io_buffer[39:33] <= cmd_crc_value;
         cmd_io_buffer_fill <= CMD_CRC_BITS-1;
     end
 endtask
 
 task handle_send_crc();
-    if( cmd_io_buffer_fill==0 ) begin
+    cmd_io_buffer[CMD_CMD_BITS-1:0] <= {cmd_io_buffer[CMD_CMD_BITS-2:0], 1'bX};
+    cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
+
+    if( cmd_io_buffer_fill==CMD_CRC_BITS-1 ) begin
+        cmd_io_buffer[CMD_CMD_BITS:CMD_CMD_BITS-CMD_CRC_BITS] <= {1'bX, cmd_crc_value[CMD_CRC_BITS-2:0], 1'bX};
+    end else if( cmd_io_buffer_fill==0 ) begin
+        if( reply_type_sd==2'b00 )
+            cmd_state <= CMD_IDLE;
+        else begin
+            cmd_state <= CMD_RECV_PENDING;
+            cmd_io_buffer_fill <= REPLY_WAIT_CYCLES - 1;
+        end
+    end
+endtask
+
+task handle_recv_pend();
+    cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
+
+    if( sd_cmd_i == 1'b0 ) begin
+        cmd_state <= CMD_RECV;
+        cmd_io_buffer_fill <= CMD_REPLY_BITS - 2;       // -1 for the non-blocking assignment, another because this cycle should also count
+        cmd_io_buffer[0] <= 1'b0;
+
+        // Our CRC calculation doesn't look at this start bit. That's okay,
+        // however, as the CRC's initial value is 0, which means it is
+        // agnostic to leading zeros.
+    end else if( cmd_io_buffer_fill==0 ) begin
+        // XXX Report timeout
         cmd_state <= CMD_IDLE;
     end
+endtask
+
+task handle_recv();
+    cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
+    cmd_io_buffer[CMD_REPLY_BITS-1:0] <= { cmd_io_buffer[CMD_REPLY_BITS-2:0], sd_cmd_i };
+
+    if( cmd_io_buffer_fill == 0 ) begin
+        cmd_state <= CMD_RECV_CRC;
+        cmd_io_buffer_fill <= CMD_CRC_BITS - 1;
+    end
+endtask
+
+task handle_recv_crc();
+    cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
+    cmd_io_buffer[CMD_REPLY_BITS-1:0] <= { cmd_io_buffer[CMD_REPLY_BITS-2:0], sd_cmd_i };
+
+    if( cmd_io_buffer_fill == 0 ) begin
+        cmd_state <= CMD_RECV_STOP;
+    end
+endtask
+
+task handle_recv_stop();
+    cmd_state <= CMD_IDLE;
+
+    //sd_cmd_i == 1'b1;
+
 endtask
 
 always_ff@(posedge sd_clk) begin
     if( cmd_cdc_ack_sd && !cmd_cdc_valid_sd )
         cmd_cdc_ack_sd <= 1'b0;
 
-    if( cmd_state!=CMD_IDLE ) begin
-        cmd_io_buffer <= {cmd_io_buffer[38:0], 1'bX};
-        cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
-    end
-
     case( cmd_state )
         CMD_IDLE: handle_cmd_idle();
         CMD_SEND_CMD: handle_send_cmd();
         CMD_SEND_CRC: handle_send_crc();
+        CMD_RECV_PENDING: handle_recv_pend();
+        CMD_RECV: handle_recv();
+        CMD_RECV_CRC: handle_recv_crc();
+        CMD_RECV_STOP: handle_recv_stop();
     endcase
 end
 
 always_ff@(negedge sd_clk) begin
-    sd_cmd_o <= cmd_io_buffer[39];
-    sd_cmd_dir <= cmd_state == CMD_IDLE;
+    sd_cmd_o <= cmd_io_buffer[CMD_CMD_BITS-1];
+    if( cmd_state==CMD_SEND_CRC && cmd_io_buffer_fill==CMD_CRC_BITS-1 )
+        sd_cmd_o <= cmd_crc_value[CMD_CRC_BITS-1];
+
+    sd_cmd_dir <= cmd_state[3];
 end
 
 crc#(
@@ -172,10 +243,10 @@ crc#(
     .INIT_VALUE(7'b0),
     .POLYNOM(7'b0001001)
 ) cmd_crc(
-    .clock_i(!sd_clk),
+    .clock_i(sd_clk),
     .reset_i(cmd_crc_reset),
     .bit_valid_i(cmd_crc_valid),
-    .bit_i(cmd_io_buffer[39]),
+    .bit_i(sd_cmd_io),
 
     .crc_o(cmd_crc_value)
 );

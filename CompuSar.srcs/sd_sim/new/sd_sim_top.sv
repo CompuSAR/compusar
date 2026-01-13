@@ -110,11 +110,118 @@ initial begin
     #200;
     @(negedge ctrl_clk);
     req_valid = 1'b1;
-    req_data = 17;
+    req_data = 17 | 256;
 
     wait_ctrl_ack();
     @(negedge ctrl_clk);
     req_valid = 1'b0;
+end
+
+enum { CMD_IDLE, CMD_RECV_HEADER, CMD_RECV_CRC, CMD_RECV_STOPBIT } cmd_state = CMD_IDLE;
+logic [47:0] cmd;
+int cmd_counter;
+logic [6:0] cmd_crc_value;
+crc#(
+    .CRC_BITS(7),
+    .INIT_VALUE(7'b0),
+    .POLYNOM(7'b0001001)
+) cmd_crc(
+    .clock_i(sd_clock),
+    .reset_i(cmd_state==CMD_IDLE),
+    .bit_valid_i(cmd_state==CMD_RECV_HEADER),
+    .bit_i(sd_cmd_signal),
+
+    .crc_o(cmd_crc_value)
+);
+
+logic status = 1'b1;
+
+logic verify = 1'b0, reply_active = 1'b0;
+logic [5:0] verify__cmd;
+logic [31:0] verify__args;
+
+task verify_cmd();
+    if( sd_cmd_signal != 1'b1 ) begin
+        $display("CMD STOP bit is not 1");
+        status = 1'bX;
+    end
+
+    if( cmd[45] != 1'b1 ) begin
+        $display("CMD signal bit is not 1");
+        status = 1'bX;
+    end
+
+    if( cmd[6:0] != cmd_crc_value ) begin
+        $display("CMD bad CRC, got ", cmd[6:0], " calculated ", cmd_crc_value);
+        status = 1'bX;
+    end
+
+    verify<=1'b1;
+    verify__cmd<=cmd[44:39];
+    verify__args<=cmd[38:7];
+endtask
+
+always_ff@(posedge sd_clock) begin
+    verify <= 1'b0;
+
+    if( cmd_state != CMD_IDLE ) begin
+        cmd_counter <= cmd_counter - 1;
+        cmd <= { cmd[46:0], sd_cmd_signal };
+    end
+
+    case(cmd_state)
+        CMD_IDLE: begin
+            if(sd_cmd_signal == 1'b0 && !reply_active) begin
+                cmd_state <= CMD_RECV_HEADER;
+                cmd_counter <= 38;
+            end
+        end
+        CMD_RECV_HEADER: begin
+            if( cmd_counter==0 ) begin
+                cmd_state <= CMD_RECV_CRC;
+                cmd_counter <= 6;
+            end
+        end
+        CMD_RECV_CRC: begin
+            if( cmd_counter==0 ) begin
+                cmd_state <= CMD_RECV_STOPBIT;
+            end
+        end
+        CMD_RECV_STOPBIT: begin
+            cmd_state <= CMD_IDLE;
+
+            verify_cmd();
+        end
+    endcase
+end
+
+int reply_count = 0;
+logic [47:0] reply_buffer;
+
+always_ff@(negedge sd_clock) begin
+    if( reply_active ) begin
+        if( reply_count!=0 ) begin
+            reply_count <= reply_count-1;
+            sd_cmd_drive <= reply_buffer[47];
+            reply_buffer <= { reply_buffer[46:0], 1'bX };
+        end else begin
+            reply_count <= 0;
+            sd_cmd_drive <= 1'bz;
+            reply_active <= 1'b0;
+        end
+    end
+
+    if( verify ) begin
+        case(verify__cmd)
+            6'd0: $display("Received CMD0");
+            6'd17: begin
+                reply_active <= 1'b1;
+                $display("Received CMD17");
+                reply_count <= 48;
+                reply_buffer <= 48'b000100010000000000000000000010010000000001100111;
+            end
+        endcase
+    end
 end
 
 endmodule

@@ -11,26 +11,39 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="2,753.800 ns"></ZoomStartTime>
-      <ZoomEndTime time="2,918.501 ns"></ZoomEndTime>
-      <Cursor1Time time="2,820.000 ns"></Cursor1Time>
+      <ZoomStartTime time="7,531.666 ns"></ZoomStartTime>
+      <ZoomEndTime time="9,136.667 ns"></ZoomEndTime>
+      <Cursor1Time time="7,906.666 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="148"></NameColumnWidth>
-      <ValueColumnWidth column_width="81"></ValueColumnWidth>
+      <NameColumnWidth column_width="154"></NameColumnWidth>
+      <ValueColumnWidth column_width="117"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="13" />
+   <WVObjectSize size="29" />
+   <wave_markers>
+      <marker label="" time="4180000" />
+   </wave_markers>
+   <wvobject type="logic" fp_name="/sd_sim_top/status">
+      <obj_property name="ElementShortName">status</obj_property>
+      <obj_property name="ObjectShortName">status</obj_property>
+   </wvobject>
    <wvobject type="logic" fp_name="/sd_sim_top/sd_clk_default">
       <obj_property name="ElementShortName">sd_clk_default</obj_property>
       <obj_property name="ObjectShortName">sd_clk_default</obj_property>
+      <obj_property name="CustomSignalColor">#800080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sd_sim_top/sd_clk_high">
       <obj_property name="ElementShortName">sd_clk_high</obj_property>
       <obj_property name="ObjectShortName">sd_clk_high</obj_property>
+      <obj_property name="CustomSignalColor">#800080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sd_sim_top/ctrl_clk">
       <obj_property name="ElementShortName">ctrl_clk</obj_property>
       <obj_property name="ObjectShortName">ctrl_clk</obj_property>
+      <obj_property name="CustomSignalColor">#800080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sd_sim_top/req_valid">
       <obj_property name="ElementShortName">req_valid</obj_property>
@@ -68,8 +81,77 @@
       <obj_property name="ElementShortName">sd_cmd_pin</obj_property>
       <obj_property name="ObjectShortName">sd_cmd_pin</obj_property>
    </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd_cmd_signal">
+      <obj_property name="ElementShortName">sd_cmd_signal</obj_property>
+      <obj_property name="ObjectShortName">sd_cmd_signal</obj_property>
+   </wvobject>
    <wvobject type="logic" fp_name="/sd_sim_top/sd_clock">
       <obj_property name="ElementShortName">sd_clock</obj_property>
       <obj_property name="ObjectShortName">sd_clock</obj_property>
+      <obj_property name="CustomSignalColor">#800080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_state">
+      <obj_property name="ElementShortName">cmd_state[31:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_state[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_io_buffer">
+      <obj_property name="ElementShortName">cmd_io_buffer[133:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_io_buffer[133:0]</obj_property>
+      <obj_property name="Radix">HEXRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_io_buffer_fill">
+      <obj_property name="ElementShortName">cmd_io_buffer_fill[7:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_io_buffer_fill[7:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd/cmd_crc_reset">
+      <obj_property name="ElementShortName">cmd_crc_reset</obj_property>
+      <obj_property name="ObjectShortName">cmd_crc_reset</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd/cmd_crc_valid">
+      <obj_property name="ElementShortName">cmd_crc_valid</obj_property>
+      <obj_property name="ObjectShortName">cmd_crc_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_crc_value">
+      <obj_property name="ElementShortName">cmd_crc_value[6:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_crc_value[6:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/cmd_state">
+      <obj_property name="ElementShortName">cmd_state[31:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_state[31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#800000</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/cmd_counter">
+      <obj_property name="ElementShortName">cmd_counter[31:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_counter[31:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/cmd_crc_value">
+      <obj_property name="ElementShortName">cmd_crc_value[6:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_crc_value[6:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/verify">
+      <obj_property name="ElementShortName">verify</obj_property>
+      <obj_property name="ObjectShortName">verify</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/verify__cmd">
+      <obj_property name="ElementShortName">verify__cmd[5:0]</obj_property>
+      <obj_property name="ObjectShortName">verify__cmd[5:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/verify__args">
+      <obj_property name="ElementShortName">verify__args[31:0]</obj_property>
+      <obj_property name="ObjectShortName">verify__args[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/reply_count">
+      <obj_property name="ElementShortName">reply_count[31:0]</obj_property>
+      <obj_property name="ObjectShortName">reply_count[31:0]</obj_property>
+      <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/reply_buffer">
+      <obj_property name="ElementShortName">reply_buffer[47:0]</obj_property>
+      <obj_property name="ObjectShortName">reply_buffer[47:0]</obj_property>
    </wvobject>
 </wave_config>
