@@ -12,7 +12,7 @@ module sd#(
     input [31:0] ctrl_req_data_i,
     output ctrl_req_ack_o,
 
-    output logic ctrl_rsp_valid_o,
+    output logic ctrl_rsp_valid_o = 1'b0,
     output logic [31:0] ctrl_rsp_data_o,
 
     output ctrl_irq_o,
@@ -51,9 +51,28 @@ logic cmd_cdc_valid_ctrl = 1'b0, cmd_cdc_valid_sd, cmd_cdc_ack_ctrl, cmd_cdc_ack
 // Only accept new commands if our CDC is idle
 assign ctrl_req_ack_o = !cmd_cdc_valid_ctrl && !cmd_cdc_ack_ctrl;
 
+localparam REPLY_ERROR_TIMEOUT = 4'b0001;
+localparam REPLY_ERROR_CMD_MISMATCH = 4'b0010;
+localparam REPLY_ERROR_CRC_MISMATCH = 4'b0100;
+localparam REPLY_ERROR_INVALID_REPLY = 4'b1000;
+localparam NUM_ERROR_BITS = 4;
+
+logic status_busy = 1'b0, status_reply_received = 1'b0;
+logic [NUM_ERROR_BITS-1:0] status_error = 4'b0000;
+logic [127:0] last_reply_ctrl, cdc_reply_sd, cdc_reply_ctrl;
+logic [NUM_ERROR_BITS-1:0] cdc_reply_error_sd, cdc_reply_error_ctrl;
+logic cdc_reply_valid_ctrl, cdc_reply_valid_sd = 1'b0, cdc_reply_ack_sd;
+
 // Handle ctrl commands
 always_ff@(posedge ctrl_clock_i) begin
     ctrl_rsp_valid_o <= 1'b0;
+
+    if( cdc_reply_valid_ctrl ) begin
+        last_reply_ctrl <= cdc_reply_ctrl;
+        status_error <= cdc_reply_error_ctrl;
+        status_busy <= 1'b0;
+        status_reply_received <= 1'b1;
+    end
 
     if( cmd_cdc_valid_ctrl && cmd_cdc_ack_ctrl )
         cmd_cdc_valid_ctrl <= 1'b0;
@@ -64,12 +83,24 @@ always_ff@(posedge ctrl_clock_i) begin
             cmd_cdc_valid_ctrl <= 1'b1;
             case(ctrl_req_addr_i)
                 16'h0000: cmd_cdc_data_ctrl <= { CMDCDC_ARG, ctrl_req_data_i };
-                16'h0004: cmd_cdc_data_ctrl <= { CMDCDC_CMD, ctrl_req_data_i };
+                16'h0004: begin
+                    cmd_cdc_data_ctrl <= { CMDCDC_CMD, ctrl_req_data_i };
+                    status_reply_received <= 1'b0;
+                    status_error <= 4'b0000;
+                    status_busy <= ctrl_req_data_i[8];
+                end
                 default: cmd_cdc_valid_ctrl <= 1'b0;
             endcase
         end else begin
             // Handle the read case
             ctrl_rsp_valid_o <= 1'b1;
+            case( ctrl_req_data_i )
+                16'h0000: ctrl_rsp_data_o <= { status_busy, 23'b0, status_error, 3'b0, status_reply_received };
+                16'h0010: ctrl_rsp_data_o <= last_reply_ctrl[31:0];
+                16'h0014: ctrl_rsp_data_o <= last_reply_ctrl[63:32];
+                16'h0018: ctrl_rsp_data_o <= last_reply_ctrl[95:64];
+                16'h001c: ctrl_rsp_data_o <= last_reply_ctrl[127:96];
+            endcase
         end
     end
 end
@@ -90,6 +121,22 @@ xpm_cdc_handshake#(
     .dest_req(cmd_cdc_valid_sd),
     .dest_out({cmd_cdc_cmd, cmd_cdc_data}),
     .dest_ack(cmd_cdc_ack_sd)
+);
+
+xpm_cdc_handshake#(
+    .WIDTH(128+NUM_ERROR_BITS),
+    .SRC_SYNC_FF(2),
+    .DEST_SYNC_FF(2),
+    .DEST_EXT_HSK(0)
+) cmd_reply_cdc(
+    .src_clk(sd_clk),
+    .src_in({cdc_reply_error_sd, cdc_reply_sd}),
+    .src_send(cdc_reply_valid_sd),
+    .src_rcv(cdc_reply_ack_sd),
+
+    .dest_clk(ctrl_clock_i),
+    .dest_out({cdc_reply_error_ctrl, cdc_reply_ctrl}),
+    .dest_req(cdc_reply_valid_ctrl)
 );
 
 wire sd_clk;
@@ -184,14 +231,15 @@ task handle_recv_pend();
         // however, as the CRC's initial value is 0, which means it is
         // agnostic to leading zeros.
     end else if( cmd_io_buffer_fill==0 ) begin
-        // XXX Report timeout
+        cdc_reply_error_sd <= REPLY_ERROR_TIMEOUT;
+        cdc_reply_valid_sd <= 1'b1;
         cmd_state <= CMD_IDLE;
     end
 endtask
 
 task handle_recv();
     cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
-    cmd_io_buffer[CMD_REPLY_BITS-1:0] <= { cmd_io_buffer[CMD_REPLY_BITS-2:0], sd_cmd_i };
+    cmd_io_buffer[47:0] <= { cmd_io_buffer[46:0], sd_cmd_i };
 
     if( cmd_io_buffer_fill == 0 ) begin
         cmd_state <= CMD_RECV_CRC;
@@ -201,7 +249,7 @@ endtask
 
 task handle_recv_crc();
     cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
-    cmd_io_buffer[CMD_REPLY_BITS-1:0] <= { cmd_io_buffer[CMD_REPLY_BITS-2:0], sd_cmd_i };
+    cmd_io_buffer[47:0] <= { cmd_io_buffer[46:0], sd_cmd_i };
 
     if( cmd_io_buffer_fill == 0 ) begin
         cmd_state <= CMD_RECV_STOP;
@@ -209,15 +257,29 @@ task handle_recv_crc();
 endtask
 
 task handle_recv_stop();
+    logic [NUM_ERROR_BITS-1:0] error = 0;
+
     cmd_state <= CMD_IDLE;
 
-    //sd_cmd_i == 1'b1;
+    if( sd_cmd_i != 1'b1 )
+        error |= REPLY_ERROR_INVALID_REPLY;
+    if( cmd_io_buffer[CMD_CRC_BITS+37:CMD_CRC_BITS+32] != last_cmd_sd )
+        error |= REPLY_ERROR_CMD_MISMATCH;
+    if( cmd_io_buffer[CMD_CRC_BITS-1:0] != cmd_crc_value )
+        error |= REPLY_ERROR_CRC_MISMATCH;
 
+    cdc_reply_error_sd <= error;
+    cdc_reply_valid_sd <= 1'b1;
+
+    cdc_reply_sd[31:0] <= cmd_io_buffer[CMD_CRC_BITS+31:CMD_CRC_BITS];
 endtask
 
 always_ff@(posedge sd_clk) begin
     if( cmd_cdc_ack_sd && !cmd_cdc_valid_sd )
         cmd_cdc_ack_sd <= 1'b0;
+
+    if( cdc_reply_valid_sd && cdc_reply_ack_sd )
+        cdc_reply_valid_sd <= 1'b0;
 
     case( cmd_state )
         CMD_IDLE: handle_cmd_idle();
