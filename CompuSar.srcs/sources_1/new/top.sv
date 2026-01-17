@@ -122,6 +122,8 @@ wire clock_feedback;
 
 wire ctrl_cpu_reset;
 
+logic bus_clock_25, bus_clock_50, bus_clock_200, bus_clock_feedback;
+
 xpm_cdc_sync_rst reset_synchronizer(
     .dest_rst(ctrl_cpu_reset),
     .dest_clk(ctrl_cpu_clock),
@@ -136,6 +138,16 @@ clk_converter clocks(
     .clkfb_in(clock_feedback),
     .clkfb_out(clock_feedback),
     .locked(clocks_locked)
+);
+
+bus_clocks bus_clocks(
+    .clk_in1(board_clock),
+    .clkfb_in(bus_clock_feedback),
+
+    .clk_25(bus_clock_25),
+    .clk_50(bus_clock_50),
+    .clk_200(bus_clock_200),
+    .clkfb_out(bus_clock_feedback)
 );
 
 localparam CACHE_PORTS_NUM = 5;
@@ -275,6 +287,8 @@ logic uart_enable, uart_req_ack, uart_rsp_valid;
 logic [31:0] uart_rsp_data;
 logic display_enable, display_req_ack, display_rsp_valid;
 logic [31:0] display_rsp_data;
+logic sd_enable, sd_req_ack, sd_rsp_valid;
+logic [31:0] sd_rsp_data;
 
 io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .clock(ctrl_cpu_clock),
@@ -321,7 +335,12 @@ io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .passthrough_display_enable(display_enable),
     .passthrough_display_req_ack(display_req_ack),
     .passthrough_display_rsp_data(display_rsp_data),
-    .passthrough_display_rsp_valid(display_rsp_valid)
+    .passthrough_display_rsp_valid(display_rsp_valid),
+
+    .passthrough_sd_enable(sd_enable),
+    .passthrough_sd_req_ack(sd_req_ack),
+    .passthrough_sd_rsp_data(sd_rsp_data),
+    .passthrough_sd_rsp_valid(sd_rsp_valid)
 );
 
 cache#(
@@ -604,6 +623,27 @@ uart_ctrl#(.ClockDivider(SIM_MODE ? 10 : CTRL_CLOCK_HZ / UART_BAUD), .SimMode(SI
 
     .uart_tx(uart_tx),
     .uart_rx(uart_rx)
+);
+
+sd sd_ctrl(
+    .ctrl_clock_i(ctrl_cpu_clock),
+
+    .ctrl_req_valid_i(sd_enable),
+    .ctrl_req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
+    .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
+    .ctrl_req_data_i(ctrl_dBus_cmd_payload_data),
+    .ctrl_req_ack_o(sd_req_ack),
+
+    .ctrl_rsp_valid_o(sd_rsp_valid),
+    .ctrl_rsp_data_o(sd_rsp_data),
+
+
+    .sd_default_speed_clock_i(bus_clock_25),
+    .sd_high_speed_clock_i(bus_clock_50),
+
+    .sd_cmd_io(sd_cmd),
+    .sd_data_io(sd_data),
+    .sd_clk_o(sd_clk)
 );
 
 STARTUPE2 startup_cfg(

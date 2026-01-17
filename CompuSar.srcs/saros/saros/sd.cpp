@@ -22,4 +22,6 @@ constexpr uint32_t RegR__GetReply0                      = 0x0010;
 constexpr uint32_t RegR__GetReply1                      = 0x0014;
 constexpr uint32_t RegR__GetReply2                      = 0x0018;
 constexpr uint32_t RegR__GetReply3                      = 0x001c;
+
+static constexpr uint32_t DeviceId = 6;
 }

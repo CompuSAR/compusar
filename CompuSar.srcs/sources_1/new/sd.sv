@@ -105,6 +105,7 @@ always_ff@(posedge ctrl_clock_i) begin
     end
 end
 
+wire sd_clk;
 wire [CMDCDC_BITS-1:0] cmd_cdc_cmd;
 wire [31:0] cmd_cdc_data;
 xpm_cdc_handshake#(
@@ -139,7 +140,6 @@ xpm_cdc_handshake#(
     .dest_req(cdc_reply_valid_ctrl)
 );
 
-wire sd_clk;
 BUFGMUX clock_switcher(
     .I0(sd_default_speed_clock_i),
     .I1(sd_high_speed_clock_i),
@@ -147,6 +147,7 @@ BUFGMUX clock_switcher(
 
     .O(sd_clk)
 );
+
 assign sd_clk_o = sd_clk;
 
 enum {
@@ -257,7 +258,7 @@ task handle_recv_crc();
 endtask
 
 task handle_recv_stop();
-    logic [NUM_ERROR_BITS-1:0] error = 0;
+    automatic logic [NUM_ERROR_BITS-1:0] error = 0;
 
     cmd_state <= CMD_IDLE;
 
@@ -308,11 +309,12 @@ crc#(
     .clock_i(sd_clk),
     .reset_i(cmd_crc_reset),
     .bit_valid_i(cmd_crc_valid),
-    .bit_i(sd_cmd_io),
+    .bit_i(sd_cmd_dir ? sd_cmd_i : sd_cmd_o),
 
     .crc_o(cmd_crc_value)
 );
 
+/*
 crc#(
     .CRC_BITS(16),
     .INIT_VALUE(7'b0),
@@ -325,6 +327,7 @@ crc#(
 
     .crc_o(current_crc16)
 );
+*/
 
 IOBUF cmd_buf(
     .I(sd_cmd_o),

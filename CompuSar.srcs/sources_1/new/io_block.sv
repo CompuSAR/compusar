@@ -64,6 +64,11 @@ module io_block#(
     input passthrough_uart_rsp_valid,
     input [31:0] passthrough_uart_rsp_data,
 
+    output logic passthrough_sd_enable,
+    input passthrough_sd_req_ack,
+    input passthrough_sd_rsp_valid,
+    input [31:0] passthrough_sd_rsp_data,
+
     output logic passthrough_display_enable,
     input passthrough_display_req_ack,
     input passthrough_display_rsp_valid,
@@ -100,6 +105,7 @@ task default_state_current();
     passthrough_irq_enable = 1'b0;
     passthrough_spi_enable = 1'b0;
     passthrough_display_enable = 1'b0;
+    passthrough_sd_enable = 1'b0;
 endtask
 
 function logic is_ddr(logic [31:0]address);
@@ -145,6 +151,10 @@ always_comb begin
                 8'h5: begin                     // Display controller
                     rsp_valid = passthrough_display_rsp_valid;
                     data_out = passthrough_display_rsp_data;
+                end
+                8'h6: begin                     // UART
+                    rsp_valid = passthrough_sd_rsp_valid;
+                    data_out = passthrough_sd_rsp_data;
                 end
                 default: begin                  // Invalid memory access
                     rsp_valid = 1'b1;
@@ -192,6 +202,10 @@ always_comb begin
                 8'h5: begin                 // Display controller
                     passthrough_display_enable = 1'b1;
                     req_ack = passthrough_display_req_ack;
+                end
+                8'h6: begin                // SD
+                    passthrough_sd_enable = 1'b1;
+                    req_ack = passthrough_sd_req_ack;
                 end
                 default: begin
                     // Bus error case. If it's a read, it's handled with the
