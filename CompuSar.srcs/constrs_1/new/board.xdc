@@ -41,10 +41,12 @@ set_property IOSTANDARD LVCMOS33 [get_ports spi_*]
 
 set_property PACKAGE_PIN N15 [get_ports sd_clk]
 set_property PACKAGE_PIN P15 [get_ports sd_cmd]
+set_property PULLUP TRUE [get_ports sd_cmd]
 set_property PACKAGE_PIN P16 [get_ports sd_data[0]]
 set_property PACKAGE_PIN R17 [get_ports sd_data[1]]
 set_property PACKAGE_PIN N14 [get_ports sd_data[2]]
 set_property PACKAGE_PIN N13 [get_ports sd_data[3]]
+set_property PULLUP TRUE [get_ports sd_data]
 set_property PACKAGE_PIN R16 [get_ports sd_card_detect_n]
 set_property IOSTANDARD LVCMOS33 [get_ports sd_*]
 

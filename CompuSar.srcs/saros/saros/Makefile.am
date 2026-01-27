@@ -1,7 +1,7 @@
 SUBDIRS=kernel .
 
 AM_CCASFLAGS=$(ARCH) $(ABI)
-AM_CXXFLAGS=$(ARCH) $(ABI)
+AM_CXXFLAGS=$(ARCH) $(ABI) -fno-exceptions
 AM_CFLAGS=$(ARCH) $(ABI)
 AM_CPPFLAGS=-I$(top_srcdir)/include -DSAROS
 
@@ -19,7 +19,7 @@ ABI=-mabi=ilp32
 noinst_PROGRAMS=saros.elf
 
 saros_elf_SOURCES=main.cpp uart.cpp saros.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \
-                  start.s ../abort.cpp display.cpp crt.cpp \
+                  start.s ../abort.cpp display.cpp crt.cpp sd.cpp \
                   assets/logo.cpp
 EXTRA_saros_elf_DEPENDENCIES=$(srcdir)/saros.ld kernel/libkernel.a
 saros_elf_LDFLAGS=-T $(srcdir)/saros.ld --orphan-handling=error

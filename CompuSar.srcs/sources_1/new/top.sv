@@ -578,6 +578,7 @@ gpio(
 wire spi_flash_dma_write;
 spi_ctrl#(.MEM_DATA_WIDTH(CACHELINE_BITS)) spi_flash(
     .cpu_clock_i(ctrl_cpu_clock),
+    //.spi_ref_clock_i(bus_clock_50),
     .spi_ref_clock_i(board_clock),
     .irq(),
 

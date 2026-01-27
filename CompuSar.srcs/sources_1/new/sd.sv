@@ -94,7 +94,7 @@ always_ff@(posedge ctrl_clock_i) begin
         end else begin
             // Handle the read case
             ctrl_rsp_valid_o <= 1'b1;
-            case( ctrl_req_data_i )
+            case( ctrl_req_addr_i )
                 16'h0000: ctrl_rsp_data_o <= { status_busy, 23'b0, status_error, 3'b0, status_reply_received };
                 16'h0010: ctrl_rsp_data_o <= last_reply_ctrl[31:0];
                 16'h0014: ctrl_rsp_data_o <= last_reply_ctrl[63:32];
@@ -151,8 +151,8 @@ BUFGMUX clock_switcher(
 assign sd_clk_o = sd_clk;
 
 enum {
-    CMD_IDLE = 4'b1000, CMD_SEND_CMD = 4'b0001, CMD_SEND_CRC = 4'b0010, CMD_RECV_PENDING = 4'b1001, CMD_RECV,
-    CMD_RECV_CRC, CMD_RECV_STOP, CMD_RECV_ERR
+    CMD_IDLE = 4'b0100, CMD_SEND_CMD = 4'b0001, CMD_SEND_CRC = 4'b0010, CMD_SEND_STOP = 4'b0111,
+    CMD_RECV_PENDING = 4'b1000, CMD_RECV, CMD_RECV_CRC, CMD_RECV_STOP
  } cmd_state = CMD_IDLE;
 
 localparam CMD_PAYLOAD_SIZE = 40;
@@ -211,12 +211,16 @@ task handle_send_crc();
     if( cmd_io_buffer_fill==CMD_CRC_BITS-1 ) begin
         cmd_io_buffer[CMD_CMD_BITS:CMD_CMD_BITS-CMD_CRC_BITS] <= {1'bX, cmd_crc_value[CMD_CRC_BITS-2:0], 1'bX};
     end else if( cmd_io_buffer_fill==0 ) begin
-        if( reply_type_sd==2'b00 )
-            cmd_state <= CMD_IDLE;
-        else begin
-            cmd_state <= CMD_RECV_PENDING;
-            cmd_io_buffer_fill <= REPLY_WAIT_CYCLES - 1;
-        end
+        cmd_state <= CMD_SEND_STOP;
+    end
+endtask
+
+task handle_send_stop();
+    if( reply_type_sd==2'b00 )
+        cmd_state <= CMD_IDLE;
+    else begin
+        cmd_state <= CMD_RECV_PENDING;
+        cmd_io_buffer_fill <= REPLY_WAIT_CYCLES - 1;
     end
 endtask
 
@@ -286,6 +290,7 @@ always_ff@(posedge sd_clk) begin
         CMD_IDLE: handle_cmd_idle();
         CMD_SEND_CMD: handle_send_cmd();
         CMD_SEND_CRC: handle_send_crc();
+        CMD_SEND_STOP: handle_send_stop();
         CMD_RECV_PENDING: handle_recv_pend();
         CMD_RECV: handle_recv();
         CMD_RECV_CRC: handle_recv_crc();
@@ -297,6 +302,8 @@ always_ff@(negedge sd_clk) begin
     sd_cmd_o <= cmd_io_buffer[CMD_CMD_BITS-1];
     if( cmd_state==CMD_SEND_CRC && cmd_io_buffer_fill==CMD_CRC_BITS-1 )
         sd_cmd_o <= cmd_crc_value[CMD_CRC_BITS-1];
+    if( cmd_state[2] )
+        sd_cmd_o <= 1'b1;
 
     sd_cmd_dir <= cmd_state[3];
 end

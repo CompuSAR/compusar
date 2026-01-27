@@ -2,9 +2,10 @@
 #include "irq.h"
 #include "format.h"
 
-#include "gpio.h"
-#include "display.h"
 #include "assets/logo.h"
+#include "display.h"
+#include "gpio.h"
+#include "sd.h"
 
 #include <saros/csr.h>
 #include <saros/saros.h>
@@ -61,6 +62,8 @@ void logoCrawl(void *) noexcept {
 }
 
 void startup_function(void *) noexcept {
+    SD::init();
+
     saros.createThread( logoCrawl, nullptr );
     start_8bit();
 }

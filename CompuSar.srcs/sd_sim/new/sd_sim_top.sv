@@ -115,6 +115,52 @@ initial begin
     wait_ctrl_ack();
     @(negedge ctrl_clk);
     req_valid = 1'b0;
+
+    #200;
+    @(negedge ctrl_clk);
+    req_valid = 1'b1;
+    req_addr = 16'h0000;
+    req_data = 32'h000001a5;
+    wait_ctrl_ack();
+
+    @(negedge ctrl_clk);
+    req_addr = 16'h0004;
+    req_valid = 1'b1;
+    req_data = 8 | 256;
+
+    wait_ctrl_ack();
+    @(negedge ctrl_clk);
+    req_valid = 1'b0;
+
+    #200;
+    @(negedge ctrl_clk);
+    req_valid = 1'b1;
+    req_write = 1'b0;
+    req_addr = 16'h0000;
+
+    wait_ctrl_ack();
+    @(negedge ctrl_clk);
+    req_valid = 1'b0;
+
+    @(posedge ctrl_clk);
+    while( !rsp_valid )
+        @(posedge ctrl_clk);
+
+    @(negedge ctrl_clk);
+    req_valid = 1'b1;
+    req_write = 1'b0;
+    req_addr = 16'h0010;
+
+    wait_ctrl_ack();
+    @(negedge ctrl_clk);
+    req_valid = 1'b0;
+
+    @(posedge ctrl_clk);
+    while( !rsp_valid )
+        @(posedge ctrl_clk);
+
+    @(negedge ctrl_clk);
+    req_valid = 1'b0;
 end
 
 enum { CMD_IDLE, CMD_RECV_HEADER, CMD_RECV_CRC, CMD_RECV_STOPBIT } cmd_state = CMD_IDLE;
