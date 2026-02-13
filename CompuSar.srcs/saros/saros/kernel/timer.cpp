@@ -72,7 +72,7 @@ TimerHandle registerTimerNs(uint64_t triggerTime, uint64_t repeatDuration) {
     const uint64_t clockFreq = get_clock_freq();
 
     static constexpr uint64_t NanoFactor = 1'000'000'000;
-    return registerTimer( triggerTime * NanoFactor / clockFreq, repeatDuration * NanoFactor / clockFreq );
+    return registerTimer( triggerTime * clockFreq / NanoFactor, repeatDuration * clockFreq / NanoFactor  );
 }
 
 } // namespace Saros
@@ -84,11 +84,11 @@ void handleTimerInterrupt() {
 
     while( !timerQueue.empty() ) {
         TimerEvent &front = timerQueue.front();
-        timerQueue.pop_front();
 
         if( front.wakeupTime > now )
             break;
 
+        timerQueue.pop_front();
         front.wakupEvent.set();
 
         if( front.repeatTime!=0 ) {

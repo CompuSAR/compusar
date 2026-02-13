@@ -68,10 +68,8 @@ static int timerId = 0;
 void timerDemo(void *delayPtr) noexcept {
     int threadId = ++timerId;
     uint64_t delay = *reinterpret_cast<const uint64_t *>(delayPtr);
-    delay =10000;
 
-    //Saros::TimerHandle timer = Saros::registerTimerNs( get_cycles_count() + delay, delay );
-    Saros::TimerHandle timer = Saros::registerTimer( get_cycles_count() + delay, delay );
+    Saros::TimerHandle timer = Saros::registerTimerNs( get_cycles_count() + delay, delay );
 
     uart_send("Timer thread ");
     print_hex(threadId);
@@ -90,11 +88,11 @@ void timerDemo(void *delayPtr) noexcept {
 void startup_function(void *) noexcept {
     SD::init();
 
-    static constexpr uint64_t delay1 = 1000000000, delay2 = 133356664;
+    static constexpr uint64_t delay1 = 1000000000, delay2 = 1333566645;
 
     saros.createThread( logoCrawl, nullptr );
     saros.createThread( timerDemo, (void*)&delay1 );
-    //saros.createThread( timerDemo, (void*)&delay2 );
+    saros.createThread( timerDemo, (void*)&delay2 );
     start_8bit();
 }
 
