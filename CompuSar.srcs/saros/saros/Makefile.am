@@ -1,7 +1,7 @@
 SUBDIRS=kernel .
 
 AM_CCASFLAGS=$(ARCH) $(ABI)
-AM_CXXFLAGS=$(ARCH) $(ABI) -fno-exceptions
+AM_CXXFLAGS=$(ARCH) $(ABI)
 AM_CFLAGS=$(ARCH) $(ABI)
 AM_CPPFLAGS=-I$(top_srcdir)/include -DSAROS
 

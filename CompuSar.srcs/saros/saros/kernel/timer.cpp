@@ -1,0 +1,105 @@
+#include "saros/kernel/timer.h"
+
+#include "ds/pool.h"
+
+#include "irq.h"
+
+#include <boost/intrusive/list.hpp>
+
+namespace Saros {
+namespace Kernel {
+
+struct TimerEvent {
+    uint64_t wakeupTime;
+    uint64_t repeatTime;
+    Sync::Event wakupEvent;
+    boost::intrusive::list_member_hook< boost::intrusive::link_mode<boost::intrusive::auto_unlink> > listHook;
+};
+
+namespace {
+
+constexpr size_t MaxTimers = 10;
+
+using TimerQueueOption = boost::intrusive::member_hook<TimerEvent, decltype(TimerEvent::listHook), &TimerEvent::listHook>;
+using TimerQueue = boost::intrusive::list<TimerEvent, TimerQueueOption, boost::intrusive::constant_time_size<false>>;
+
+TimerQueue timerQueue;
+
+}
+
+static void placeTimerEvent(TimerEvent &event) {
+    auto iter = timerQueue.begin();
+
+    while( iter!=timerQueue.end() && iter->wakeupTime <= event.wakeupTime )
+        ++iter;
+
+    if( iter==timerQueue.end() ) {
+        timerQueue.push_back(event);
+    } else {
+        timerQueue.insert(iter, event);
+    }
+}
+
+static DS::PoolAllocator<TimerEvent, MaxTimers> timersAllocator;
+
+
+} // namespace Saros::Kernel
+
+using namespace Kernel;
+
+Sync::Event &TimerHandle::event() const {
+    return _event->wakupEvent;
+}
+
+TimerHandle registerTimer(uint64_t triggerTime, uint64_t repeatDuration) {
+    auto eventPtr = timersAllocator.alloc();
+
+    eventPtr->wakeupTime = triggerTime;
+    eventPtr->repeatTime = repeatDuration;
+
+    bool first = timerQueue.empty() || timerQueue.front().wakeupTime > triggerTime;
+    placeTimerEvent(*eventPtr);
+
+    if( first ) {
+        //uart_send("Setting on empty timer\n");
+        set_timer_cycles( triggerTime );
+    }
+
+    return TimerHandle(eventPtr.release());
+}
+
+TimerHandle registerTimerNs(uint64_t triggerTime, uint64_t repeatDuration) {
+    const uint64_t clockFreq = get_clock_freq();
+
+    static constexpr uint64_t NanoFactor = 1'000'000'000;
+    return registerTimer( triggerTime * NanoFactor / clockFreq, repeatDuration * NanoFactor / clockFreq );
+}
+
+} // namespace Saros
+
+using namespace Saros::Kernel;
+
+void handleTimerInterrupt() {
+    uint64_t now = get_cycles_count();
+
+    while( !timerQueue.empty() ) {
+        TimerEvent &front = timerQueue.front();
+        timerQueue.pop_front();
+
+        if( front.wakeupTime > now )
+            break;
+
+        front.wakupEvent.set();
+
+        if( front.repeatTime!=0 ) {
+            front.wakeupTime += front.repeatTime;
+            placeTimerEvent(front);
+        }
+    }
+
+    if( timerQueue.empty() ) {
+        reset_timer_cycles();
+    } else {
+        set_timer_cycles(timerQueue.front().wakeupTime);
+    }
+}

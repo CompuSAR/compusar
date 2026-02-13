@@ -2,6 +2,8 @@
 #include "irq.h"
 #include "format.h"
 
+#include <saros/kernel/timer.h>
+
 #include "assets/logo.h"
 #include "display.h"
 #include "gpio.h"
@@ -61,10 +63,38 @@ void logoCrawl(void *) noexcept {
     }
 }
 
+static int timerId = 0;
+
+void timerDemo(void *delayPtr) noexcept {
+    int threadId = ++timerId;
+    uint64_t delay = *reinterpret_cast<const uint64_t *>(delayPtr);
+    delay =10000;
+
+    //Saros::TimerHandle timer = Saros::registerTimerNs( get_cycles_count() + delay, delay );
+    Saros::TimerHandle timer = Saros::registerTimer( get_cycles_count() + delay, delay );
+
+    uart_send("Timer thread ");
+    print_hex(threadId);
+    uart_send(" started\n");
+
+    while(true) {
+        timer.event().wait();
+        timer.event().clear();
+
+        uart_send("Timer ");
+        print_hex(threadId);
+        uart_send("\n");
+    }
+}
+
 void startup_function(void *) noexcept {
     SD::init();
 
+    static constexpr uint64_t delay1 = 1000000000, delay2 = 133356664;
+
     saros.createThread( logoCrawl, nullptr );
+    saros.createThread( timerDemo, (void*)&delay1 );
+    //saros.createThread( timerDemo, (void*)&delay2 );
     start_8bit();
 }
 

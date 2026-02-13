@@ -30,7 +30,7 @@ void sleep_ns(uint64_t nanoseconds) {
 }
 
 void sleep_cycles(uint64_t cycles) {
-    uint64_t cycle_count = reg_read_64(DEVICE_NUM, REG_CYCLE_COUNT);
+    uint64_t cycle_count = get_cycles_count();
     reg_write_64(DEVICE_NUM, REG_WAIT_COUNT, cycle_count + cycles);
     reg_read_32(DEVICE_NUM, REG_HALT);
 }
@@ -40,7 +40,7 @@ void set_timer_ns(uint64_t nanoseconds) {
 }
 
 void set_timer_cycles(uint64_t cycles_num) {
-    reg_write_32(DEVICE_NUM, REG_INT_CYCLE+1, cycles_num>>32);
+    reg_write_32(DEVICE_NUM, REG_INT_CYCLE+4, cycles_num>>32);
     wwb();
     reg_write_32(DEVICE_NUM, REG_INT_CYCLE, cycles_num & 0xffffffff);
 }
@@ -56,7 +56,7 @@ uint32_t get_clock_freq() {
 uint64_t get_cycles_count() {
     uint64_t cycles_count = reg_read_32(DEVICE_NUM, REG_CYCLE_COUNT);
     rrb();
-    cycles_count |= static_cast<uint64_t>( reg_read_32(DEVICE_NUM, REG_CYCLE_COUNT+1) )<<32;
+    cycles_count |= static_cast<uint64_t>( reg_read_32(DEVICE_NUM, REG_CYCLE_COUNT+4) )<<32;
 
     return cycles_count;
 }
@@ -77,10 +77,7 @@ void __attribute__((weak)) handleSoftwareInterrupt() {
     abortWithMessage("handleSoftwareInterrupt is unimplemented");
 }
 
-static void handleTimerInterrupt() {
-    // TODO implement
-    reset_timer_cycles();
-}
+void handleTimerInterrupt();
 
 static void handleExternalInterrupt() {
     uint32_t active_irqs = reg_read_32( DEVICE_NUM, REG_ACTIVE_IRQS );

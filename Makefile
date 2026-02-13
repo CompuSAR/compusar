@@ -3,28 +3,28 @@ all: $(PROJNAME).srcs/saros/boot_loader_state.mem $(PROJNAME).gen/saros/saros.mc
 
 $(PROJNAME).runs/$(PROJNAME).mcs:
 
-$(PROJNAME).gen/saros/%: $(PROJNAME).gen/saros/config.log
+$(PROJNAME).gen/saros/%: $(PROJNAME).gen/saros/config.status
 	$(MAKE) -C "$(@D)" "$(@F)"
 
-$(PROJNAME).gen/saros/saros.mcs: $(PROJNAME).gen/saros/config.log
+$(PROJNAME).gen/saros/saros.mcs: $(PROJNAME).gen/saros/config.status
 	$(MAKE) -C "$(@D)" "$(@F)"
 .PHONY: $(PROJNAME).gen/saros/saros.mcs
 
-$(PROJNAME).gen/saros/saros.mem: $(PROJNAME).gen/saros/config.log
+$(PROJNAME).gen/saros/saros.mem: $(PROJNAME).gen/saros/config.status
 	$(MAKE) -C "$(@D)" "$(@F)"
 .PHONY: $(PROJNAME).gen/saros/saros.mem
 
-$(PROJNAME).gen/saros/bl1/bl1.coe: $(PROJNAME).gen/saros/config.log
+$(PROJNAME).gen/saros/bl1/bl1.coe: $(PROJNAME).gen/saros/config.status
 	$(MAKE) -C "$(@D)" "$(@F)"
 
 .PHONY: $(PROJNAME).gen/saros/bl1/bl1.coe
 
-$(PROJNAME).gen/saros/bl1/bl1.mem: $(PROJNAME).gen/saros/config.log
+$(PROJNAME).gen/saros/bl1/bl1.mem: $(PROJNAME).gen/saros/config.status
 	$(MAKE) -C "$(@D)" "$(@F)"
 
 .PHONY: $(PROJNAME).gen/saros/bl1/bl1.mem
 
-$(PROJNAME).gen/saros/config.log: $(PROJNAME).srcs/saros/configure
+$(PROJNAME).gen/saros/config.status: $(PROJNAME).srcs/saros/configure
 	$(RM) -r $(@D)
 	mkdir -p $(@D)
 	cd $(@D) && ../../$(PROJNAME).srcs/saros/configure --host=riscv32-unknown-elf
@@ -40,7 +40,7 @@ $(PROJNAME).gen/saros/bl1/mif.tag: $(PROJNAME).gen/saros/bl1/bl1.mif
 	find -name blk_mem.mif -print0 | xargs -0 --no-run-if-empty -n1 cp -a $<
 	touch $@
 
-$(PROJNAME).gen/saros/bl1/bl1.mif: $(PROJNAME).gen/saros/config.log
+$(PROJNAME).gen/saros/bl1/bl1.mif: $(PROJNAME).gen/saros/config.status
 	$(MAKE) -C "$(@D)" "$(@F)"
 .PHONY: $(PROJNAME).gen/saros/bl1/bl1.mif
 
@@ -57,7 +57,7 @@ clean:
 	$(RM) -r $(PROJNAME).gen/saros
 
 distclean: clean
-	$(RM) $(PROJNAME).gen/saros/config.log
+	$(RM) $(PROJNAME).gen/saros/config.status
 	$(RM) $(PROJNAME).srcs/saros/**.in $(PROJNAME).srcs/saros/configure
 
 .PHONY: clean distclean

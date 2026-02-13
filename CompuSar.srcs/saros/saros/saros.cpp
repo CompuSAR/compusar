@@ -67,7 +67,7 @@ void Saros::initIrq() {
 
     irq_external_mask(0xffffffff);
 
-    csr_read_set_bits<CSR::mie>( MIE__MEIE_MASK );
+    csr_read_set_bits<CSR::mie>( MIE__MEIE_MASK | MIE__MTIE_MASK );
     csr_read_set_bits<CSR::mstatus>( MSTATUS__MIE );
 }
 

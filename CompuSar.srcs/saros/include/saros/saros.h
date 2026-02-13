@@ -29,6 +29,11 @@ public:
         _scheduler.createThread( function, param, highPriority );
     }
 
+    template <typename T>
+    void createThread( void (T::*method)() noexcept, T &instance, bool highPriority = false ) {
+        createThread( [](void *p) noexcept { reinterpret_cast<T *>(p)->method(); }, &instance, highPriority );
+    }
+
     [[nodiscard]] bool isRunning() const {
         return _running;
     }
@@ -47,6 +52,7 @@ public:
         csr_read_clr_bits<CSR::mie>( MIE__MSIE_MASK );
     }
 
+    void sleep_ns( uint64_t delay );
 private:
     void initIrq();
 };
