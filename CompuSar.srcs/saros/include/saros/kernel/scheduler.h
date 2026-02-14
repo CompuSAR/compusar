@@ -33,6 +33,7 @@ public:
 
     void sleepOn( ThreadQueue &queue );
     void schedule( Thread *thread );
+
 private:
     // Methods to be called by Thread
     [[noreturn]] void stopThread();

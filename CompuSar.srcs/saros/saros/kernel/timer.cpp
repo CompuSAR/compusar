@@ -47,6 +47,11 @@ static DS::PoolAllocator<TimerEvent, MaxTimers> timersAllocator;
 
 using namespace Kernel;
 
+void TimerHandle::clear() {
+    if( _event != nullptr )
+        timersAllocator.free(_event);
+}
+
 Sync::Event &TimerHandle::event() const {
     return _event->wakeupEvent;
 }

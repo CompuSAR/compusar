@@ -1,5 +1,6 @@
 #include <saros/saros.h>
 
+#include <saros/kernel/timer.h>
 #include <saros/csr.h>
 
 #include <irq.h>
@@ -46,6 +47,11 @@ void Saros::wakeAllThreads( Kernel::Scheduler::ThreadQueue &queue ) {
         Kernel::Thread *thread = &queue.front();
         _scheduler.schedule( thread ); // Scheduler::schedule will unlink it from the list
     }
+}
+
+void Saros::sleep_ns( uint64_t delay ) {
+    TimerHandle handle = registerTimerNs(delay);
+    handle.event().wait();
 }
 
 namespace {

@@ -12,16 +12,31 @@ class TimerHandle {
     Kernel::TimerEvent *_event;
 
 public:
-    explicit TimerHandle(Kernel::TimerEvent *event) : _event(event) {}
+    explicit TimerHandle(Kernel::TimerEvent *event = nullptr) : _event(event) {}
 
     TimerHandle(const TimerHandle &that) = delete;
     TimerHandle &operator=(const TimerHandle &that) = delete;
-    TimerHandle(const TimerHandle &&hat);
-    TimerHandle &operator=(const TimerHandle &&that);
+    TimerHandle(TimerHandle &&that) : _event(that._event) {
+        that._event = nullptr;
+    }
 
-    ~TimerHandle();
+    TimerHandle &operator=(TimerHandle &&that) {
+        if( &that != this ) {
+            clear();
+            _event = that._event;
+            that._event = nullptr;
+        }
+
+        return *this;
+    }
+
+    ~TimerHandle() {
+        clear();
+    }
 
     Sync::Event &event() const;
+
+    void clear();
 };
 
 typedef bool (*TimerCallback)(void *); 

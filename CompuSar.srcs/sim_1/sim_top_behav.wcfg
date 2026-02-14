@@ -11,19 +11,21 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0.000000000 us"></ZoomStartTime>
-      <ZoomEndTime time="42.195070084 us"></ZoomEndTime>
-      <Cursor1Time time="1.000000000 us"></Cursor1Time>
+      <ZoomStartTime time="6,328.028966000 us"></ZoomStartTime>
+      <ZoomEndTime time="6,340.028966001 us"></ZoomEndTime>
+      <Cursor1Time time="6,336.326698000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="220"></NameColumnWidth>
       <ValueColumnWidth column_width="205"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="34" />
+   <WVObjectSize size="35" />
    <wave_markers>
-      <marker label="" time="15283236389000" />
-      <marker label="" time="15283817007000" />
-      <marker label="" time="17100084224000" />
+      <marker label="" time="5870604633000" />
+      <marker label="" time="6319383193000" />
+      <marker label="" time="6323843399000" />
+      <marker label="" time="6334347319000" />
+      <marker label="" time="6336326698000" />
    </wave_markers>
    <wvobject type="array" fp_name="/sim_top/top_module/uart_ctrl/uart_send_data">
       <obj_property name="ElementShortName">uart_send_data[7:0]</obj_property>
@@ -91,10 +93,6 @@
       <obj_property name="ElementShortName">spi_flash_cs</obj_property>
       <obj_property name="ObjectShortName">spi_flash_cs</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/sim_top/spi_flash_dq">
-      <obj_property name="ElementShortName">spi_flash_dq[3:0]</obj_property>
-      <obj_property name="ObjectShortName">spi_flash_dq[3:0]</obj_property>
-   </wvobject>
    <wvobject type="logic" fp_name="/sim_top/top_module/control_cpu/CsrPlugin_allowException">
       <obj_property name="ElementShortName">CsrPlugin_allowException</obj_property>
       <obj_property name="ObjectShortName">CsrPlugin_allowException</obj_property>
@@ -134,6 +132,14 @@
    <wvobject type="array" fp_name="/sim_top/top_module/control_cpu/CsrPlugin_mscratch">
       <obj_property name="ElementShortName">CsrPlugin_mscratch[31:0]</obj_property>
       <obj_property name="ObjectShortName">CsrPlugin_mscratch[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/control_cpu/softwareInterrupt">
+      <obj_property name="ElementShortName">softwareInterrupt</obj_property>
+      <obj_property name="ObjectShortName">softwareInterrupt</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/control_cpu/externalInterrupt">
+      <obj_property name="ElementShortName">externalInterrupt</obj_property>
+      <obj_property name="ObjectShortName">externalInterrupt</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sim_top/top_module/ctrl_timer_interrupt">
       <obj_property name="ElementShortName">ctrl_timer_interrupt</obj_property>

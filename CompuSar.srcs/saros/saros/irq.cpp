@@ -25,6 +25,8 @@
 
 using namespace Saros;
 
+#if 0
+// These functions are intentionally left undefined, as they should never be used. Use Saros::sleep_ns instead
 void sleep_ns(uint64_t nanoseconds) {
     sleep_cycles(nanoseconds*reg_read_32(DEVICE_NUM, REG_CPU_CLOCK_FREQ) / 1'000'000'000);
 }
@@ -34,6 +36,7 @@ void sleep_cycles(uint64_t cycles) {
     reg_write_64(DEVICE_NUM, REG_WAIT_COUNT, cycle_count + cycles);
     reg_read_32(DEVICE_NUM, REG_HALT);
 }
+#endif
 
 void set_timer_ns(uint64_t nanoseconds) {
     set_timer_cycles(get_cycles_count() + nanoseconds*get_clock_freq() / 1'000'000'000);
