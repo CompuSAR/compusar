@@ -1,6 +1,7 @@
 #include "saros/kernel/timer.h"
 
-#include "ds/pool.h"
+#include <saros/spin_lock.h>
+#include <ds/pool.h>
 
 #include "irq.h"
 
@@ -28,6 +29,7 @@ TimerQueue timerQueue;
 }
 
 static void placeTimerEvent(TimerEvent &event) {
+    // Interrupts should be disabled at this point
     auto iter = timerQueue.begin();
 
     while( iter!=timerQueue.end() && iter->wakeupTime <= event.wakeupTime )
@@ -48,8 +50,10 @@ static DS::PoolAllocator<TimerEvent, MaxTimers> timersAllocator;
 using namespace Kernel;
 
 void TimerHandle::clear() {
-    if( _event != nullptr )
+    if( _event != nullptr ) {
+        SpinLock lock(true);
         timersAllocator.free(_event);
+    }
 }
 
 Sync::Event &TimerHandle::event() const {
@@ -57,6 +61,8 @@ Sync::Event &TimerHandle::event() const {
 }
 
 TimerHandle registerTimer(uint64_t triggerTime, uint64_t repeatDuration) {
+    SpinLock lock(true);
+
     auto eventPtr = timersAllocator.alloc();
 
     eventPtr->wakeupTime = triggerTime;
@@ -84,6 +90,7 @@ TimerHandle registerTimerNs(uint64_t triggerTime, uint64_t repeatDuration) {
 using namespace Saros::Kernel;
 
 void handleTimerInterrupt() {
+    // No need to lock, as we're running with disabled interrupts
     uint64_t now = get_cycles_count();
 
     while( !timerQueue.empty() ) {
