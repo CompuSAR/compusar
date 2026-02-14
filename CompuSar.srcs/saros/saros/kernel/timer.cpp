@@ -12,7 +12,7 @@ namespace Kernel {
 struct TimerEvent {
     uint64_t wakeupTime;
     uint64_t repeatTime;
-    Sync::Event wakupEvent;
+    Sync::Event wakeupEvent;
     boost::intrusive::list_member_hook< boost::intrusive::link_mode<boost::intrusive::auto_unlink> > listHook;
 };
 
@@ -48,7 +48,7 @@ static DS::PoolAllocator<TimerEvent, MaxTimers> timersAllocator;
 using namespace Kernel;
 
 Sync::Event &TimerHandle::event() const {
-    return _event->wakupEvent;
+    return _event->wakeupEvent;
 }
 
 TimerHandle registerTimer(uint64_t triggerTime, uint64_t repeatDuration) {
@@ -61,7 +61,6 @@ TimerHandle registerTimer(uint64_t triggerTime, uint64_t repeatDuration) {
     placeTimerEvent(*eventPtr);
 
     if( first ) {
-        //uart_send("Setting on empty timer\n");
         set_timer_cycles( triggerTime );
     }
 
@@ -89,7 +88,7 @@ void handleTimerInterrupt() {
             break;
 
         timerQueue.pop_front();
-        front.wakupEvent.set();
+        front.wakeupEvent.set();
 
         if( front.repeatTime!=0 ) {
             front.wakeupTime += front.repeatTime;
