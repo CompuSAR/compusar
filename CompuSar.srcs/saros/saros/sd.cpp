@@ -149,7 +149,7 @@ void SD::initCard() {
         return;
     }
 
-    uart_send("Probe V1 SEND_OP status ");
+    uart_send("SD probed: V1 SEND_OP status ");
     print_hex(status);
     uart_send(" reply ");
     print_hex(reply);
@@ -213,25 +213,17 @@ void SD::irq_handler() noexcept {
     SdReply1 cardStatus;
     uint32_t status = send_sd_cmd(SdCmd::APP_CMD, 0, cardStatus.reply);
 
-#if 0
-    uart_send("APP_CMD status ");
-    print_hex(status);
-    uart_send(" reply ");
-    print_hex(cardStatus.reply);
-    uart_send("\n");
-#endif
-
     if( (status & GetStatus__ReplyReceived) && ((status & GetStatus__ErrorMask) == 0) && cardStatus.appCmd ) {
         return cardStatus;
     }
 
-    status = send_sd_cmd(SdCmd::APP_CMD, 0, cardStatus.reply);
-
-    uart_send("APP_CMD 2nd attempt status ");
+    uart_send("  W: APP_CMD needs 2nd  attempt S:");
     print_hex(status);
-    uart_send(" reply ");
+    uart_send(" R:");
     print_hex(cardStatus.reply);
     uart_send("\n");
+
+    status = send_sd_cmd(SdCmd::APP_CMD, 0, cardStatus.reply);
 
     return cardStatus;
 }
