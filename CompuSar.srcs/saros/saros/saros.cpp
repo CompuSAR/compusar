@@ -50,6 +50,8 @@ void Saros::wakeAllThreads( Kernel::Scheduler::ThreadQueue &queue ) {
 }
 
 void Saros::sleep_ns( uint64_t delay ) {
+    csr_read_clr_bits<CSR::mstatus>( MSTATUS__MIE );
+
     TimerHandle handle = registerTimerNs(delay);
     handle.event().wait();
 }

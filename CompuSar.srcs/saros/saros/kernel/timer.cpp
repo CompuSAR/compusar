@@ -79,10 +79,11 @@ TimerHandle registerTimer(uint64_t triggerTime, uint64_t repeatDuration) {
 }
 
 TimerHandle registerTimerNs(uint64_t triggerTime, uint64_t repeatDuration) {
+    const uint64_t now = get_cycles_count();
     const uint64_t clockFreq = get_clock_freq();
 
     static constexpr uint64_t NanoFactor = 1'000'000'000;
-    return registerTimer( triggerTime * clockFreq / NanoFactor, repeatDuration * clockFreq / NanoFactor  );
+    return registerTimer( now + triggerTime * clockFreq / NanoFactor, repeatDuration * clockFreq / NanoFactor  );
 }
 
 } // namespace Saros

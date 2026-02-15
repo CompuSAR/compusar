@@ -87,6 +87,7 @@ localparam GPIO_IN_PORTS=1, GPIO_OUT_PORTS=1;
 localparam GPIO_OUT0__DDR_RESET = 0;
 localparam GPIO_OUT0__DISPLAY32_RESET = 1;
 localparam GPIO_OUT0__DISPLAY8_RESET = 2;
+localparam GPIO_OUT0__SD_CARD_POLARITY = 3;
 
 `ifdef SYNTHESIS
 wire spi_clk;
@@ -202,6 +203,8 @@ logic [31:0]    irq_lines;
 localparam UART_SEND_IRQ = 0;
 localparam UART_RECV_IRQ = 1;
 localparam VSYNC_IRQ = 2;
+localparam SD_INSERT_IRQ = 3;
+localparam FIRST_EMPTY_IRQ = 4;
 
 logic [31:0]    iob_ddr_read_data;
 
@@ -557,6 +560,16 @@ input_delay#(.NUM_BITS(4)) switches_delay(
 
 wire [31:0]gp_out[GPIO_OUT_PORTS];
 
+logic sd_card_detect_debounced_n;
+
+debouncer#(.DEBOUNCE_CYCLES(75000)) sd_card_detect_debouncer(
+    .clock_i(ctrl_cpu_clock),
+    .signal_i(sd_card_detect_n),
+    .signal_o(sd_card_detect_debounced_n)
+);
+
+assign irq_lines[SD_INSERT_IRQ] = sd_card_detect_debounced_n ^ gp_out[0][GPIO_OUT0__SD_CARD_POLARITY];
+
 gpio#(
     .NUM_IN_PORTS(GPIO_IN_PORTS),
     .NUM_OUT_PORTS(GPIO_OUT_PORTS))
@@ -571,7 +584,7 @@ gpio(
     .rsp_data_o(gpio_rsp_data),
     .rsp_valid_o(gpio_rsp_valid),
 
-    .gp_in( '{ {28'b0, buffered_switches} } ),
+    .gp_in( '{ {27'b0, sd_card_detect_debounced_n, buffered_switches} } ),
     .gp_out( gp_out )
 );
 
@@ -661,7 +674,7 @@ STARTUPE2 startup_cfg(
 
 genvar i;
 generate
-    for(i=3; i<32; ++i)
+    for(i=FIRST_EMPTY_IRQ; i<32; ++i)
         assign irq_lines[i] = 1'b0;
 endgenerate
 

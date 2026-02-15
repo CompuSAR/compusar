@@ -40,7 +40,7 @@ void logoCrawl(void *) noexcept {
     int dirx = 1, diry = 1;
 
     Display::setDisplay(Bitmaps::logo, x, y);
-    reset_gpio_bits(0, GPIO0__DISPLAY32_RESET | GPIO0__DDR_RESET);
+    reset_gpio_bits(0, GPO0__DISPLAY32_RESET | GPO0__DDR_RESET);
 
     irq_external_unmask( IrqExt__Vsync );
 

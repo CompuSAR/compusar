@@ -1,6 +1,10 @@
 #include "sd.h"
 
+#include "saros/saros.h"
+
 #include "format.h"
+#include "gpio.h"
+#include "irq.h"
 #include "reg.h"
 #include "uart.h"
 
@@ -113,14 +117,45 @@ void SD::initCard() {
         return;
     }
 
-    args |= 1<<20;              // We work at 3V3
+    args |= 3<<20;              // We work at 3v3, do mark the range of 3v2 to 3v4.
+    unsigned retries = 0;
 
-        uart_send("Probe V1 SEND_OP status ");
-        print_hex(status);
-        uart_send(" reply ");
-        print_hex(reply);
-        uart_send("\n");
+    static constexpr uint64_t SendOpTimeoutNs = 1'0000'000'000; // 1 second
+    static constexpr uint64_t SendOpTimeoutSplit = 50;
 
+    status = send_sd_cmd(SdCmd::SD_SEND_OP_COND, args, reply);
+
+    if( (status & GetStatus__Timeout) != 0 ) {
+        uart_send( "SD card failed to respond to commands\n" );
+
+        return;
+    }
+
+    // The SD_SEND_OP_COND, and *only* it, respond with CMD and CRC set to all 1's. Instead of convulting the hardware for just
+    // this one command, we /expect/ that status to have both GetStatus__CmdMismatch and GetStatus__CrcMismatch set.
+
+    for( unsigned retries=0; retries<SendOpTimeoutSplit && (reply & (1u<<31))==0; retries++ ) {
+        saros.sleep_ns( SendOpTimeoutNs / SendOpTimeoutSplit );
+        status = send_sd_cmd(SdCmd::SD_SEND_OP_COND, args, reply);
+    }
+
+    if( (reply & (1u<<31))==0 ) {
+        uart_send( "SD card not ready in time: response " );
+        print_hex( reply );
+        uart_send( " status ");
+        print_hex( status );
+        uart_send( "\n" );
+
+        return;
+    }
+
+    uart_send("Probe V1 SEND_OP status ");
+    print_hex(status);
+    uart_send(" reply ");
+    print_hex(reply);
+    uart_send("\n");
+
+    return;
 
     uart_send("Negotiate voltage: status ");
     print_hex(status);
@@ -137,25 +172,54 @@ void SD::initCard() {
 }
 
 void SD::threadMain() noexcept {
-    // XXX Loop waiting for a card
-    initCard();
+    while(true) {
+        if( (read_gpio(0) & GPI0__SD_CARD_IN_N) == 0 ) {
+            irq_external_mask( IrqExt__SdCard );
+            reset_gpio_bits(0, GPO0__SD_CARD_POLARITY);
 
-    _cardStatusChanged.wait();
+            uart_send("Initializing SD card\n");
+
+            initCard();
+
+            // Disable interrupts, set up the IRQ, and then sleep, which will re-enable interrupts
+            Saros::csr_read_clr_bits<Saros::CSR::mstatus>( Saros::MSTATUS__MIE );
+
+            irq_external_unmask( IrqExt__SdCard );
+            _cardStatusChanged.wait();
+        } else {
+            uart_send("SD card removed\n");
+
+            // Disable interrupts, set up the IRQ, and then sleep, which will re-enable interrupts
+            Saros::csr_read_clr_bits<Saros::CSR::mstatus>( Saros::MSTATUS__MIE );
+
+            set_gpio_bits(0, GPO0__SD_CARD_POLARITY);
+            irq_external_unmask( IrqExt__SdCard );
+            _cardStatusChanged.wait();
+        }
+    }
 }
 
 void SD::init() {
     saros.createThread( [](void *) noexcept { sd.threadMain(); }, nullptr);
 }
 
+void SD::irq_handler() noexcept {
+    irq_external_mask( IrqExt__SdCard );
+
+    sd._cardStatusChanged.signal();
+}
+
 [[nodiscard]] static SdReply1 send_app_cmd() {
     SdReply1 cardStatus;
     uint32_t status = send_sd_cmd(SdCmd::APP_CMD, 0, cardStatus.reply);
 
+#if 0
     uart_send("APP_CMD status ");
     print_hex(status);
     uart_send(" reply ");
     print_hex(cardStatus.reply);
     uart_send("\n");
+#endif
 
     if( (status & GetStatus__ReplyReceived) && ((status & GetStatus__ErrorMask) == 0) && cardStatus.appCmd ) {
         return cardStatus;

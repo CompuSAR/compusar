@@ -14,6 +14,7 @@ public:
     const SD &operator=(const SD &) = delete;
 
     static void init();
+    static void irq_handler() noexcept;
 
 private:
     void threadMain() noexcept;

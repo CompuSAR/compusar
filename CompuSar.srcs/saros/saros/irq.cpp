@@ -6,6 +6,7 @@
 #include "irq.h"
 #include "memory.h"
 #include "reg.h"
+#include "sd.h"
 #include "uart.h"
 
 #define DEVICE_NUM 3
@@ -91,6 +92,8 @@ static void handleExternalInterrupt() {
         handle_uart_rx_ready_irq();
     if( (active_irqs & IrqExt__Vsync) != 0 )
         Display::handle_vsync_irq();
+    if( (active_irqs & IrqExt__SdCard) != 0 )
+        SD::irq_handler();
 }
 
 extern "C"
