@@ -2,13 +2,13 @@
 
 module crc# (
     CRC_BITS = 16,
-    INIT_VALUE = 0,
     POLYNOM = 1
 )(
     input clock_i,
     input reset_i,
     input bit_valid_i,
     input bit_i,
+    input [CRC_BITS-1:0] init_value_i,
 
     output [CRC_BITS-1:0] crc_o
 );
@@ -21,7 +21,7 @@ assign crc_o = crc;
 
 always_ff@(posedge clock_i) begin
     if( reset_i ) begin
-        crc <= INIT_VALUE;
+        crc <= init_value_i;
     end else if( bit_valid_i ) begin
         if( crc[CRC_BITS-1] ^ bit_i ) begin
             crc <= shifted ^ POLYNOM;

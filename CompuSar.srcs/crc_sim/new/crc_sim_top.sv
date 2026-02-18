@@ -39,7 +39,7 @@ logic [15:0] current_crc16;
 
 crc#(
     .CRC_BITS(7),
-    .INIT_VALUE(7'b0),
+    .INIT_VALUE(7'b1011011),
     .POLYNOM(7'b0001001)
 ) crc7(
     .clock_i(clock),
@@ -66,7 +66,8 @@ crc#(
 // These sample calculations are from the SD simplified specs
 //logic [39:0] test_value = 40'b0100000000000000000000000000000000000000; // CRC should be 1001010
 //logic [39:0] test_value = 40'b0101000100000000000000000000000000000000; // CRC should be 0101010
-logic [39:0] test_value = 40'b0001000100000000000000000000100100000000; // CRC should be 0110011
+//logic [39:0] test_value = 40'b0001000100000000000000000000100100000000; // CRC should be 0110011
+logic [39:0] test_value = 40'b0011111100000000000000000000000000000000;   // CRC should be 0000000 after 8 bits if we start from XXXXXXX
 
 initial begin
     reset = 1'b1;

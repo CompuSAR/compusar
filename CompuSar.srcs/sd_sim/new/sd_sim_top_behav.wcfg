@@ -11,17 +11,17 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="7,531.666 ns"></ZoomStartTime>
-      <ZoomEndTime time="9,136.667 ns"></ZoomEndTime>
-      <Cursor1Time time="7,906.666 ns"></Cursor1Time>
+      <ZoomStartTime time="9,132.195 ns"></ZoomStartTime>
+      <ZoomEndTime time="9,207.996 ns"></ZoomEndTime>
+      <Cursor1Time time="9,144.828 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="154"></NameColumnWidth>
-      <ValueColumnWidth column_width="117"></ValueColumnWidth>
+      <ValueColumnWidth column_width="113"></ValueColumnWidth>
    </column_width_setting>
    <WVObjectSize size="29" />
    <wave_markers>
-      <marker label="" time="4180000" />
+      <marker label="" time="9144828" />
    </wave_markers>
    <wvobject type="logic" fp_name="/sd_sim_top/status">
       <obj_property name="ElementShortName">status</obj_property>

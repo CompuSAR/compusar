@@ -160,6 +160,7 @@ localparam REPLY_PAYLOAD_SIZE = 128 + 6;
 localparam REPLY_WAIT_CYCLES = 20;
 
 wire cmd_crc_reset, cmd_crc_valid;
+wire [6:0] cmd_crc_init_value;
 logic [31:0] cmd_args_sd;
 logic [5:0] last_cmd_sd;
 logic [1:0] reply_type_sd;
@@ -168,6 +169,7 @@ logic [$clog2(REPLY_PAYLOAD_SIZE+1)-1:0] cmd_io_buffer_fill;
 
 assign cmd_crc_reset = cmd_state==CMD_IDLE || cmd_state==CMD_RECV_PENDING;
 assign cmd_crc_valid = cmd_state==CMD_SEND_CMD || cmd_state==CMD_RECV;
+assign cmd_crc_init_value = (cmd_state==CMD_RECV_PENDING && cmd_state[1]) ? 7'b1011011 : 7'b0000000;
 
 localparam CMD_CRC_BITS = 7;
 logic [CMD_CRC_BITS-1:0] cmd_crc_value;
@@ -185,7 +187,7 @@ task handle_cmd_idle();
             CMDCDC_ARG: cmd_args_sd <= cmd_cdc_data;
             CMDCDC_CMD: begin
                 cmd_state <= CMD_SEND_CMD;
-                cmd_io_buffer <= { START_BIT, 1'b1, cmd_cdc_data[5:0], cmd_args_sd };
+                cmd_io_buffer <= { {REPLY_PAYLOAD_SIZE-48{1'bX}}, START_BIT, 1'b1, cmd_cdc_data[5:0], cmd_args_sd };
                 cmd_io_buffer_fill <= 39;
                 last_cmd_sd <= cmd_cdc_data[5:0];
                 reply_type_sd <= cmd_cdc_data[9:8];
@@ -195,7 +197,7 @@ task handle_cmd_idle();
 endtask
 
 task handle_send_cmd();
-    cmd_io_buffer[CMD_CMD_BITS-1:0] <= {cmd_io_buffer[CMD_CMD_BITS-2:0], 1'bX};
+    cmd_io_buffer <= { cmd_io_buffer[REPLY_PAYLOAD_SIZE-2:0], 1'bX };
     cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
 
     if( cmd_io_buffer_fill==0 ) begin
@@ -205,7 +207,7 @@ task handle_send_cmd();
 endtask
 
 task handle_send_crc();
-    cmd_io_buffer[CMD_CMD_BITS-1:0] <= {cmd_io_buffer[CMD_CMD_BITS-2:0], 1'bX};
+    cmd_io_buffer <= { cmd_io_buffer[REPLY_PAYLOAD_SIZE-2:0], 1'bX };
     cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
 
     if( cmd_io_buffer_fill==CMD_CRC_BITS-1 ) begin
@@ -244,7 +246,7 @@ endtask
 
 task handle_recv();
     cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
-    cmd_io_buffer[47:0] <= { cmd_io_buffer[46:0], sd_cmd_i };
+    cmd_io_buffer <= { cmd_io_buffer[REPLY_PAYLOAD_SIZE-2:0], sd_cmd_i };
 
     if( cmd_io_buffer_fill == 0 ) begin
         cmd_state <= CMD_RECV_CRC;
@@ -254,7 +256,7 @@ endtask
 
 task handle_recv_crc();
     cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
-    cmd_io_buffer[47:0] <= { cmd_io_buffer[46:0], sd_cmd_i };
+    cmd_io_buffer <= { cmd_io_buffer[REPLY_PAYLOAD_SIZE-2:0], sd_cmd_i };
 
     if( cmd_io_buffer_fill == 0 ) begin
         cmd_state <= CMD_RECV_STOP;
@@ -310,13 +312,13 @@ end
 
 crc#(
     .CRC_BITS(CMD_CRC_BITS),
-    .INIT_VALUE(7'b0),
     .POLYNOM(7'b0001001)
 ) cmd_crc(
     .clock_i(sd_clk),
     .reset_i(cmd_crc_reset),
     .bit_valid_i(cmd_crc_valid),
     .bit_i(sd_cmd_dir ? sd_cmd_i : sd_cmd_o),
+    .init_value_i(cmd_crc_init_value),
 
     .crc_o(cmd_crc_value)
 );

@@ -87,80 +87,74 @@ task wait_ctrl_ack();
         @(posedge ctrl_clk);
 endtask
 
+task send_ctrl_cmd(input [15:0]addr, input [31:0]data);
+    // Assume we're already at the negative edge of the clock
+    req_valid = 1'b1;
+    req_addr = addr;
+    req_data = data;
+    req_write = 1'b1;
+
+    wait_ctrl_ack();
+
+    @(negedge ctrl_clk);
+    req_valid = 1'b0;
+endtask
+
+task read_ctrl_reg(input [15:0]addr);
+    // Assume we're already at the negative edge of the clock
+    req_valid = 1'b1;
+    req_write = 1'b0;
+    req_addr = addr;
+
+    wait_ctrl_ack();
+
+    @(negedge ctrl_clk);
+    req_valid = 1'b0;
+
+    @(posedge ctrl_clk);
+    while( !rsp_valid )
+        @(posedge ctrl_clk);
+endtask
+
 initial begin
     #2000;
 
     // Send CMD0
     @(negedge ctrl_clk);
-    req_valid = 1'b1;
-    req_write = 1'b1;
-    req_addr = 16'h0000;
-    req_data = 32'h00000000;
-
-    wait_ctrl_ack();
-
-    @(negedge ctrl_clk);
-    req_addr = 16'h0004;
-
-    wait_ctrl_ack();
-
-    @(negedge ctrl_clk);
-    req_valid = 1'b0;
+    send_ctrl_cmd(16'h0000, 32'h00000000);
+    send_ctrl_cmd(16'h0004, 32'h00000000);
 
     #200;
     @(negedge ctrl_clk);
-    req_valid = 1'b1;
-    req_data = 17 | 256;
-
-    wait_ctrl_ack();
-    @(negedge ctrl_clk);
-    req_valid = 1'b0;
+    send_ctrl_cmd(16'h0004, 17 | 256);
 
     #200;
     @(negedge ctrl_clk);
-    req_valid = 1'b1;
-    req_addr = 16'h0000;
-    req_data = 32'h000001a5;
-    wait_ctrl_ack();
-
-    @(negedge ctrl_clk);
-    req_addr = 16'h0004;
-    req_valid = 1'b1;
-    req_data = 8 | 256;
-
-    wait_ctrl_ack();
-    @(negedge ctrl_clk);
-    req_valid = 1'b0;
+    send_ctrl_cmd(16'h0000, 32'h000001a5);
+    send_ctrl_cmd(16'h0004, 32'h00000108);
 
     #200;
     @(negedge ctrl_clk);
-    req_valid = 1'b1;
-    req_write = 1'b0;
-    req_addr = 16'h0000;
-
-    wait_ctrl_ack();
+    read_ctrl_reg(16'h0000);
     @(negedge ctrl_clk);
-    req_valid = 1'b0;
 
-    @(posedge ctrl_clk);
-    while( !rsp_valid )
-        @(posedge ctrl_clk);
+    read_ctrl_reg(16'h0010);
 
     @(negedge ctrl_clk);
-    req_valid = 1'b1;
-    req_write = 1'b0;
-    req_addr = 16'h0010;
 
-    wait_ctrl_ack();
+    send_ctrl_cmd(16'h0000, 32'h00000302);
+    send_ctrl_cmd(16'h0004, 32'h00000000);
+
+    read_ctrl_reg(16'h0000);
     @(negedge ctrl_clk);
-    req_valid = 1'b0;
-
-    @(posedge ctrl_clk);
-    while( !rsp_valid )
-        @(posedge ctrl_clk);
-
+    read_ctrl_reg(16'h0010);
     @(negedge ctrl_clk);
-    req_valid = 1'b0;
+    read_ctrl_reg(16'h0014);
+    @(negedge ctrl_clk);
+    read_ctrl_reg(16'h0018);
+    @(negedge ctrl_clk);
+    read_ctrl_reg(16'h001c);
+    @(negedge ctrl_clk);
 end
 
 enum { CMD_IDLE, CMD_RECV_HEADER, CMD_RECV_CRC, CMD_RECV_STOPBIT } cmd_state = CMD_IDLE;
@@ -169,13 +163,13 @@ int cmd_counter;
 logic [6:0] cmd_crc_value;
 crc#(
     .CRC_BITS(7),
-    .INIT_VALUE(7'b0),
     .POLYNOM(7'b0001001)
 ) cmd_crc(
     .clock_i(sd_clock),
     .reset_i(cmd_state==CMD_IDLE),
     .bit_valid_i(cmd_state==CMD_RECV_HEADER),
     .bit_i(sd_cmd_signal),
+    .init_value_i( 7'h00 ),
 
     .crc_o(cmd_crc_value)
 );
