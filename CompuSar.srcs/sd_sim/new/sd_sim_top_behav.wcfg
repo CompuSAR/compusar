@@ -11,17 +11,22 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="9,132.195 ns"></ZoomStartTime>
-      <ZoomEndTime time="9,207.996 ns"></ZoomEndTime>
-      <Cursor1Time time="9,144.828 ns"></Cursor1Time>
+      <ZoomStartTime time="4,089.500 ns"></ZoomStartTime>
+      <ZoomEndTime time="5,230.501 ns"></ZoomEndTime>
+      <Cursor1Time time="4,540.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="154"></NameColumnWidth>
-      <ValueColumnWidth column_width="113"></ValueColumnWidth>
+      <ValueColumnWidth column_width="109"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="29" />
+   <WVObjectSize size="33" />
    <wave_markers>
-      <marker label="" time="9144828" />
+      <marker label="" time="2620000" />
+      <marker label="" time="4500000" />
+      <marker label="" time="6460000" />
+      <marker label="" time="6540000" />
+      <marker label="" time="8420000" />
+      <marker label="" time="4580000" />
    </wave_markers>
    <wvobject type="logic" fp_name="/sd_sim_top/status">
       <obj_property name="ElementShortName">status</obj_property>
@@ -91,9 +96,22 @@
       <obj_property name="CustomSignalColor">#800080</obj_property>
       <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_args_sd">
+      <obj_property name="ElementShortName">cmd_args_sd[31:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_args_sd[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_cdc_data">
+      <obj_property name="ElementShortName">cmd_cdc_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_cdc_data[31:0]</obj_property>
+   </wvobject>
    <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_state">
       <obj_property name="ElementShortName">cmd_state[31:0]</obj_property>
       <obj_property name="ObjectShortName">cmd_state[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/last_cmd_sd">
+      <obj_property name="ElementShortName">last_cmd_sd[5:0]</obj_property>
+      <obj_property name="ObjectShortName">last_cmd_sd[5:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_io_buffer">
       <obj_property name="ElementShortName">cmd_io_buffer[133:0]</obj_property>
@@ -116,6 +134,10 @@
    <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_crc_value">
       <obj_property name="ElementShortName">cmd_crc_value[6:0]</obj_property>
       <obj_property name="ObjectShortName">cmd_crc_value[6:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_crc_init_value">
+      <obj_property name="ElementShortName">cmd_crc_init_value[6:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_crc_init_value[6:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sd_sim_top/cmd_state">
       <obj_property name="ElementShortName">cmd_state[31:0]</obj_property>
@@ -151,7 +173,7 @@
       <obj_property name="Radix">SIGNEDDECRADIX</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sd_sim_top/reply_buffer">
-      <obj_property name="ElementShortName">reply_buffer[47:0]</obj_property>
-      <obj_property name="ObjectShortName">reply_buffer[47:0]</obj_property>
+      <obj_property name="ElementShortName">reply_buffer[135:0]</obj_property>
+      <obj_property name="ObjectShortName">reply_buffer[135:0]</obj_property>
    </wvobject>
 </wave_config>

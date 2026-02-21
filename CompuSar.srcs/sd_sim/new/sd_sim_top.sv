@@ -116,6 +116,27 @@ task read_ctrl_reg(input [15:0]addr);
         @(posedge ctrl_clk);
 endtask
 
+task get_cmd_status();
+    do begin
+        read_ctrl_reg(16'h0000);
+    end while( rsp_data[31] );
+
+    $displayh("CMD status ", rsp_data);
+    @(negedge ctrl_clk);
+    read_ctrl_reg(16'h001c);
+    $displayh("  ", rsp_data);
+    @(negedge ctrl_clk);
+    read_ctrl_reg(16'h0018);
+    $displayh("  ", rsp_data);
+    @(negedge ctrl_clk);
+    read_ctrl_reg(16'h0014);
+    $displayh("  ", rsp_data);
+    @(negedge ctrl_clk);
+    read_ctrl_reg(16'h0010);
+    $displayh("  ", rsp_data);
+    @(negedge ctrl_clk);
+endtask
+
 initial begin
     #2000;
 
@@ -123,44 +144,30 @@ initial begin
     @(negedge ctrl_clk);
     send_ctrl_cmd(16'h0000, 32'h00000000);
     send_ctrl_cmd(16'h0004, 32'h00000000);
+    get_cmd_status();
 
     #200;
     @(negedge ctrl_clk);
     send_ctrl_cmd(16'h0004, 17 | 256);
+    get_cmd_status();
 
     #200;
     @(negedge ctrl_clk);
     send_ctrl_cmd(16'h0000, 32'h000001a5);
     send_ctrl_cmd(16'h0004, 32'h00000108);
-
-    #200;
-    @(negedge ctrl_clk);
-    read_ctrl_reg(16'h0000);
-    @(negedge ctrl_clk);
-
-    read_ctrl_reg(16'h0010);
+    get_cmd_status();
 
     @(negedge ctrl_clk);
 
-    send_ctrl_cmd(16'h0000, 32'h00000302);
-    send_ctrl_cmd(16'h0004, 32'h00000000);
-
-    read_ctrl_reg(16'h0000);
-    @(negedge ctrl_clk);
-    read_ctrl_reg(16'h0010);
-    @(negedge ctrl_clk);
-    read_ctrl_reg(16'h0014);
-    @(negedge ctrl_clk);
-    read_ctrl_reg(16'h0018);
-    @(negedge ctrl_clk);
-    read_ctrl_reg(16'h001c);
-    @(negedge ctrl_clk);
+    send_ctrl_cmd(16'h0000, 32'h00000000);
+    send_ctrl_cmd(16'h0004, 32'h00000702);
+    get_cmd_status();
 end
 
 enum { CMD_IDLE, CMD_RECV_HEADER, CMD_RECV_CRC, CMD_RECV_STOPBIT } cmd_state = CMD_IDLE;
 logic [47:0] cmd;
 int cmd_counter;
-logic [6:0] cmd_crc_value;
+logic [6:0] cmd_crc_value, cmd_crc_init_value;
 crc#(
     .CRC_BITS(7),
     .POLYNOM(7'b0001001)
@@ -236,24 +243,30 @@ always_ff@(posedge sd_clock) begin
 end
 
 int reply_count = 0;
-logic [47:0] reply_buffer;
+logic [135:0] reply_buffer;
 
 always_ff@(negedge sd_clock) begin
     if( reply_active ) begin
         if( reply_count!=0 ) begin
             reply_count <= reply_count-1;
-            sd_cmd_drive <= reply_buffer[47];
-            reply_buffer <= { reply_buffer[46:0], 1'bX };
+            sd_cmd_drive <= reply_buffer[reply_count-1];
         end else begin
             reply_count <= 0;
             sd_cmd_drive <= 1'bz;
             reply_active <= 1'b0;
+            reply_buffer <= 'X;
         end
     end
 
     if( verify ) begin
         case(verify__cmd)
             6'd0: $display("Received CMD0");
+            6'd02: begin
+                reply_active <= 1'b1;
+                $display("Received CMD02");
+                reply_count <= 136;
+                reply_buffer <= 136'h3f7f0000000000000000000000000071a7;
+            end
             6'd17: begin
                 reply_active <= 1'b1;
                 $display("Received CMD17");

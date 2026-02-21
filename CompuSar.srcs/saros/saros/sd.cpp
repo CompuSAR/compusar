@@ -16,7 +16,9 @@ namespace {
 constexpr uint32_t RegW__SetCmdArgument                 = 0x0000;
 constexpr uint32_t RegW__SendCmd                        = 0x0004;
     constexpr uint32_t SetCmd__Reply48                  = 0x00000100;
-    constexpr uint32_t SetCmd__Reply136                 = 0x00000300;
+    // The reply will have the CMD bits all set
+    constexpr uint32_t SetCmd__ReplyCmd3f               = 0x00000400;
+    constexpr uint32_t SetCmd__Reply136                 = 0x00000700;
 
 // Read registers
 constexpr uint32_t RegR__GetStatus                      = 0x0000;
@@ -39,13 +41,14 @@ static constexpr uint32_t DeviceId = 6;
 
 static constexpr uint8_t APP_CMD_BIT = 1<<7;
 static constexpr uint8_t CMD_BITS_MASK = (1<<6) - 1;
-enum class SdCmd : uint8_t {
+enum class SdCmd : uint16_t {
     GO_IDLE_STATE = 0,
+    ALL_SEND_CID = 2 | SetCmd__ReplyCmd3f,
     SEND_IF_COND = 8,
     READ_SINGLE_BLOCK = 17,
     APP_CMD = 55,
 
-    SD_SEND_OP_COND = 41 | APP_CMD_BIT,
+    SD_SEND_OP_COND = 41 | APP_CMD_BIT | SetCmd__ReplyCmd3f,
 };
 
 union SdReply1 {
@@ -84,12 +87,36 @@ union SdReply1 {
 };
 static_assert(sizeof(SdReply1) == sizeof(uint32_t));
 
+struct uint128_t {
+    uint32_t w0, w1, w2, w3;
+};
+static_assert(sizeof(uint128_t) == 16, "Wrong 128 bit type");
+
+union CID {
+    uint128_t raw;
+    struct {
+        uint32_t stopBit : 1;
+        uint32_t crc : 7;
+        uint32_t manufacturingMonth : 4;
+        uint32_t manufacturingYear : 8;
+        uint32_t reserved : 4;
+        uint32_t prodSN2 : 8;
+        uint32_t prodSN1 : 24;
+        uint32_t prodRev : 8;
+        char productName[5];
+        uint32_t oid : 16;
+        uint32_t manufacturerId : 8;
+    };
+};
+static_assert(sizeof(CID) == 16);
+
 namespace {
     SD sd;
 };
 
 static void send_sd_cmd(SdCmd command, uint32_t args);
 [[nodiscard]] static uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint32_t &reply);
+[[nodiscard]] static uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint128_t &reply);
 
 void SD::initCard() {
     // Implement the init state machine described in section 4.2.3
@@ -153,6 +180,39 @@ void SD::initCard() {
     print_hex(status);
     uart_send(" reply ");
     print_hex(reply);
+    uart_send("\n");
+
+    CID cid;
+    status = send_sd_cmd(SdCmd::ALL_SEND_CID, 0, cid.raw);
+    uart_send("get CID status ");
+    print_hex(status);
+    uart_send(" CID: ");
+    print_hex(cid.raw.w3);
+    print_hex(cid.raw.w2);
+    print_hex(cid.raw.w1);
+    print_hex(cid.raw.w0);
+    uart_send("\n");
+
+    uart_send("Manufacturer ID ");
+    print_hex(cid.manufacturerId);
+    uart_send(" OEM ");
+    print_hex(cid.oid);
+    uart_send(" product name \"");
+    for( char c : cid.productName ) {
+        if( c=='\0' )
+            break;
+
+        uart_send(c);
+    }
+    uart_send("\" rev ");
+    print_hex(cid.prodRev);
+    uart_send(" S/N ");
+    print_hex(cid.prodSN1);
+    print_hex(cid.prodSN2);
+    uart_send(" manufacturing date ");
+    print_hex(cid.manufacturingMonth);
+    uart_send("/");
+    print_hex(cid.manufacturingYear);
     uart_send("\n");
 
     return;
@@ -253,3 +313,25 @@ uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint32_t &reply) {
     return status;
 }
 
+uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint128_t &reply) {
+    if( (static_cast<uint32_t>(command) & APP_CMD_BIT) != 0 ) {
+        if( !send_app_cmd().appCmd ) {
+            return GetStatus__CmdMismatch;
+        }
+    }
+
+    reg_write_32(DeviceId, RegW__SetCmdArgument, args);
+    reg_write_32(DeviceId, RegW__SendCmd, static_cast<uint32_t>(command) & CMD_BITS_MASK | SetCmd__Reply136);
+
+    uint32_t status;
+    do {
+       status = reg_read_32(DeviceId, RegR__GetStatus);
+    } while( (status & GetStatus__Busy) != 0 );
+
+    reply.w0 = reg_read_32(DeviceId, RegR__GetReply0);
+    reply.w1 = reg_read_32(DeviceId, RegR__GetReply1);
+    reply.w2 = reg_read_32(DeviceId, RegR__GetReply2);
+    reply.w3 = reg_read_32(DeviceId, RegR__GetReply3);
+
+    return status;
+}

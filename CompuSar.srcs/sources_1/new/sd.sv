@@ -45,7 +45,7 @@ logic CMDCDC_ARG = 2'b01;
 logic CMDCDC_CMD = 2'b00;
 
 logic clock_selector = 1'b0;
-logic [CMDCDC_BITS+31:0] cmd_cdc_data_ctrl, cmd_cdc_data_sd;
+logic [CMDCDC_BITS+31:0] cmd_cdc_data_ctrl;
 logic cmd_cdc_valid_ctrl = 1'b0, cmd_cdc_valid_sd, cmd_cdc_ack_ctrl, cmd_cdc_ack_sd = 1'b0;
 
 // Only accept new commands if our CDC is idle
@@ -152,7 +152,7 @@ assign sd_clk_o = sd_clk;
 
 enum {
     CMD_IDLE = 4'b0100, CMD_SEND_CMD = 4'b0001, CMD_SEND_CRC = 4'b0010, CMD_SEND_STOP = 4'b0111,
-    CMD_RECV_PENDING = 4'b1000, CMD_RECV, CMD_RECV_CRC, CMD_RECV_STOP
+    CMD_RECV_PENDING = 4'b1000, CMD_RECV_HEADER, CMD_RECV_DATA, CMD_RECV_CRC, CMD_RECV_STOP
  } cmd_state = CMD_IDLE;
 
 localparam CMD_PAYLOAD_SIZE = 40;
@@ -168,12 +168,16 @@ logic [REPLY_PAYLOAD_SIZE-1:0] cmd_io_buffer;
 logic [$clog2(REPLY_PAYLOAD_SIZE+1)-1:0] cmd_io_buffer_fill;
 
 assign cmd_crc_reset = cmd_state==CMD_IDLE || cmd_state==CMD_RECV_PENDING;
-assign cmd_crc_valid = cmd_state==CMD_SEND_CMD || cmd_state==CMD_RECV;
-assign cmd_crc_init_value = (cmd_state==CMD_RECV_PENDING && cmd_state[1]) ? 7'b1011011 : 7'b0000000;
+assign cmd_crc_valid = cmd_state==CMD_SEND_CMD || cmd_state==CMD_RECV_HEADER || cmd_state==CMD_RECV_DATA;
+// In case of 136bit answer (R2), initialize the CRC so that it zeros after the
+// header, which is always 8'b00111111.
+assign cmd_crc_init_value = (cmd_state==CMD_RECV_PENDING && cmd_cdc_data[9]) ? 7'b0111111 : 7'b0000000;
 
 localparam CMD_CRC_BITS = 7;
+localparam CMD_REPLY_HEADER_BITS = 8;
 logic [CMD_CRC_BITS-1:0] cmd_crc_value;
 localparam CMD_REPLY_BITS = 48 - CMD_CRC_BITS - 1;
+localparam CMD_REPLY_BITS_LONG = 136 - CMD_CRC_BITS - 1;
 localparam CMD_CMD_BITS = 40;
 
 localparam START_BIT = 1'b0;
@@ -189,7 +193,10 @@ task handle_cmd_idle();
                 cmd_state <= CMD_SEND_CMD;
                 cmd_io_buffer <= { {REPLY_PAYLOAD_SIZE-48{1'bX}}, START_BIT, 1'b1, cmd_cdc_data[5:0], cmd_args_sd };
                 cmd_io_buffer_fill <= 39;
-                last_cmd_sd <= cmd_cdc_data[5:0];
+                if( cmd_cdc_data[10] )
+                    last_cmd_sd <= 6'b111111;
+                else
+                    last_cmd_sd <= cmd_cdc_data[5:0];
                 reply_type_sd <= cmd_cdc_data[9:8];
             end
         endcase
@@ -228,15 +235,18 @@ endtask
 
 task handle_recv_pend();
     cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
+    cdc_reply_error_sd <= { NUM_ERROR_BITS{1'b0} };
 
     if( sd_cmd_i == 1'b0 ) begin
-        cmd_state <= CMD_RECV;
-        cmd_io_buffer_fill <= CMD_REPLY_BITS - 2;       // -1 for the non-blocking assignment, another because this cycle should also count
-        cmd_io_buffer[0] <= 1'b0;
+        cmd_state <= CMD_RECV_HEADER;
+        cmd_io_buffer_fill <= 6;        // 1 start bit (already passed), 1 direction bit (non-blocking assignment) and 6 cmd bits
+        cmd_io_buffer[0] <= sd_cmd_i;
 
         // Our CRC calculation doesn't look at this start bit. That's okay,
         // however, as the CRC's initial value is 0, which means it is
-        // agnostic to leading zeros.
+        // agnostic to leading zeros. It's more problematic for 136 bit
+        // replies, but there we just seed the initial value considering this
+        // fact.
     end else if( cmd_io_buffer_fill==0 ) begin
         cdc_reply_error_sd <= REPLY_ERROR_TIMEOUT;
         cdc_reply_valid_sd <= 1'b1;
@@ -244,7 +254,30 @@ task handle_recv_pend();
     end
 endtask
 
-task handle_recv();
+task handle_recv_header();
+    cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
+    cmd_io_buffer <= { cmd_io_buffer[REPLY_PAYLOAD_SIZE-2:0], sd_cmd_i };
+
+    if( cmd_io_buffer_fill == 0 ) begin
+        cmd_state <= CMD_RECV_DATA;
+
+        if( cmd_cdc_data[9] ) begin
+            // 136 bit reply
+
+            // -1 for the non-blocking assignment, another because this cycle should also count
+            cmd_io_buffer_fill <= CMD_REPLY_BITS_LONG - CMD_REPLY_HEADER_BITS - 1;
+        end else begin
+            // Regular 48 bit reply
+            cmd_io_buffer_fill <= CMD_REPLY_BITS  - CMD_REPLY_HEADER_BITS - 1;
+        end
+
+        if( {cmd_io_buffer[4:0], sd_cmd_i} != last_cmd_sd ) begin
+            cdc_reply_error_sd <= REPLY_ERROR_CMD_MISMATCH;
+        end
+    end
+endtask
+
+task handle_recv_data();
     cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
     cmd_io_buffer <= { cmd_io_buffer[REPLY_PAYLOAD_SIZE-2:0], sd_cmd_i };
 
@@ -270,15 +303,17 @@ task handle_recv_stop();
 
     if( sd_cmd_i != 1'b1 )
         error |= REPLY_ERROR_INVALID_REPLY;
-    if( cmd_io_buffer[CMD_CRC_BITS+37:CMD_CRC_BITS+32] != last_cmd_sd )
-        error |= REPLY_ERROR_CMD_MISMATCH;
     if( cmd_io_buffer[CMD_CRC_BITS-1:0] != cmd_crc_value )
         error |= REPLY_ERROR_CRC_MISMATCH;
 
-    cdc_reply_error_sd <= error;
+    cdc_reply_error_sd <= cdc_reply_error_sd | error;
     cdc_reply_valid_sd <= 1'b1;
 
-    cdc_reply_sd[31:0] <= cmd_io_buffer[CMD_CRC_BITS+31:CMD_CRC_BITS];
+    if( cmd_cdc_data[9] ) begin
+        cdc_reply_sd <= { cmd_io_buffer[126:0], sd_cmd_i };
+    end else begin
+        cdc_reply_sd <= { 96'bX, cmd_io_buffer[CMD_CRC_BITS+31:CMD_CRC_BITS] };
+    end
 endtask
 
 always_ff@(posedge sd_clk) begin
@@ -294,7 +329,8 @@ always_ff@(posedge sd_clk) begin
         CMD_SEND_CRC: handle_send_crc();
         CMD_SEND_STOP: handle_send_stop();
         CMD_RECV_PENDING: handle_recv_pend();
-        CMD_RECV: handle_recv();
+        CMD_RECV_HEADER: handle_recv_header();
+        CMD_RECV_DATA: handle_recv_data();
         CMD_RECV_CRC: handle_recv_crc();
         CMD_RECV_STOP: handle_recv_stop();
     endcase
