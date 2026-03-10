@@ -43,10 +43,19 @@ logic sd_cmd_i, sd_cmd_o = 1'b1, sd_cmd_dir = 1'b1;
 localparam CMDCDC_BITS = 2;
 logic CMDCDC_ARG = 2'b01;
 logic CMDCDC_CMD = 2'b00;
+logic CMDCDC_DATA = 2'b10;
+
+localparam MAX_DATA_TRANSFER = 2048;
+localparam MAX_DATA_TRANSFER_BITS = $clog2(MAX_DATA_TRANSFER + 1);
+
+localparam SD_CDC_PIPELINE_LEN = 4;
 
 logic clock_selector = 1'b0;
 logic [CMDCDC_BITS+31:0] cmd_cdc_data_ctrl;
 logic cmd_cdc_valid_ctrl = 1'b0, cmd_cdc_valid_sd, cmd_cdc_ack_ctrl, cmd_cdc_ack_sd = 1'b0;
+
+logic [DMA_WIDTH-1:0] data_cdc_data_ctrl, data_cdc_data_sd;
+logic data_cdc_valid_ctrl, data_cdc_valid_sd, data_cdc_ack_ctrl, data_cdc_ack_sd;
 
 // Only accept new commands if our CDC is idle
 assign ctrl_req_ack_o = !cmd_cdc_valid_ctrl && !cmd_cdc_ack_ctrl;
@@ -62,6 +71,8 @@ logic [NUM_ERROR_BITS-1:0] status_error = 4'b0000;
 logic [127:0] last_reply_ctrl, cdc_reply_sd, cdc_reply_ctrl;
 logic [NUM_ERROR_BITS-1:0] cdc_reply_error_sd, cdc_reply_error_ctrl;
 logic cdc_reply_valid_ctrl, cdc_reply_valid_sd = 1'b0, cdc_reply_ack_sd;
+
+logic [31:0]  dma_address;
 
 // Handle ctrl commands
 always_ff@(posedge ctrl_clock_i) begin
@@ -82,14 +93,24 @@ always_ff@(posedge ctrl_clock_i) begin
             // Handle the write case
             cmd_cdc_valid_ctrl <= 1'b1;
             case(ctrl_req_addr_i)
-                16'h0000: cmd_cdc_data_ctrl <= { CMDCDC_ARG, ctrl_req_data_i };
+                16'h0000: begin
+                    cmd_cdc_data_ctrl <= { CMDCDC_ARG, ctrl_req_data_i };
+                    cmd_cdc_valid_ctrl <= 1'b1;
+                end
                 16'h0004: begin
                     cmd_cdc_data_ctrl <= { CMDCDC_CMD, ctrl_req_data_i };
+                    cmd_cdc_valid_ctrl <= 1'b1;
                     status_reply_received <= 1'b0;
                     status_error <= 4'b0000;
                     status_busy <= ctrl_req_data_i[8];
                 end
-                default: cmd_cdc_valid_ctrl <= 1'b0;
+                16'h0100: begin
+                    dma_address <= ctrl_req_data_i;
+                end
+                16'h0104: begin
+                    cmd_cdc_data_ctrl <= { CMDCDC_DATA, ctrl_req_data_i };
+                    cmd_cdc_valid_ctrl <= 1'b1;
+                end
             endcase
         end else begin
             // Handle the read case
@@ -140,6 +161,22 @@ xpm_cdc_handshake#(
     .dest_req(cdc_reply_valid_ctrl)
 );
 
+xpm_cdc_handshake#(
+    .WIDTH(DMA_WIDTH),
+    .SRC_SYNC_FF(2),
+    .DEST_SYNC_FF(2)
+) data_cdc_read(
+    .src_clk(sd_clk),
+    .src_in(data_cdc_data_sd),
+    .src_send(data_cdc_valid_sd),
+    .src_rcv(data_cdc_ack_sd),
+
+    .dest_clk(ctrl_clock_i),
+    .dest_out(data_cdc_data_ctrl),
+    .dest_req(data_cdc_valid_ctrl),
+    .dest_ack(data_cdc_ack_ctrl)
+);
+
 BUFGMUX clock_switcher(
     .I0(sd_default_speed_clock_i),
     .I1(sd_high_speed_clock_i),
@@ -180,8 +217,20 @@ localparam CMD_REPLY_BITS = 48 - CMD_CRC_BITS - 1;
 localparam CMD_REPLY_BITS_LONG = 136 - CMD_CRC_BITS - 1;
 localparam CMD_CMD_BITS = 40;
 
+logic [MAX_DATA_TRANSFER_BITS-1:0] sd_data_bits_counter;
+logic [DMA_WIDTH-1:0] data_pipeline[SD_CDC_PIPELINE_LEN];
+logic [DMA_WIDTH-1:0] data_buffer;
+logic [$clog2(DMA_WIDTH)-1:0] data_buffer_fill;
+logic data_pipeline_valid[SD_CDC_PIPELINE_LEN];
+assign data_cdc_valid_sd = data_pipeline_valid[0];
+assign data_cdc_data_sd = data_pipeline[0];
+
 localparam START_BIT = 1'b0;
 localparam STOP_BIT = 1'b1;
+
+enum {
+    DATA_IDLE, DATA_R_WAIT_START, DATA_RECV, DATA_R_CRC
+ } data_state = DATA_IDLE;
 
 task handle_cmd_idle();
     if( cmd_cdc_valid_sd && !cmd_cdc_ack_sd ) begin
@@ -198,6 +247,18 @@ task handle_cmd_idle();
                 else
                     last_cmd_sd <= cmd_cdc_data[5:0];
                 reply_type_sd <= cmd_cdc_data[9:8];
+            end
+            CMDCDC_DATA: begin
+                sd_data_bits_counter <= cmd_cdc_data[MAX_DATA_TRANSFER_BITS-1:0];
+                {sd_data_dir, sd_data_width_4bit} <= cmd_cdc_data[31:30];
+                for( int i=0; i<SD_CDC_PIPELINE_LEN; ++i )
+                    data_pipeline_valid[i] <= 1'b0;
+
+                if( cmd_cdc_data[MAX_DATA_TRANSFER_BITS-1:0] == 0 )
+                    data_state <= DATA_IDLE;
+                else
+                    // TODO add the write path
+                    data_state <= DATA_R_WAIT_START;
             end
         endcase
     end
@@ -316,6 +377,37 @@ task handle_recv_stop();
     end
 endtask
 
+task handle_data_idle();
+endtask
+
+task handle_data_r_wait_start();
+    if( sd_data_i[0] == START_BIT ) begin
+        data_state <= DATA_RECV;
+        data_buffer_fill <= 0;
+    end
+endtask
+
+task handle_data_receive();
+    if( sd_data_width_4bit ) begin
+    end else begin
+        data_buffer <= {data_buffer[DMA_WIDTH-2:0], sd_data_i[0]};
+        data_buffer_fill <= data_buffer_fill + 1;
+
+        if( data_buffer_fill==DMA_WIDTH-1 ) begin
+            data_buffer_fill <= 0;
+            data_pipeline[SD_CDC_PIPELINE_LEN-1] <= {data_buffer[DMA_WIDTH-2:0], sd_data_i[0]};
+            data_pipeline_valid[SD_CDC_PIPELINE_LEN-1] <= 1'b1;
+
+            if( data_pipeline_valid[SD_CDC_PIPELINE_LEN-1] ) begin
+                // TODO report buffer overrun error
+            end
+        end
+    end
+endtask
+
+task handle_data_r_crc();
+endtask
+
 always_ff@(posedge sd_clk) begin
     if( cmd_cdc_ack_sd && !cmd_cdc_valid_sd )
         cmd_cdc_ack_sd <= 1'b0;
@@ -333,6 +425,33 @@ always_ff@(posedge sd_clk) begin
         CMD_RECV_DATA: handle_recv_data();
         CMD_RECV_CRC: handle_recv_crc();
         CMD_RECV_STOP: handle_recv_stop();
+    endcase
+
+    // Advance the data pipeline
+    // TODO this handles only the read path
+    for( int i=2; i<SD_CDC_PIPELINE_LEN; ++i ) begin
+        if( data_pipeline_valid[i] && !data_pipeline_valid[i-1] ) begin
+            data_pipeline[i-1] <= data_pipeline[i];
+            data_pipeline_valid[i-1] <= 1'b1;
+            data_pipeline_valid[i] <= 1'b0;
+        end
+    end
+
+    if( data_pipeline_valid[1] && !data_pipeline_valid[0] && !data_cdc_ack_sd ) begin
+        data_pipeline[0] <= data_pipeline[1];
+        data_pipeline_valid[0] <= 1'b1;
+        data_pipeline_valid[1] <= 1'b0;
+    end
+
+    if( data_pipeline_valid[0] && data_cdc_ack_sd ) begin
+        data_pipeline_valid[0] <= 1'b0;
+    end
+
+    case( data_state )
+        DATA_IDLE: handle_data_idle();
+        DATA_R_WAIT_START: handle_data_r_wait_start();
+        DATA_RECV: handle_data_receive();
+        DATA_R_CRC: handle_data_r_crc();
     endcase
 end
 
@@ -360,18 +479,6 @@ crc#(
 );
 
 /*
-crc#(
-    .CRC_BITS(16),
-    .INIT_VALUE(7'b0),
-    .POLYNOM(16'b0001000000100001)
-) data_crc(
-    .clock_i(sd_clk),
-    .reset_i(reset),
-    .bit_valid_i(valid16),
-    .bit_i(value),
-
-    .crc_o(current_crc16)
-);
 */
 
 IOBUF cmd_buf(
@@ -381,5 +488,39 @@ IOBUF cmd_buf(
 
     .IO(sd_cmd_io)
 );
+
+logic [3:0] sd_data_i, sd_data_o;
+logic sd_data_dir = 1'b1, sd_data_width_4bit = 1'b0;
+
+genvar i;
+
+generate
+
+for( i=0; i<4; ++i ) begin : data_channels
+    logic [15:0] data_crc_value;
+
+    IOBUF data_buf(
+        .I(sd_data_o[i]),
+        .O(sd_data_i[i]),
+        .T(sd_data_dir),
+
+        .IO(sd_data_io[i])
+    );
+
+    crc#(
+        .CRC_BITS(16),
+        .POLYNOM(16'b0001000000100001)
+    ) data_crc(
+        .clock_i(sd_clk),
+        .reset_i(data_state == DATA_IDLE),
+        .bit_valid_i(data_state == DATA_RECV),
+        .bit_i(sd_data_dir ? sd_data_i[i] : sd_data_o[i]),
+        .init_value_i(16'h0000),
+
+        .crc_o(data_crc_value)
+    );
+end
+
+endgenerate
 
 endmodule

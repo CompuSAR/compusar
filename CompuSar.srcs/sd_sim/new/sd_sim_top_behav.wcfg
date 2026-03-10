@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="4,089.500 ns"></ZoomStartTime>
-      <ZoomEndTime time="5,230.501 ns"></ZoomEndTime>
-      <Cursor1Time time="4,540.000 ns"></Cursor1Time>
+      <ZoomStartTime time="13,755.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="16,041.001 ns"></ZoomEndTime>
+      <Cursor1Time time="15,620.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="154"></NameColumnWidth>
-      <ValueColumnWidth column_width="109"></ValueColumnWidth>
+      <ValueColumnWidth column_width="105"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="33" />
+   <WVObjectSize size="41" />
    <wave_markers>
       <marker label="" time="2620000" />
       <marker label="" time="4500000" />
@@ -27,6 +27,8 @@
       <marker label="" time="6540000" />
       <marker label="" time="8420000" />
       <marker label="" time="4580000" />
+      <marker label="" time="15620000" />
+      <marker label="" time="10500000" />
    </wave_markers>
    <wvobject type="logic" fp_name="/sd_sim_top/status">
       <obj_property name="ElementShortName">status</obj_property>
@@ -175,5 +177,40 @@
    <wvobject type="array" fp_name="/sd_sim_top/reply_buffer">
       <obj_property name="ElementShortName">reply_buffer[135:0]</obj_property>
       <obj_property name="ObjectShortName">reply_buffer[135:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd_clock">
+      <obj_property name="ElementShortName">sd_clock</obj_property>
+      <obj_property name="ObjectShortName">sd_clock</obj_property>
+      <obj_property name="CustomSignalColor">#800080</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd_data_drive[0]">
+      <obj_property name="ElementShortName">[0]</obj_property>
+      <obj_property name="ObjectShortName">[0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/dc_count">
+      <obj_property name="ElementShortName">dc_count[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dc_count[31:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd_data_drive">
+      <obj_property name="ElementShortName">sd_data_drive[3:0]</obj_property>
+      <obj_property name="ObjectShortName">sd_data_drive[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd_data_pin">
+      <obj_property name="ElementShortName">sd_data_pin[3:0]</obj_property>
+      <obj_property name="ObjectShortName">sd_data_pin[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd_data_signal">
+      <obj_property name="ElementShortName">sd_data_signal[3:0]</obj_property>
+      <obj_property name="ObjectShortName">sd_data_signal[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/dc_state">
+      <obj_property name="ElementShortName">dc_state[31:0]</obj_property>
+      <obj_property name="ObjectShortName">dc_state[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/data_card_crc_value">
+      <obj_property name="ElementShortName">data_card_crc_value[15:0]</obj_property>
+      <obj_property name="ObjectShortName">data_card_crc_value[15:0]</obj_property>
    </wvobject>
 </wave_config>

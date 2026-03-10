@@ -19,6 +19,12 @@ constexpr uint32_t RegW__SendCmd                        = 0x0004;
     // The reply will have the CMD bits all set
     constexpr uint32_t SetCmd__ReplyCmd3f               = 0x00000400;
     constexpr uint32_t SetCmd__Reply136                 = 0x00000700;
+constexpr uint32_t RegW__DataDmaAddr                    = 0x0100;
+constexpr uint32_t RegW__StartDataTransfer              = 0x0104;
+    constexpr uint32_t StartDataTransfer__SizeMask      = (1<<11) - 1;
+    constexpr uint32_t StartDataTransfer__Read          = 0x80000000;
+    constexpr uint32_t StartDataTransfer__Write         = 0x00000000;
+    constexpr uint32_t StartDataTransfer__4Wire         = 0x40000000;
 
 // Read registers
 constexpr uint32_t RegR__GetStatus                      = 0x0000;
@@ -44,6 +50,7 @@ static constexpr uint8_t CMD_BITS_MASK = (1<<6) - 1;
 enum class SdCmd : uint16_t {
     GO_IDLE_STATE = 0,
     ALL_SEND_CID = 2 | SetCmd__ReplyCmd3f,
+    SEND_RELATIVE_ADDR = 3,
     SEND_IF_COND = 8,
     READ_SINGLE_BLOCK = 17,
     APP_CMD = 55,
@@ -215,18 +222,11 @@ void SD::initCard() {
     print_hex(cid.manufacturingYear);
     uart_send("\n");
 
-    return;
-
-    uart_send("Negotiate voltage: status ");
-    print_hex(status);
-    uart_send(" reply ");
+    status = send_sd_cmd(SdCmd::SEND_RELATIVE_ADDR, 0, reply);
+    uart_send("Relative address ");
     print_hex(reply);
-    uart_send("\n");
-
-    status = send_sd_cmd(SdCmd::APP_CMD, 0, reply);
-    uart_send("App CMD: status ");
-    print_hex(status);
-    uart_send(" reply ");
+    uart_send(" ");
+    status = send_sd_cmd(SdCmd::SEND_RELATIVE_ADDR, 0, reply);
     print_hex(reply);
     uart_send("\n");
 }
