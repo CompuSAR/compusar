@@ -11,25 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="13,755.000 ns"></ZoomStartTime>
-      <ZoomEndTime time="16,041.001 ns"></ZoomEndTime>
-      <Cursor1Time time="15,620.000 ns"></Cursor1Time>
+      <ZoomStartTime time="326.250 ns"></ZoomStartTime>
+      <ZoomEndTime time="1,134.751 ns"></ZoomEndTime>
+      <Cursor1Time time="498.750 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
-      <NameColumnWidth column_width="154"></NameColumnWidth>
-      <ValueColumnWidth column_width="105"></ValueColumnWidth>
+      <NameColumnWidth column_width="190"></NameColumnWidth>
+      <ValueColumnWidth column_width="69"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="41" />
-   <wave_markers>
-      <marker label="" time="2620000" />
-      <marker label="" time="4500000" />
-      <marker label="" time="6460000" />
-      <marker label="" time="6540000" />
-      <marker label="" time="8420000" />
-      <marker label="" time="4580000" />
-      <marker label="" time="15620000" />
-      <marker label="" time="10500000" />
-   </wave_markers>
+   <WVObjectSize size="60" />
    <wvobject type="logic" fp_name="/sd_sim_top/status">
       <obj_property name="ElementShortName">status</obj_property>
       <obj_property name="ObjectShortName">status</obj_property>
@@ -79,6 +69,26 @@
    <wvobject type="array" fp_name="/sd_sim_top/rsp_data">
       <obj_property name="ElementShortName">rsp_data[31:0]</obj_property>
       <obj_property name="ObjectShortName">rsp_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_cdc_data_ctrl">
+      <obj_property name="ElementShortName">cmd_cdc_data_ctrl[33:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_cdc_data_ctrl[33:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd/cmd_cdc_valid_sd">
+      <obj_property name="ElementShortName">cmd_cdc_valid_sd</obj_property>
+      <obj_property name="ObjectShortName">cmd_cdc_valid_sd</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_cdc_cmd">
+      <obj_property name="ElementShortName">cmd_cdc_cmd[1:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_cdc_cmd[1:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_cdc_data">
+      <obj_property name="ElementShortName">cmd_cdc_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_cdc_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd/cmd_cdc_ack_sd">
+      <obj_property name="ElementShortName">cmd_cdc_ack_sd</obj_property>
+      <obj_property name="ObjectShortName">cmd_cdc_ack_sd</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sd_sim_top/sd_cmd_drive">
       <obj_property name="ElementShortName">sd_cmd_drive</obj_property>
@@ -187,6 +197,8 @@
    <wvobject type="logic" fp_name="/sd_sim_top/sd_data_drive[0]">
       <obj_property name="ElementShortName">[0]</obj_property>
       <obj_property name="ObjectShortName">[0]</obj_property>
+      <obj_property name="CustomSignalColor">#FF00FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sd_sim_top/dc_count">
       <obj_property name="ElementShortName">dc_count[31:0]</obj_property>
@@ -209,8 +221,64 @@
       <obj_property name="ElementShortName">dc_state[31:0]</obj_property>
       <obj_property name="ObjectShortName">dc_state[31:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/sd_sim_top/data_card_crc_value">
-      <obj_property name="ElementShortName">data_card_crc_value[15:0]</obj_property>
-      <obj_property name="ObjectShortName">data_card_crc_value[15:0]</obj_property>
+   <wvobject type="logic" fp_name="/sd_sim_top/dc_crc_valid">
+      <obj_property name="ElementShortName">dc_crc_valid</obj_property>
+      <obj_property name="ObjectShortName">dc_crc_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/sd_data_bits_counter">
+      <obj_property name="ElementShortName">sd_data_bits_counter[11:0]</obj_property>
+      <obj_property name="ObjectShortName">sd_data_bits_counter[11:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/data_pipeline">
+      <obj_property name="ElementShortName">data_pipeline[0:3][127:0]</obj_property>
+      <obj_property name="ObjectShortName">data_pipeline[0:3][127:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/data_pipeline_valid">
+      <obj_property name="ElementShortName">data_pipeline_valid[0:3]</obj_property>
+      <obj_property name="ObjectShortName">data_pipeline_valid[0:3]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd/sd_data_dir">
+      <obj_property name="ElementShortName">sd_data_dir</obj_property>
+      <obj_property name="ObjectShortName">sd_data_dir</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd/sd_data_width_4bit">
+      <obj_property name="ElementShortName">sd_data_width_4bit</obj_property>
+      <obj_property name="ObjectShortName">sd_data_width_4bit</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/data_cdc_data_sd">
+      <obj_property name="ElementShortName">data_cdc_data_sd[127:0]</obj_property>
+      <obj_property name="ObjectShortName">data_cdc_data_sd[127:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd/data_cdc_valid_sd">
+      <obj_property name="ElementShortName">data_cdc_valid_sd</obj_property>
+      <obj_property name="ObjectShortName">data_cdc_valid_sd</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sd_sim_top/sd/data_cdc_ack_sd">
+      <obj_property name="ElementShortName">data_cdc_ack_sd</obj_property>
+      <obj_property name="ObjectShortName">data_cdc_ack_sd</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/\data_channels[0].data_crc_value ">
+      <obj_property name="ElementShortName">\data_channels[0].data_crc_value [15:0]</obj_property>
+      <obj_property name="ObjectShortName">\data_channels[0].data_crc_value [15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/\data_channels[1].data_crc_value ">
+      <obj_property name="ElementShortName">\data_channels[1].data_crc_value [15:0]</obj_property>
+      <obj_property name="ObjectShortName">\data_channels[1].data_crc_value [15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/\data_channels[2].data_crc_value ">
+      <obj_property name="ElementShortName">\data_channels[2].data_crc_value [15:0]</obj_property>
+      <obj_property name="ObjectShortName">\data_channels[2].data_crc_value [15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/\data_channels[3].data_crc_value ">
+      <obj_property name="ElementShortName">\data_channels[3].data_crc_value [15:0]</obj_property>
+      <obj_property name="ObjectShortName">\data_channels[3].data_crc_value [15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/data_buffer">
+      <obj_property name="ElementShortName">data_buffer[127:0]</obj_property>
+      <obj_property name="ObjectShortName">data_buffer[127:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/data_buffer_fill">
+      <obj_property name="ElementShortName">data_buffer_fill[6:0]</obj_property>
+      <obj_property name="ObjectShortName">data_buffer_fill[6:0]</obj_property>
    </wvobject>
 </wave_config>

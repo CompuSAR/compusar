@@ -23,7 +23,13 @@
 module sd_sim_top(
     );
 
+localparam MEM_WIDTH = 128;
+localparam MEM_SIZE = 32768;
+localparam DATA_BLOCK_BITS = 512;
+
 logic sd_clk_default, sd_clk_high, ctrl_clk;
+
+logic [MEM_WIDTH-1:0] memory[MEM_SIZE];
 
 initial begin
     // 25MHz clock
@@ -69,6 +75,10 @@ assign sd_data_signal[1] = sd_data_pin[1] === 1'bZ ? 1'b1 : sd_data_pin[1];
 assign sd_data_signal[2] = sd_data_pin[2] === 1'bZ ? 1'b1 : sd_data_pin[2];
 assign sd_data_signal[3] = sd_data_pin[3] === 1'bZ ? 1'b1 : sd_data_pin[3];
 
+logic dma_req_valid, dma_req_write, dma_req_ack, dma_rsp_valid = 1'b0;
+logic [31:0] dma_req_addr;
+logic [MEM_WIDTH-1:0] dma_req_data, dma_rsp_data;
+
 wire sd_clock;
 
 sd sd(
@@ -81,6 +91,15 @@ sd sd(
     .ctrl_req_ack_o(req_ack),
     .ctrl_rsp_valid_o(rsp_valid),
     .ctrl_rsp_data_o(rsp_data),
+
+    .dma_req_valid_o(dma_req_valid),
+    .dma_req_addr_o(dma_req_addr),
+    .dma_req_write_o(dma_req_write),
+    .dma_req_data_o(dma_req_data),
+    .dma_req_ack_i(dma_req_ack),
+    
+    .dma_rsp_valid_i(dma_rsp_valid),
+    .dma_rsp_data_i(dma_rsp_data),
 
 
     .sd_default_speed_clock_i(sd_clk_default),
@@ -158,10 +177,29 @@ initial begin
 
     #200;
     @(negedge ctrl_clk);
-    // Configure data reception: read direction (bit31=1), 1-bit mode (bit30=0), 128 bits
-    send_ctrl_cmd(16'h0104, 32'h80000080);
-    send_ctrl_cmd(16'h0004, 17 | 256);
+    send_ctrl_cmd(16'h0100, 32'h00000400);                              // DMA write address
+    // Configure data reception: read direction (bit31=1), 1-bit mode (bit30=0), 512 bits
+    send_ctrl_cmd(16'h0104, 32'h80000000 | DATA_BLOCK_BITS);
+    send_ctrl_cmd(16'h0004, 17 | 32'h00000100);                         // CMD17, reply48
     get_cmd_status();
+
+    // Wait for all DMA writes (one per DMA_WIDTH chunk)
+    while( dma_write_count < DATA_BLOCK_BITS / MEM_WIDTH )
+        @(posedge ctrl_clk);
+
+    // Verify each chunk landed in memory in the correct order.
+    // The SD controller receives bits MSB-first and writes them in arrival order,
+    // so chunk 0 holds the most-significant DMA_WIDTH bits of data_block.
+    for( int i=0; i < DATA_BLOCK_BITS / MEM_WIDTH; ++i ) begin
+        automatic int addr = 32'h400 + i * (MEM_WIDTH / 8);
+        automatic logic [MEM_WIDTH-1:0] expected =
+            data_block[DATA_BLOCK_BITS - 1 - i*MEM_WIDTH -: MEM_WIDTH];
+        if( memory[addr] !== expected )
+            $display("DMA MEMORY[%0d] MISMATCH: got %h, expected %h",
+                     addr, memory[addr], expected);
+        else
+            $display("DMA MEMORY[%0d] OK: %h", addr, memory[addr]);
+    end
 
     #200;
     @(negedge ctrl_clk);
@@ -196,8 +234,8 @@ crc#(
 logic status = 1'b1;
 
 // ===== Data channel card simulation =====
-localparam DATA_BLOCK_BITS = 128;
-logic [DATA_BLOCK_BITS-1:0] data_block = 128'h0102030405060708090a0b0c0d0e0f11;
+logic [DATA_BLOCK_BITS-1:0] data_block =
+    512'h0f0e0d0c0b0a090807060504030201001f1e1d1c1b1a191817161514131211102f2e2d2c2b2a292827262524232221207f7e7d7c7b7a79787776757473727170;
 
 logic data_send_trigger = 1'b0;
 enum { DC_IDLE, DC_SEND_START, DC_SEND_DATA, DC_SEND_CRC, DC_SEND_END } dc_state = DC_IDLE;
@@ -350,12 +388,6 @@ always_ff@(negedge sd_clock) begin
                              sd.data_channels[0].data_crc_value, data_card_crc_value);
                 else
                     $display("DATA CRC OK: %h", data_card_crc_value);
-                // Validate the received data block in the DUT pipeline
-                if( sd.data_pipeline[3] !== data_block )
-                    $display("DATA PIPELINE MISMATCH: got %h, expected %h",
-                             sd.data_pipeline[3], data_block);
-                else
-                    $display("DATA PIPELINE OK: %h", sd.data_pipeline[3]);
             end
             sd_data_drive[0] <= data_card_crc_value[dc_count];
             if( dc_count == 0 )
@@ -369,6 +401,28 @@ always_ff@(negedge sd_clock) begin
             $display("Data: block send complete");
         end
     endcase
+end
+
+// DMA handler
+int dma_write_count = 0;
+
+always_ff@(posedge ctrl_clk) begin
+    dma_rsp_valid <= 1'b0;
+
+    if( dma_req_valid )
+        dma_req_ack <= 1'b1;
+
+    if( dma_req_valid && dma_req_ack ) begin
+        if( dma_req_write ) begin
+            memory[dma_req_addr] <= dma_req_data;
+            dma_write_count <= dma_write_count + 1;
+        end else begin
+            dma_rsp_data <= memory[dma_req_addr];
+            dma_rsp_valid <= 1'b1;
+        end
+
+        dma_req_ack <= 1'b0;
+    end
 end
 
 endmodule

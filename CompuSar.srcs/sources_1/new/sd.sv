@@ -18,9 +18,9 @@ module sd#(
     output ctrl_irq_o,
 
 
-    output dma_req_valid_o,
-    output [31:0] dma_req_addr_o,
-    output dma_req_write_o,
+    output logic dma_req_valid_o = 1'b0,
+    output logic [31:0] dma_req_addr_o,
+    output logic dma_req_write_o,
     output [DMA_WIDTH-1:0] dma_req_data_o,
     input dma_req_ack_i,
 
@@ -36,14 +36,11 @@ module sd#(
     output sd_clk_o
 );
 
-assign dma_req_valid_o = 1'b0;
-
 logic sd_cmd_i, sd_cmd_o = 1'b1, sd_cmd_dir = 1'b1;
 
 localparam CMDCDC_BITS = 2;
-logic CMDCDC_ARG = 2'b01;
-logic CMDCDC_CMD = 2'b00;
-logic CMDCDC_DATA = 2'b10;
+//logic [CMDCDC_BITS-1:0] CMDCDC_ARG = 2'b01, CMDCDC_CMD = 2'b00, CMDCDC_DATA = 2'b10;
+localparam CMDCDC_ARG = 2'b01, CMDCDC_CMD = 2'b00, CMDCDC_DATA = 2'b10;
 
 localparam MAX_DATA_TRANSFER = 2048;
 localparam MAX_DATA_TRANSFER_BITS = $clog2(MAX_DATA_TRANSFER + 1);
@@ -54,8 +51,8 @@ logic clock_selector = 1'b0;
 logic [CMDCDC_BITS+31:0] cmd_cdc_data_ctrl;
 logic cmd_cdc_valid_ctrl = 1'b0, cmd_cdc_valid_sd, cmd_cdc_ack_ctrl, cmd_cdc_ack_sd = 1'b0;
 
-logic [DMA_WIDTH-1:0] data_cdc_data_ctrl, data_cdc_data_sd;
-logic data_cdc_valid_ctrl, data_cdc_valid_sd, data_cdc_ack_ctrl, data_cdc_ack_sd;
+logic [DMA_WIDTH-1:0] data_cdc_data_sd;
+logic data_cdc_valid_ctrl, data_cdc_valid_sd, data_cdc_ack_ctrl = 1'b0, data_cdc_ack_sd;
 
 // Only accept new commands if our CDC is idle
 assign ctrl_req_ack_o = !cmd_cdc_valid_ctrl && !cmd_cdc_ack_ctrl;
@@ -74,8 +71,8 @@ logic cdc_reply_valid_ctrl, cdc_reply_valid_sd = 1'b0, cdc_reply_ack_sd;
 
 logic [31:0]  dma_address;
 
-// Handle ctrl commands
 always_ff@(posedge ctrl_clock_i) begin
+    // Handle ctrl commands
     ctrl_rsp_valid_o <= 1'b0;
 
     if( cdc_reply_valid_ctrl ) begin
@@ -123,6 +120,22 @@ always_ff@(posedge ctrl_clock_i) begin
                 16'h001c: ctrl_rsp_data_o <= last_reply_ctrl[127:96];
             endcase
         end
+    end
+
+    // Handle the read DMA case
+    if( !data_cdc_valid_ctrl && data_cdc_ack_ctrl )
+        data_cdc_ack_ctrl <= 1'b0;
+
+    if( data_cdc_valid_ctrl && !data_cdc_ack_ctrl && !dma_req_valid_o ) begin
+        dma_req_valid_o <= 1'b1;
+        dma_req_addr_o <= dma_address;
+        dma_req_write_o <= 1'b1;
+    end
+
+    if( data_cdc_valid_ctrl && !data_cdc_ack_ctrl && dma_req_valid_o && dma_req_ack_i ) begin
+        dma_req_valid_o <= 1'b0;
+        data_cdc_ack_ctrl <= 1'b1;
+        dma_address <= dma_address + DMA_WIDTH/8;
     end
 end
 
@@ -172,7 +185,7 @@ xpm_cdc_handshake#(
     .src_rcv(data_cdc_ack_sd),
 
     .dest_clk(ctrl_clock_i),
-    .dest_out(data_cdc_data_ctrl),
+    .dest_out(dma_req_data_o),
     .dest_req(data_cdc_valid_ctrl),
     .dest_ack(data_cdc_ack_ctrl)
 );
@@ -224,6 +237,11 @@ logic [$clog2(DMA_WIDTH)-1:0] data_buffer_fill;
 logic data_pipeline_valid[SD_CDC_PIPELINE_LEN];
 assign data_cdc_valid_sd = data_pipeline_valid[0];
 assign data_cdc_data_sd = data_pipeline[0];
+
+initial begin
+    for( int i=0; i<SD_CDC_PIPELINE_LEN; ++i )
+        data_pipeline_valid[i] = 1'b0;
+end
 
 localparam START_BIT = 1'b0;
 localparam STOP_BIT = 1'b1;
@@ -384,11 +402,15 @@ task handle_data_r_wait_start();
     if( sd_data_i[0] == START_BIT ) begin
         data_state <= DATA_RECV;
         data_buffer_fill <= 0;
+        sd_data_bits_counter <= sd_data_bits_counter - 1;
     end
 endtask
 
 task handle_data_receive();
+    sd_data_bits_counter <= sd_data_bits_counter - 1;
+
     if( sd_data_width_4bit ) begin
+        $display("4 bit receive not yet implemented");
     end else begin
         data_buffer <= {data_buffer[DMA_WIDTH-2:0], sd_data_i[0]};
         data_buffer_fill <= data_buffer_fill + 1;
