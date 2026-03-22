@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="326.250 ns"></ZoomStartTime>
-      <ZoomEndTime time="1,134.751 ns"></ZoomEndTime>
-      <Cursor1Time time="498.750 ns"></Cursor1Time>
+      <ZoomStartTime time="6,720.799 ns"></ZoomStartTime>
+      <ZoomEndTime time="7,796.008 ns"></ZoomEndTime>
+      <Cursor1Time time="6,900.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="190"></NameColumnWidth>
-      <ValueColumnWidth column_width="69"></ValueColumnWidth>
+      <ValueColumnWidth column_width="65"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="60" />
+   <WVObjectSize size="57" />
    <wvobject type="logic" fp_name="/sd_sim_top/status">
       <obj_property name="ElementShortName">status</obj_property>
       <obj_property name="ObjectShortName">status</obj_property>
@@ -117,8 +117,8 @@
       <obj_property name="ObjectShortName">cmd_cdc_data[31:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sd_sim_top/sd/cmd_state">
-      <obj_property name="ElementShortName">cmd_state[31:0]</obj_property>
-      <obj_property name="ObjectShortName">cmd_state[31:0]</obj_property>
+      <obj_property name="ElementShortName">cmd_state[3:0]</obj_property>
+      <obj_property name="ObjectShortName">cmd_state[3:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sd_sim_top/sd/last_cmd_sd">
       <obj_property name="ElementShortName">last_cmd_sd[5:0]</obj_property>
@@ -249,6 +249,10 @@
       <obj_property name="ElementShortName">data_cdc_data_sd[127:0]</obj_property>
       <obj_property name="ObjectShortName">data_cdc_data_sd[127:0]</obj_property>
    </wvobject>
+   <wvobject type="array" fp_name="/sd_sim_top/sd/data_state">
+      <obj_property name="ElementShortName">data_state[31:0]</obj_property>
+      <obj_property name="ObjectShortName">data_state[31:0]</obj_property>
+   </wvobject>
    <wvobject type="logic" fp_name="/sd_sim_top/sd/data_cdc_valid_sd">
       <obj_property name="ElementShortName">data_cdc_valid_sd</obj_property>
       <obj_property name="ObjectShortName">data_cdc_valid_sd</obj_property>
@@ -257,22 +261,6 @@
       <obj_property name="ElementShortName">data_cdc_ack_sd</obj_property>
       <obj_property name="ObjectShortName">data_cdc_ack_sd</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/sd_sim_top/sd/\data_channels[0].data_crc_value ">
-      <obj_property name="ElementShortName">\data_channels[0].data_crc_value [15:0]</obj_property>
-      <obj_property name="ObjectShortName">\data_channels[0].data_crc_value [15:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sd_sim_top/sd/\data_channels[1].data_crc_value ">
-      <obj_property name="ElementShortName">\data_channels[1].data_crc_value [15:0]</obj_property>
-      <obj_property name="ObjectShortName">\data_channels[1].data_crc_value [15:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sd_sim_top/sd/\data_channels[2].data_crc_value ">
-      <obj_property name="ElementShortName">\data_channels[2].data_crc_value [15:0]</obj_property>
-      <obj_property name="ObjectShortName">\data_channels[2].data_crc_value [15:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sd_sim_top/sd/\data_channels[3].data_crc_value ">
-      <obj_property name="ElementShortName">\data_channels[3].data_crc_value [15:0]</obj_property>
-      <obj_property name="ObjectShortName">\data_channels[3].data_crc_value [15:0]</obj_property>
-   </wvobject>
    <wvobject type="array" fp_name="/sd_sim_top/sd/data_buffer">
       <obj_property name="ElementShortName">data_buffer[127:0]</obj_property>
       <obj_property name="ObjectShortName">data_buffer[127:0]</obj_property>
@@ -280,5 +268,6 @@
    <wvobject type="array" fp_name="/sd_sim_top/sd/data_buffer_fill">
       <obj_property name="ElementShortName">data_buffer_fill[6:0]</obj_property>
       <obj_property name="ObjectShortName">data_buffer_fill[6:0]</obj_property>
+      <obj_property name="Radix">UNSIGNEDDECRADIX</obj_property>
    </wvobject>
 </wave_config>

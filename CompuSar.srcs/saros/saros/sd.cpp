@@ -19,23 +19,31 @@ constexpr uint32_t RegW__SendCmd                        = 0x0004;
     // The reply will have the CMD bits all set
     constexpr uint32_t SetCmd__ReplyCmd3f               = 0x00000400;
     constexpr uint32_t SetCmd__Reply136                 = 0x00000700;
+    constexpr uint32_t SetCmd__ReadData                 = 0x00001000;
+    constexpr uint32_t SetCmd__WriteData                = 0x00002000;
 constexpr uint32_t RegW__DataDmaAddr                    = 0x0100;
-constexpr uint32_t RegW__StartDataTransfer              = 0x0104;
+constexpr uint32_t RegW__DataTransferParams             = 0x0104;
     constexpr uint32_t StartDataTransfer__SizeMask      = (1<<11) - 1;
-    constexpr uint32_t StartDataTransfer__Read          = 0x80000000;
-    constexpr uint32_t StartDataTransfer__Write         = 0x00000000;
-    constexpr uint32_t StartDataTransfer__4Wire         = 0x40000000;
+    constexpr uint32_t StartDataTransfer__4Wire         = 0x80000000;
 
 // Read registers
 constexpr uint32_t RegR__GetStatus                      = 0x0000;
-    constexpr uint32_t GetStatus__Busy                  = 0x80000000;
+    constexpr uint32_t GetStatus__CmdBusy               = 0x80000000;
+    constexpr uint32_t GetStatus__DataBusy              = 0x40000000;
 
-    constexpr uint32_t GetStatus__ReplyReceived         = 0x00000001;
-    constexpr uint32_t GetStatus__Timeout               = 0x00000010;
-    constexpr uint32_t GetStatus__CmdMismatch           = 0x00000020;
-    constexpr uint32_t GetStatus__CrcMismatch           = 0x00000040;
-    constexpr uint32_t GetStatus__InvalidReplyBit       = 0x00000080;
-    constexpr uint32_t GetStatus__ErrorMask             = 0x000000f0;
+    constexpr uint32_t GetStatus__Cmd_ReplyReceived     = 0x00000001;
+    constexpr uint32_t GetStatus__Cmd_Timeout           = 0x00000010;
+    constexpr uint32_t GetStatus__Cmd_Mismatch          = 0x00000020;
+    constexpr uint32_t GetStatus__Cmd_CrcMismatch       = 0x00000040;
+    constexpr uint32_t GetStatus__Cmd_InvalidReplyBit   = 0x00000080;
+    constexpr uint32_t GetStatus__Cmd_ErrorMask         = 0x000000f0;
+
+    constexpr uint32_t GetStatus__Data_Timeout          = 0x00000100;
+    constexpr uint32_t GetStatus__Data_CrcMismatch      = 0x00000200;
+    constexpr uint32_t GetStatus__Data_StopBitError     = 0x00000400;
+    constexpr uint32_t GetStatus__Data_StartBitError    = 0x00000800;
+    constexpr uint32_t GetStatus__Data_DataOverrun      = 0x00001000;
+    constexpr uint32_t GetStatus__Data_ErrorMask        = 0x00001f00;
 
 constexpr uint32_t RegR__GetReply0                      = 0x0010;
 constexpr uint32_t RegR__GetReply1                      = 0x0014;
@@ -139,7 +147,7 @@ void SD::initCard() {
     args |= 0xa5;       // Check pattern XXX Use random pattern
     uint8_t status = send_sd_cmd(SdCmd::SEND_IF_COND, args, reply);
 
-    if( (status & GetStatus__Timeout) != 0 ) {
+    if( (status & GetStatus__Cmd_Timeout) != 0 ) {
         // SD did not reply to voltage confirmation. Either we can't support it or it's a ver 1 card.
         // The standard also suggests there is no card inserted, but we rely on a separate card detect to eliminate that
         // option.
@@ -159,7 +167,7 @@ void SD::initCard() {
 
     status = send_sd_cmd(SdCmd::SD_SEND_OP_COND, args, reply);
 
-    if( (status & GetStatus__Timeout) != 0 ) {
+    if( (status & GetStatus__Cmd_Timeout) != 0 ) {
         uart_send( "SD card failed to respond to commands\n" );
 
         return;
@@ -273,7 +281,7 @@ void SD::irq_handler() noexcept {
     SdReply1 cardStatus;
     uint32_t status = send_sd_cmd(SdCmd::APP_CMD, 0, cardStatus.reply);
 
-    if( (status & GetStatus__ReplyReceived) && ((status & GetStatus__ErrorMask) == 0) && cardStatus.appCmd ) {
+    if( (status & GetStatus__Cmd_ReplyReceived) && ((status & GetStatus__Cmd_ErrorMask) == 0) && cardStatus.appCmd ) {
         return cardStatus;
     }
 
@@ -296,7 +304,7 @@ void send_sd_cmd(SdCmd command, uint32_t args) {
 uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint32_t &reply) {
     if( (static_cast<uint32_t>(command) & APP_CMD_BIT) != 0 ) {
         if( !send_app_cmd().appCmd ) {
-            return GetStatus__CmdMismatch;
+            return GetStatus__Cmd_Mismatch;
         }
     }
 
@@ -306,7 +314,7 @@ uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint32_t &reply) {
     uint32_t status;
     do {
        status = reg_read_32(DeviceId, RegR__GetStatus);
-    } while( (status & GetStatus__Busy) != 0 );
+    } while( (status & GetStatus__CmdBusy) != 0 );
 
     reply = reg_read_32(DeviceId, RegR__GetReply0);
 
@@ -316,7 +324,7 @@ uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint32_t &reply) {
 uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint128_t &reply) {
     if( (static_cast<uint32_t>(command) & APP_CMD_BIT) != 0 ) {
         if( !send_app_cmd().appCmd ) {
-            return GetStatus__CmdMismatch;
+            return GetStatus__Cmd_Mismatch;
         }
     }
 
@@ -326,7 +334,7 @@ uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint128_t &reply) {
     uint32_t status;
     do {
        status = reg_read_32(DeviceId, RegR__GetStatus);
-    } while( (status & GetStatus__Busy) != 0 );
+    } while( (status & GetStatus__CmdBusy) != 0 );
 
     reply.w0 = reg_read_32(DeviceId, RegR__GetReply0);
     reply.w1 = reg_read_32(DeviceId, RegR__GetReply1);

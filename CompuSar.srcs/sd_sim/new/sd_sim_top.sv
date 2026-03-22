@@ -166,6 +166,7 @@ task get_cmd_status();
     @(negedge ctrl_clk);
 endtask
 
+localparam DMA_WRITE_ADDR = 32'h00000400;
 initial begin
     #2000;
 
@@ -177,21 +178,22 @@ initial begin
 
     #200;
     @(negedge ctrl_clk);
-    send_ctrl_cmd(16'h0100, 32'h00000400);                              // DMA write address
+    send_ctrl_cmd(16'h0100, DMA_WRITE_ADDR);                              // DMA write address
     // Configure data reception: read direction (bit31=1), 1-bit mode (bit30=0), 512 bits
-    send_ctrl_cmd(16'h0104, 32'h80000000 | DATA_BLOCK_BITS);
-    send_ctrl_cmd(16'h0004, 17 | 32'h00000100);                         // CMD17, reply48
+    send_ctrl_cmd(16'h0104, 32'h00000000 | DATA_BLOCK_BITS);
+    send_ctrl_cmd(16'h0004, 17 | 32'h00001100);                         // CMD17, reply48, read data
     get_cmd_status();
-
-    // Wait for all DMA writes (one per DMA_WIDTH chunk)
-    while( dma_write_count < DATA_BLOCK_BITS / MEM_WIDTH )
-        @(posedge ctrl_clk);
+    // Wait for data to finish coming
+    do begin
+        read_ctrl_reg(16'h0000);
+    end while( rsp_data[30] );
+    get_cmd_status();
 
     // Verify each chunk landed in memory in the correct order.
     // The SD controller receives bits MSB-first and writes them in arrival order,
     // so chunk 0 holds the most-significant DMA_WIDTH bits of data_block.
     for( int i=0; i < DATA_BLOCK_BITS / MEM_WIDTH; ++i ) begin
-        automatic int addr = 32'h400 + i * (MEM_WIDTH / 8);
+        automatic int addr = DMA_WRITE_ADDR/(MEM_WIDTH/8) + i;
         automatic logic [MEM_WIDTH-1:0] expected =
             data_block[DATA_BLOCK_BITS - 1 - i*MEM_WIDTH -: MEM_WIDTH];
         if( memory[addr] !== expected )
@@ -383,9 +385,9 @@ always_ff@(negedge sd_clock) begin
         DC_SEND_CRC: begin
             if( dc_count == 15 ) begin
                 // All data bits have been clocked into both CRC modules — validate now
-                if( sd.data_channels[0].data_crc_value !== data_card_crc_value )
+                if( sd.data_crc_value[0] !== data_card_crc_value )
                     $display("DATA CRC MISMATCH: DUT computed %h, testbench expected %h",
-                             sd.data_channels[0].data_crc_value, data_card_crc_value);
+                             sd.data_crc_value[0], data_card_crc_value);
                 else
                     $display("DATA CRC OK: %h", data_card_crc_value);
             end
@@ -413,11 +415,13 @@ always_ff@(posedge ctrl_clk) begin
         dma_req_ack <= 1'b1;
 
     if( dma_req_valid && dma_req_ack ) begin
+        automatic logic [31:0]mem_addr = dma_req_addr[31:$clog2(MEM_WIDTH/8)];
+
         if( dma_req_write ) begin
-            memory[dma_req_addr] <= dma_req_data;
+            memory[mem_addr] <= dma_req_data;
             dma_write_count <= dma_write_count + 1;
         end else begin
-            dma_rsp_data <= memory[dma_req_addr];
+            dma_rsp_data <= memory[mem_addr];
             dma_rsp_valid <= 1'b1;
         end
 
