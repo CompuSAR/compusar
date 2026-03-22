@@ -56,14 +56,15 @@ static constexpr uint32_t DeviceId = 6;
 static constexpr uint8_t APP_CMD_BIT = 1<<7;
 static constexpr uint8_t CMD_BITS_MASK = (1<<6) - 1;
 enum class SdCmd : uint16_t {
-    GO_IDLE_STATE = 0,
-    ALL_SEND_CID = 2 | SetCmd__ReplyCmd3f,
-    SEND_RELATIVE_ADDR = 3,
-    SEND_IF_COND = 8,
-    READ_SINGLE_BLOCK = 17,
+    CMD0_GO_IDLE_STATE = 0,
+    CMD2_ALL_SEND_CID = 2 | SetCmd__Reply136,
+    CMD3_SEND_RELATIVE_ADDR = 3,
+    CMD8_SEND_IF_COND = 8,
+    CMD9_SEND_CSD = 9 | SetCmd__Reply136,
+    CMD17_READ_SINGLE_BLOCK = 17,
     APP_CMD = 55,
 
-    SD_SEND_OP_COND = 41 | APP_CMD_BIT | SetCmd__ReplyCmd3f,
+    ACMD41_SD_SEND_OP_COND = 41 | APP_CMD_BIT | SetCmd__ReplyCmd3f,
 };
 
 union SdReply1 {
@@ -125,6 +126,50 @@ union CID {
 };
 static_assert(sizeof(CID) == 16);
 
+union CSD {
+    uint128_t raw;
+    struct {
+        uint32_t stopBit : 1;
+        uint32_t crc : 7;
+        uint32_t reserved1 : 1;
+        uint32_t wpUpc : 1;             // Write protect until power cycle
+        uint32_t fileFormat : 2;
+        uint32_t tmpWriteProtect : 1;
+        uint32_t permWriteProtect : 1;
+        uint32_t copy : 1;
+        uint32_t fileFormatGrp: 1;
+        uint32_t reserved2 : 5;
+        uint32_t writeBlPartial : 1;    // Legal to write partial blocks
+        uint32_t writeBlLen : 4;        // Max write data block length
+        uint32_t r2wFactor : 3;         // Write speed factor
+        uint32_t reserved3 : 2;
+        uint32_t wpGrpEnable : 1;
+        uint32_t wpGrpSize : 7;
+        uint32_t sectorSize : 7;
+        uint32_t eraseBlkEn : 1;
+        uint32_t cSizeMult : 3;
+        uint32_t vddWCurrMax : 3;
+        uint32_t vddWCurrMin : 3;
+        uint32_t vddRCurrMax : 3;
+        uint32_t vddRCurrMin : 3;
+        uint32_t cSize_low : 2;
+        uint32_t cSize_high : 10;
+        uint32_t reserved4 : 2;
+        uint32_t dsrImp : 1;
+        uint32_t readBlkMisalign : 1;
+        uint32_t writeBlkMisalign : 1;
+        uint32_t readBlPartial : 1;
+        uint32_t readBlLen : 4;
+        uint32_t ccc : 12;              // Card command class
+        uint32_t tranSpeed : 8;
+        uint32_t nsac : 8;              // Data read access time 2 in CLK cycles
+        uint32_t taac : 8;              // Data read access time 1
+        uint32_t reserved5 : 6;
+        uint32_t csdStructure : 2;
+    } v1;
+};
+static_assert(sizeof(CSD) == 16);
+
 namespace {
     SD sd;
 };
@@ -138,14 +183,14 @@ void SD::initCard() {
 
     // Reset the SD to power-on state, regardless of pervious state
     uart_send("SD card inserted\n");
-    send_sd_cmd(SdCmd::GO_IDLE_STATE, 0);
+    send_sd_cmd(SdCmd::CMD0_GO_IDLE_STATE, 0);
 
     // Make sure device is talking to us
     uint32_t reply;
     uint32_t args = 0;
     args |= 0x01 << 8;  // 2.6 - 3.3v
     args |= 0xa5;       // Check pattern XXX Use random pattern
-    uint8_t status = send_sd_cmd(SdCmd::SEND_IF_COND, args, reply);
+    uint8_t status = send_sd_cmd(SdCmd::CMD8_SEND_IF_COND, args, reply);
 
     if( (status & GetStatus__Cmd_Timeout) != 0 ) {
         // SD did not reply to voltage confirmation. Either we can't support it or it's a ver 1 card.
@@ -153,7 +198,7 @@ void SD::initCard() {
         // option.
 
         _cardType = CardType::Sdsc;
-        args = 0<<30;           // Cards that don't respond to SEND_IF_COND are told we don't support anything above SDSC
+        args = 0<<30;           // Cards that don't respond to CMD8_SEND_IF_COND are told we don't support anything above SDSC
     } else {
         uart_send("V2 cards are not yet supported\n");
         return;
@@ -165,7 +210,7 @@ void SD::initCard() {
     static constexpr uint64_t SendOpTimeoutNs = 1'0000'000'000; // 1 second
     static constexpr uint64_t SendOpTimeoutSplit = 50;
 
-    status = send_sd_cmd(SdCmd::SD_SEND_OP_COND, args, reply);
+    status = send_sd_cmd(SdCmd::ACMD41_SD_SEND_OP_COND, args, reply);
 
     if( (status & GetStatus__Cmd_Timeout) != 0 ) {
         uart_send( "SD card failed to respond to commands\n" );
@@ -173,12 +218,12 @@ void SD::initCard() {
         return;
     }
 
-    // The SD_SEND_OP_COND, and *only* it, respond with CMD and CRC set to all 1's. Instead of convulting the hardware for just
+    // The ACMD41_SD_SEND_OP_COND, and *only* it, respond with CMD and CRC set to all 1's. Instead of convulting the hardware for just
     // this one command, we /expect/ that status to have both GetStatus__CmdMismatch and GetStatus__CrcMismatch set.
 
     for( unsigned retries=0; retries<SendOpTimeoutSplit && (reply & (1u<<31))==0; retries++ ) {
         saros.sleep_ns( SendOpTimeoutNs / SendOpTimeoutSplit );
-        status = send_sd_cmd(SdCmd::SD_SEND_OP_COND, args, reply);
+        status = send_sd_cmd(SdCmd::ACMD41_SD_SEND_OP_COND, args, reply);
     }
 
     if( (reply & (1u<<31))==0 ) {
@@ -198,7 +243,7 @@ void SD::initCard() {
     uart_send("\n");
 
     CID cid;
-    status = send_sd_cmd(SdCmd::ALL_SEND_CID, 0, cid.raw);
+    status = send_sd_cmd(SdCmd::CMD2_ALL_SEND_CID, 0, cid.raw);
     uart_send("get CID status ");
     print_hex(status);
     uart_send(" CID: ");
@@ -230,12 +275,44 @@ void SD::initCard() {
     print_hex(cid.manufacturingYear);
     uart_send("\n");
 
-    status = send_sd_cmd(SdCmd::SEND_RELATIVE_ADDR, 0, reply);
+    status = send_sd_cmd(SdCmd::CMD3_SEND_RELATIVE_ADDR, 0, reply);
     uart_send("Relative address ");
     print_hex(reply);
+
+    uint32_t cardAddress = reply>>16;
+    uart_send("\nFetching CSD:\n");
+
+    CSD csd;
+    status = send_sd_cmd(SdCmd::CMD9_SEND_CSD, cardAddress<<16, csd.raw);
+    print_hex(csd.raw.w3);
     uart_send(" ");
-    status = send_sd_cmd(SdCmd::SEND_RELATIVE_ADDR, 0, reply);
-    print_hex(reply);
+    print_hex(csd.raw.w2);
+    uart_send(" ");
+    print_hex(csd.raw.w1);
+    uart_send(" ");
+    print_hex(csd.raw.w0);
+    uart_send("\n");
+
+    uint64_t numBlocks;
+    uint32_t blockSize;
+    switch(csd.v1.csdStructure) {
+    case 0:
+        {
+            blockSize = 1u << csd.v1.readBlLen;
+            uint32_t mult = 1u << (csd.v1.cSizeMult + 2u);
+            uint32_t cSize = (csd.v1.cSize_high << 2u) | csd.v1.cSize_low;
+            numBlocks = (cSize+1) * mult;
+            print_hex(mult);
+            uart_send(" ");
+            print_hex(cSize);
+            uart_send("\n");
+        }
+    }
+
+    uart_send("SD size: ");
+    print_hex(numBlocks);
+    uart_send("*");
+    print_hex(blockSize);
     uart_send("\n");
 }
 
