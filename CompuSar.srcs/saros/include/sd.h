@@ -5,8 +5,14 @@
 #include <stdint.h>
 
 class SD {
-    enum class CardType { Uninit, Sdsc, Sdhc, Sdxc, Sduc, Inactive } _cardType = CardType::Uninit;
+public:
+    enum class CardType { Uninit, Sdsc, Sdhc, Sdxc, Sduc, Inactive };
+
+private:
+    CardType _cardType = CardType::Uninit;
     Saros::Sync::Signal _cardStatusChanged;
+    uint64_t _numBlocks = 0;
+    uint32_t _cardAddr = 0;
 
 public:
     SD() = default;
@@ -16,8 +22,15 @@ public:
     static void init();
     static void irq_handler() noexcept;
 
+    explicit operator bool() const {
+        return _cardType != CardType::Uninit;
+    }
+
 private:
     void threadMain() noexcept;
 
     void initCard();
+    void uninit();
+
+    [[nodiscard]] static bool isError(uint32_t status);
 };

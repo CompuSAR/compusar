@@ -24,3 +24,16 @@ void print_hex(uint64_t number, bool sync) {
     }
 }
 
+void print_dec(uint64_t number) {
+    char buffer[25];
+    int i=0;
+
+    do {
+        buffer[i++] = (number % 10) + '0';
+        number /= 10;
+    } while(number!=0);
+
+    for( int j=i-1; j>=0; --j ) {
+        uart_send(buffer[j]);
+    }
+}

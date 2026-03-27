@@ -59,6 +59,7 @@ enum class SdCmd : uint16_t {
     CMD0_GO_IDLE_STATE = 0,
     CMD2_ALL_SEND_CID = 2 | SetCmd__Reply136,
     CMD3_SEND_RELATIVE_ADDR = 3,
+    CMD7_DE_SELECT_CARD = 7,
     CMD8_SEND_IF_COND = 8,
     CMD9_SEND_CSD = 9 | SetCmd__Reply136,
     CMD17_READ_SINGLE_BLOCK = 17,
@@ -178,8 +179,29 @@ static void send_sd_cmd(SdCmd command, uint32_t args);
 [[nodiscard]] static uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint32_t &reply);
 [[nodiscard]] static uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint128_t &reply);
 
+[[nodiscard]] bool SD::isError(uint32_t status) {
+    if( (status & GetStatus__Cmd_ErrorMask)==0 )
+        return false;
+
+    uart_send("SD error:");
+    if( status & GetStatus__Cmd_Timeout )
+        uart_send("  Timeout");
+    if( status & GetStatus__Cmd_Mismatch )
+        uart_send("  CMD mismatch");
+    if( status & GetStatus__Cmd_CrcMismatch )
+        uart_send("  CRC error");
+    if( status & GetStatus__Cmd_InvalidReplyBit )
+        uart_send("  Start/stop bit error");
+
+    uart_send("\n");
+
+    return true;
+}
+
 void SD::initCard() {
     // Implement the init state machine described in section 4.2.3
+
+    CardType cardType = CardType::Uninit;
 
     // Reset the SD to power-on state, regardless of pervious state
     uart_send("SD card inserted\n");
@@ -197,7 +219,7 @@ void SD::initCard() {
         // The standard also suggests there is no card inserted, but we rely on a separate card detect to eliminate that
         // option.
 
-        _cardType = CardType::Sdsc;
+        cardType = CardType::Sdsc;
         args = 0<<30;           // Cards that don't respond to CMD8_SEND_IF_COND are told we don't support anything above SDSC
     } else {
         uart_send("V2 cards are not yet supported\n");
@@ -244,14 +266,6 @@ void SD::initCard() {
 
     CID cid;
     status = send_sd_cmd(SdCmd::CMD2_ALL_SEND_CID, 0, cid.raw);
-    uart_send("get CID status ");
-    print_hex(status);
-    uart_send(" CID: ");
-    print_hex(cid.raw.w3);
-    print_hex(cid.raw.w2);
-    print_hex(cid.raw.w1);
-    print_hex(cid.raw.w0);
-    uart_send("\n");
 
     uart_send("Manufacturer ID ");
     print_hex(cid.manufacturerId);
@@ -276,44 +290,59 @@ void SD::initCard() {
     uart_send("\n");
 
     status = send_sd_cmd(SdCmd::CMD3_SEND_RELATIVE_ADDR, 0, reply);
-    uart_send("Relative address ");
-    print_hex(reply);
+    if( isError(status) )
+        return;
 
-    uint32_t cardAddress = reply>>16;
-    uart_send("\nFetching CSD:\n");
+    _cardAddr = reply>>16;
 
     CSD csd;
-    status = send_sd_cmd(SdCmd::CMD9_SEND_CSD, cardAddress<<16, csd.raw);
-    print_hex(csd.raw.w3);
-    uart_send(" ");
-    print_hex(csd.raw.w2);
-    uart_send(" ");
-    print_hex(csd.raw.w1);
-    uart_send(" ");
-    print_hex(csd.raw.w0);
-    uart_send("\n");
+    status = send_sd_cmd(SdCmd::CMD9_SEND_CSD, _cardAddr<<16, csd.raw);
+    if( isError(status) )
+        return;
 
-    uint64_t numBlocks;
-    uint32_t blockSize;
+    uint32_t blockSize = 512;
     switch(csd.v1.csdStructure) {
     case 0:
         {
+            // V1 card
             blockSize = 1u << csd.v1.readBlLen;
             uint32_t mult = 1u << (csd.v1.cSizeMult + 2u);
             uint32_t cSize = (csd.v1.cSize_high << 2u) | csd.v1.cSize_low;
-            numBlocks = (cSize+1) * mult;
-            print_hex(mult);
-            uart_send(" ");
-            print_hex(cSize);
-            uart_send("\n");
+            _numBlocks = (cSize+1) * mult;
         }
     }
 
     uart_send("SD size: ");
-    print_hex(numBlocks);
-    uart_send("*");
-    print_hex(blockSize);
-    uart_send("\n");
+    print_dec(_numBlocks);
+    uart_send(" blocks of ");
+    print_dec(blockSize);
+    uart_send(" bytes = ");
+    print_dec( _numBlocks * blockSize / 1024 / 1024 );
+    uart_send("MB\n");
+
+
+    if( blockSize != 512 ) {
+        uart_send("Only 512 bytes block cards are supported\n");
+
+        return;
+    }
+
+    /* We're skipping the following stages of init
+     *  CMD4 - driver stages:   Undocumented in the simplified specs, and also probably unsopported for an FPGA based impl.
+     *                          Also - probably unnecessary for the low frequencies we work at, but we'll never know.
+     *  CMD16 set block length: For SDSC the default is defined as 512 bytes, for the others it's the only legal value.
+     *                          So our code assumes 512 bytes block and refuses to work otherwise.
+     * ACMD6 - wide bus:        TODO Not yet implemented in hardware
+     */
+
+
+    uart_send("Selecting card\n");
+    SdReply1 rep1;
+    status = send_sd_cmd( SdCmd::CMD7_DE_SELECT_CARD, _cardAddr<<16, rep1.reply );
+    if( isError(status) )
+        return;
+
+    _cardType = cardType;
 }
 
 void SD::threadMain() noexcept {
@@ -325,6 +354,13 @@ void SD::threadMain() noexcept {
             uart_send("Initializing SD card\n");
 
             initCard();
+
+            if( !sd ) {
+                uart_send("Card initialization failed. Retrying in 1 second\n");
+                saros.sleep_ns( 1'000'000'000 );
+
+                continue;
+            }
 
             // Disable interrupts, set up the IRQ, and then sleep, which will re-enable interrupts
             Saros::csr_read_clr_bits<Saros::CSR::mstatus>( Saros::MSTATUS__MIE );
@@ -352,6 +388,10 @@ void SD::irq_handler() noexcept {
     irq_external_mask( IrqExt__SdCard );
 
     sd._cardStatusChanged.signal();
+}
+
+void SD::uninit() {
+    _cardType = CardType::Uninit;
 }
 
 [[nodiscard]] static SdReply1 send_app_cmd() {
