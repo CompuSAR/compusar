@@ -274,7 +274,7 @@ logic sd_data_dir = 1'b1, sd_data_width_4bit = 1'b0;
 logic [DATA_CRC_BITS-1:0] data_crc_value[4];
 
 enum {
-    DATA_IDLE, DATA_R_WAIT_START, DATA_RECV, DATA_R_CRC
+    DATA_IDLE, DATA_R_WAIT_START, DATA_RECV, DATA_R_CRC, DATA_R_STOP
  } data_state = DATA_IDLE;
 
 genvar i;
@@ -522,7 +522,21 @@ task handle_data_r_crc();
     end
 
     if( sd_data_bits_counter==0 )
-        data_state <= DATA_IDLE;
+        data_state <= DATA_R_STOP;
+endtask
+
+task handle_data_r_stop();
+    if( sd_data_i[0] != 1'b1 )
+        sd_data_error_stop_bit <= 1'b1;
+
+    if( sd_data_width_4bit ) begin
+        for( int i=1; i<4; ++i ) begin
+            if( sd_data_i[i] != 1'b1 )
+                sd_data_error_stop_bit <= 1'b1;
+        end
+    end
+
+    data_state <= DATA_IDLE;
 endtask
 
 always_ff@(posedge sd_clk) begin
@@ -569,6 +583,7 @@ always_ff@(posedge sd_clk) begin
         DATA_R_WAIT_START: handle_data_r_wait_start();
         DATA_RECV: handle_data_receive();
         DATA_R_CRC: handle_data_r_crc();
+        DATA_R_STOP: handle_data_r_stop();
     endcase
 end
 
