@@ -1,5 +1,6 @@
 #include "sd.h"
 
+#include "saros/csr.h"
 #include "saros/saros.h"
 
 #include "format.h"
@@ -7,6 +8,8 @@
 #include "irq.h"
 #include "reg.h"
 #include "uart.h"
+
+#include <mutex>
 
 /* In this file, any comment referencing a standard section refers to "SD Physical Layer Simplified Specification Ver 9.00"
  */
@@ -38,12 +41,12 @@ constexpr uint32_t RegR__GetStatus                      = 0x0000;
     constexpr uint32_t GetStatus__Cmd_InvalidReplyBit   = 0x00000080;
     constexpr uint32_t GetStatus__Cmd_ErrorMask         = 0x000000f0;
 
-    constexpr uint32_t GetStatus__Data_Timeout          = 0x00000100;
-    constexpr uint32_t GetStatus__Data_CrcMismatch      = 0x00000200;
-    constexpr uint32_t GetStatus__Data_StopBitError     = 0x00000400;
-    constexpr uint32_t GetStatus__Data_StartBitError    = 0x00000800;
-    constexpr uint32_t GetStatus__Data_DataOverrun      = 0x00001000;
-    constexpr uint32_t GetStatus__Data_ErrorMask        = 0x00001f00;
+    constexpr uint32_t GetStatus__Data_Timeout          = 0x00010000;
+    constexpr uint32_t GetStatus__Data_CrcMismatch      = 0x00020000;
+    constexpr uint32_t GetStatus__Data_StopBitError     = 0x00040000;
+    constexpr uint32_t GetStatus__Data_StartBitError    = 0x00080000;
+    constexpr uint32_t GetStatus__Data_DataOverrun      = 0x00100000;
+    constexpr uint32_t GetStatus__Data_ErrorMask        = 0x001f0000;
 
 constexpr uint32_t RegR__GetReply0                      = 0x0010;
 constexpr uint32_t RegR__GetReply1                      = 0x0014;
@@ -62,7 +65,7 @@ enum class SdCmd : uint16_t {
     CMD7_DE_SELECT_CARD = 7,
     CMD8_SEND_IF_COND = 8,
     CMD9_SEND_CSD = 9 | SetCmd__Reply136,
-    CMD17_READ_SINGLE_BLOCK = 17,
+    CMD17_READ_SINGLE_BLOCK = 17 | SetCmd__ReadData,
     APP_CMD = 55,
 
     ACMD41_SD_SEND_OP_COND = 41 | APP_CMD_BIT | SetCmd__ReplyCmd3f,
@@ -179,11 +182,57 @@ static void send_sd_cmd(SdCmd command, uint32_t args);
 [[nodiscard]] static uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint32_t &reply);
 [[nodiscard]] static uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint128_t &reply);
 
+SD::BlockPtr SD::readBlock(uint32_t blockNum) const {
+    if( checkUninit() )
+        return _blocksPool.emptyPtr();
+
+    if( blockNum>=_numBlocks ) {
+        uart_send("E: SD readBlock(");
+        print_dec(blockNum);
+        uart_send(" out of range\n");
+
+        return _blocksPool.emptyPtr();
+    }
+
+    std::unique_lock dataLock(_dataLock);
+
+    waitDataIdle();
+
+    BlockPtr block = _blocksPool.alloc();
+
+    reg_write_32(DeviceId, RegW__DataDmaAddr, reinterpret_cast<uint32_t>(block->data.data()));
+    reg_write_32(DeviceId, RegW__DataTransferParams, BlockSize * 8);    // Size is in bits
+
+    uint32_t addressMultiplier = 1;
+    switch(_cardType) {
+    case CardType::Sdsc:
+        addressMultiplier = 8;
+        break;
+    default:
+        addressMultiplier = 1;
+    }
+
+    SdReply1 reply;
+    if( isError( send_sd_cmd(SdCmd::CMD17_READ_SINGLE_BLOCK, blockNum * addressMultiplier, reply.reply) ) )
+        return _blocksPool.emptyPtr();
+    // TODO check `reply` for errors
+
+    waitDataIdle();
+    uint32_t status = reg_read_32(DeviceId, RegR__GetStatus);
+    print_hex(status);
+    uart_send("\n");
+
+    if( isDataError(reg_read_32(DeviceId, RegR__GetStatus)) )
+        return _blocksPool.emptyPtr();
+
+    return block;
+}
+
 [[nodiscard]] bool SD::isError(uint32_t status) {
     if( (status & GetStatus__Cmd_ErrorMask)==0 )
         return false;
 
-    uart_send("SD error:");
+    uart_send("E: SD error:");
     if( status & GetStatus__Cmd_Timeout )
         uart_send("  Timeout");
     if( status & GetStatus__Cmd_Mismatch )
@@ -196,6 +245,54 @@ static void send_sd_cmd(SdCmd command, uint32_t args);
     uart_send("\n");
 
     return true;
+}
+
+[[nodiscard]] bool SD::isDataError(uint32_t status) {
+    if( (status & GetStatus__Data_ErrorMask)==0 )
+        return false;
+
+    uart_send("E: SD data error:");
+    if( status & GetStatus__Data_Timeout )
+        uart_send("  Timeout");
+    if( status & GetStatus__Data_CrcMismatch )
+        uart_send("  CRC error");
+    if( status & GetStatus__Data_StopBitError )
+        uart_send("  Stop bit");
+    if( status & GetStatus__Data_StartBitError )
+        uart_send("  Start bit");
+    if( status & GetStatus__Data_DataOverrun )
+        uart_send("  Data overrun");
+
+    uart_send("\n");
+
+    return true;
+}
+
+bool SD::isInserted() {
+    return (read_gpio(0) & GPI0__SD_CARD_IN_N) == 0;
+}
+
+bool SD::checkUninit() const {
+    // TODO implement generations to detect card removal and insertion
+
+    return _cardType == CardType::Uninit;
+}
+
+void SD::waitDataIdle() const {
+    using namespace Saros;
+
+    while(true) {
+        // Disable interrupts
+        csr_read_clr_bits<CSR::mstatus>( MSTATUS__MIE );
+
+        if( read_gpio(0) & GPI0__SD_CARD_DATA_IDLE ) {
+            csr_read_set_bits<CSR::mstatus>( MSTATUS__MIE );
+            return;
+        }
+
+        irq_external_unmask( IrqExt__SdCardDataIdle );
+        _dataIdle.wait();
+    }
 }
 
 void SD::initCard() {
@@ -243,6 +340,7 @@ void SD::initCard() {
     // The ACMD41_SD_SEND_OP_COND, and *only* it, respond with CMD and CRC set to all 1's. Instead of convulting the hardware for just
     // this one command, we /expect/ that status to have both GetStatus__CmdMismatch and GetStatus__CrcMismatch set.
 
+    reply = 0;
     for( unsigned retries=0; retries<SendOpTimeoutSplit && (reply & (1u<<31))==0; retries++ ) {
         saros.sleep_ns( SendOpTimeoutNs / SendOpTimeoutSplit );
         status = send_sd_cmd(SdCmd::ACMD41_SD_SEND_OP_COND, args, reply);
@@ -267,7 +365,7 @@ void SD::initCard() {
     CID cid;
     status = send_sd_cmd(SdCmd::CMD2_ALL_SEND_CID, 0, cid.raw);
 
-    uart_send("Manufacturer ID ");
+    uart_send("  Manufacturer ID ");
     print_hex(cid.manufacturerId);
     uart_send(" OEM ");
     print_hex(cid.oid);
@@ -300,7 +398,7 @@ void SD::initCard() {
     if( isError(status) )
         return;
 
-    uint32_t blockSize = 512;
+    uint32_t blockSize = BlockSize;
     switch(csd.v1.csdStructure) {
     case 0:
         {
@@ -312,7 +410,7 @@ void SD::initCard() {
         }
     }
 
-    uart_send("SD size: ");
+    uart_send("  SD size: ");
     print_dec(_numBlocks);
     uart_send(" blocks of ");
     print_dec(blockSize);
@@ -321,8 +419,8 @@ void SD::initCard() {
     uart_send("MB\n");
 
 
-    if( blockSize != 512 ) {
-        uart_send("Only 512 bytes block cards are supported\n");
+    if( blockSize != BlockSize ) {
+        uart_send("E: Only 512 bytes block cards are supported\n");
 
         return;
     }
@@ -336,7 +434,7 @@ void SD::initCard() {
      */
 
 
-    uart_send("Selecting card\n");
+    uart_send("  Selecting card\n");
     SdReply1 rep1;
     status = send_sd_cmd( SdCmd::CMD7_DE_SELECT_CARD, _cardAddr<<16, rep1.reply );
     if( isError(status) )
@@ -347,8 +445,8 @@ void SD::initCard() {
 
 void SD::threadMain() noexcept {
     while(true) {
-        if( (read_gpio(0) & GPI0__SD_CARD_IN_N) == 0 ) {
-            irq_external_mask( IrqExt__SdCard );
+        if( isInserted() ) {
+            irq_external_mask( IrqExt__SdCardIn );
             reset_gpio_bits(0, GPO0__SD_CARD_POLARITY);
 
             uart_send("Initializing SD card\n");
@@ -356,17 +454,30 @@ void SD::threadMain() noexcept {
             initCard();
 
             if( !sd ) {
-                uart_send("Card initialization failed. Retrying in 1 second\n");
+                uart_send("E: Card initialization failed. Retrying in 1 second\n");
                 saros.sleep_ns( 1'000'000'000 );
 
                 continue;
             }
 
+            uart_send("Reading in partition table\n");
+            BlockPtr mbr = readBlock(0);
+            if( !mbr ) {
+                uart_send("E: Failed to read MBR\n");
+
+                continue;
+            }
+            dump_memory(mbr->data);
+
             // Disable interrupts, set up the IRQ, and then sleep, which will re-enable interrupts
             Saros::csr_read_clr_bits<Saros::CSR::mstatus>( Saros::MSTATUS__MIE );
 
-            irq_external_unmask( IrqExt__SdCard );
-            _cardStatusChanged.wait();
+            if( !isInserted() ) {
+                Saros::csr_read_set_bits<Saros::CSR::mstatus>( Saros::MSTATUS__MIE );
+            } else {
+                irq_external_unmask( IrqExt__SdCardIn );
+                _cardStatusChanged.wait();
+            }
         } else {
             uart_send("SD card removed\n");
 
@@ -374,7 +485,7 @@ void SD::threadMain() noexcept {
             Saros::csr_read_clr_bits<Saros::CSR::mstatus>( Saros::MSTATUS__MIE );
 
             set_gpio_bits(0, GPO0__SD_CARD_POLARITY);
-            irq_external_unmask( IrqExt__SdCard );
+            irq_external_unmask( IrqExt__SdCardIn );
             _cardStatusChanged.wait();
         }
     }
@@ -384,15 +495,26 @@ void SD::init() {
     saros.createThread( [](void *) noexcept { sd.threadMain(); }, nullptr);
 }
 
-void SD::irq_handler() noexcept {
-    irq_external_mask( IrqExt__SdCard );
+void SD::irq_handler_insert() noexcept {
+    irq_external_mask( IrqExt__SdCardIn );
 
     sd._cardStatusChanged.signal();
+}
+
+void SD::irq_handler_data() noexcept {
+    irq_external_mask( IrqExt__SdCardDataIdle );
+
+    sd._dataIdle.signal();
 }
 
 void SD::uninit() {
     _cardType = CardType::Uninit;
 }
+
+
+DS::PoolAllocator<SD::Block, SD::BlocksPoolSize> SD::_blocksPool;
+
+// Internal utility functions
 
 [[nodiscard]] static SdReply1 send_app_cmd() {
     SdReply1 cardStatus;
@@ -426,7 +548,7 @@ uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint32_t &reply) {
     }
 
     reg_write_32(DeviceId, RegW__SetCmdArgument, args);
-    reg_write_32(DeviceId, RegW__SendCmd, static_cast<uint32_t>(command) & CMD_BITS_MASK | SetCmd__Reply48);
+    reg_write_32(DeviceId, RegW__SendCmd, static_cast<uint32_t>(command) | SetCmd__Reply48);
 
     uint32_t status;
     do {

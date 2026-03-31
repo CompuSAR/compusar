@@ -38,13 +38,15 @@ module sd#(
 
 logic sd_cmd_i, sd_cmd_o = 1'b1, sd_cmd_dir = 1'b1;
 
+localparam DMA_WIDTH_BYTES = DMA_WIDTH / 8;
+
 localparam CMDCDC_BITS = 2;
 //logic [CMDCDC_BITS-1:0] CMDCDC_ARG = 2'b01, CMDCDC_CMD = 2'b00, CMDCDC_DATA = 2'b10;
 localparam CMDCDC_ARG = 2'b01, CMDCDC_CMD = 2'b00, CMDCDC_DATA = 2'b10;
 
 localparam MAX_DATA_TRANSFER = 2048;
 localparam MAX_DATA_TRANSFER_BITS = $clog2(MAX_DATA_TRANSFER + 1);
-localparam DATA_START_WAIT_TIMEOUT = 200;
+localparam DATA_START_WAIT_TIMEOUT = 25000;     // Give the card 1ms to respond
 localparam DATA_CRC_BITS = 16;
 
 localparam SD_CDC_PIPELINE_LEN = 4;
@@ -152,7 +154,7 @@ always_ff@(posedge ctrl_clock_i) begin
     if( data_cdc_valid_ctrl && !data_cdc_ack_ctrl && dma_req_valid_o && dma_req_ack_i ) begin
         dma_req_valid_o <= 1'b0;
         data_cdc_ack_ctrl <= 1'b1;
-        dma_address <= dma_address + DMA_WIDTH/8;
+        dma_address <= dma_address + DMA_WIDTH_BYTES;
     end
 end
 
@@ -256,7 +258,6 @@ logic [DMA_WIDTH-1:0] data_buffer;
 logic [$clog2(DATA_START_WAIT_TIMEOUT)-1:0] data_buffer_fill;
 logic data_pipeline_valid[SD_CDC_PIPELINE_LEN];
 assign data_cdc_valid_sd = data_pipeline_valid[0];
-assign data_cdc_data_sd = data_pipeline[0];
 logic sd_data_error_start_bit = 1'b0, sd_data_error_stop_bit = 1'b0, sd_data_error_crc = 1'b0, sd_data_error_timeout = 1'b0,
     sd_data_error_pipeline_overrun = 1'b0;
 
@@ -302,6 +303,11 @@ for( i=0; i<4; ++i ) begin : data_channels
         .crc_o(data_crc_value[i])
     );
 end : data_channels
+
+// Reverse the byte order when sendin the data to the CDC
+for( i=0; i<DMA_WIDTH_BYTES; ++i ) begin
+    assign data_cdc_data_sd[i*8+7:i*8] = data_pipeline[0][(DMA_WIDTH_BYTES-i)*8-1:(DMA_WIDTH_BYTES-i-1)*8];
+end
 
 endgenerate
 

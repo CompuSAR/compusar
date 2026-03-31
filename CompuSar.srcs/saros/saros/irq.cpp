@@ -92,8 +92,10 @@ static void handleExternalInterrupt() {
         handle_uart_rx_ready_irq();
     if( (active_irqs & IrqExt__Vsync) != 0 )
         Display::handle_vsync_irq();
-    if( (active_irqs & IrqExt__SdCard) != 0 )
-        SD::irq_handler();
+    if( (active_irqs & IrqExt__SdCardIn) != 0 )
+        SD::irq_handler_insert();
+    if( (active_irqs & IrqExt__SdCardDataIdle) != 0 )
+        SD::irq_handler_data();
 }
 
 extern "C"

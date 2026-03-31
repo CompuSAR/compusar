@@ -151,11 +151,13 @@ bus_clocks bus_clocks(
     .clkfb_out(bus_clock_feedback)
 );
 
-localparam CACHE_PORTS_NUM = 5;
+localparam CACHE_PORTS_NUM = 6;
 localparam CACHELINE_BITS = 128;
 localparam CACHELINE_BYTES = CACHELINE_BITS/8;
 localparam NUM_CACHELINES = 16*1024*8/CACHELINE_BITS;
 localparam DDR_MEM_SIZE = 256*1024*1024;
+localparam DMA_WRITE_ALL_SET = { CACHELINE_BYTES{1'b1} };
+localparam DMA_WRITE_ALL_CLEAR = { CACHELINE_BYTES{1'b0} };
 
 localparam INST_CACHE_NUM_CACHELINES = 1024*8/CACHELINE_BITS;
 
@@ -169,9 +171,10 @@ logic [CACHELINE_BITS-1:0]              cache_port_rsp_read_data_n[CACHE_PORTS_N
 
 localparam CACHE_PORT_IDX_DISPLAY8 = 0;
 localparam CACHE_PORT_IDX_DISPLAY32 = 1;
-localparam CACHE_PORT_IDX_DBUS = 2;
-localparam CACHE_PORT_IDX_IBUS = 3;
-localparam CACHE_PORT_IDX_SPI_FLASH = 4;
+localparam CACHE_PORT_IDX_SD = 2;
+localparam CACHE_PORT_IDX_DBUS = 3;
+localparam CACHE_PORT_IDX_IBUS = 4;
+localparam CACHE_PORT_IDX_SPI_FLASH = 5;
 
 logic                                   inst_cache_port_cmd_valid_s[0:0];
 logic [31:0]                            inst_cache_port_cmd_addr_s[0:0];
@@ -204,7 +207,8 @@ localparam UART_SEND_IRQ = 0;
 localparam UART_RECV_IRQ = 1;
 localparam VSYNC_IRQ = 2;
 localparam SD_INSERT_IRQ = 3;
-localparam FIRST_EMPTY_IRQ = 4;
+localparam SD_DATA_IDLE = 4;
+localparam FIRST_EMPTY_IRQ = 5;
 
 logic [31:0]    iob_ddr_read_data;
 
@@ -379,7 +383,7 @@ cache#(
     .backend_rsp_read_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_IBUS])
 );
 
-assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_IBUS] = { CACHELINE_BYTES{1'b0} };
+assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_IBUS] = DMA_WRITE_ALL_CLEAR;
 
 cache#(
     .CACHELINE_BITS(CACHELINE_BITS),
@@ -584,18 +588,19 @@ gpio(
     .rsp_data_o(gpio_rsp_data),
     .rsp_valid_o(gpio_rsp_valid),
 
-    .gp_in( '{ {27'b0, sd_card_detect_debounced_n, buffered_switches} } ),
+    .gp_in( '{ {26'b0, sd_data_idle, sd_card_detect_debounced_n, buffered_switches} } ),
     .gp_out( gp_out )
 );
 
 wire spi_flash_dma_write;
+
+assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_SPI_FLASH] = spi_flash_dma_write ? DMA_WRITE_ALL_SET : DMA_WRITE_ALL_CLEAR;
+
 spi_ctrl#(.MEM_DATA_WIDTH(CACHELINE_BITS)) spi_flash(
     .cpu_clock_i(ctrl_cpu_clock),
     //.spi_ref_clock_i(bus_clock_50),
     .spi_ref_clock_i(board_clock),
     .irq(),
-
- //   .debug(debug),
 
     .ctrl_cmd_valid_i(spi_enable),
     .ctrl_cmd_address_i(ctrl_dBus_cmd_payload_address[15:0]),
@@ -639,6 +644,11 @@ uart_ctrl#(.ClockDivider(SIM_MODE ? 10 : CTRL_CLOCK_HZ / UART_BAUD), .SimMode(SI
     .uart_rx(uart_rx)
 );
 
+logic sd_dma_write, sd_data_idle;
+
+assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_SD] = sd_dma_write ? DMA_WRITE_ALL_SET : DMA_WRITE_ALL_CLEAR;
+assign irq_lines[SD_DATA_IDLE] = sd_data_idle;
+
 sd sd_ctrl(
     .ctrl_clock_i(ctrl_cpu_clock),
 
@@ -650,6 +660,18 @@ sd sd_ctrl(
 
     .ctrl_rsp_valid_o(sd_rsp_valid),
     .ctrl_rsp_data_o(sd_rsp_data),
+
+    .ctrl_data_idle_irq_o(sd_data_idle),
+
+
+    .dma_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_SD]),
+    .dma_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_SD]),
+    .dma_req_write_o(sd_dma_write),
+    .dma_req_data_o(cache_port_cmd_write_data_s[CACHE_PORT_IDX_SD]),
+    .dma_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_SD]),
+
+    .dma_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_SD]),
+    .dma_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_SD]),
 
 
     .sd_default_speed_clock_i(bus_clock_25),
@@ -676,11 +698,6 @@ genvar i;
 generate
     for(i=FIRST_EMPTY_IRQ; i<32; ++i)
         assign irq_lines[i] = 1'b0;
-endgenerate
-
-generate
-    for(i=0; i<CACHELINE_BYTES; ++i)
-        assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_SPI_FLASH][i] = spi_flash_dma_write;
 endgenerate
 
 always_ff@(posedge ctrl_cpu_clock) begin

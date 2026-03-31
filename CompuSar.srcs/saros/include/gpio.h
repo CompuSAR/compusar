@@ -15,3 +15,4 @@ static constexpr size_t GPO0__SD_CARD_POLARITY  = 0x00000008;
 
 static constexpr size_t GPI0__SWITCHES          = 0x0000000f;
 static constexpr size_t GPI0__SD_CARD_IN_N      = 0x00000010;
+static constexpr size_t GPI0__SD_CARD_DATA_IDLE = 0x00000020;

@@ -37,3 +37,15 @@ void print_dec(uint64_t number) {
         uart_send(buffer[j]);
     }
 }
+
+void dump_memory(std::span<uint8_t> memory) {
+    size_t i = 0;
+
+    while( i<memory.size() ) {
+        for( size_t j=0; j<16 && i<memory.size(); ++j, ++i ) {
+            uart_send(" ");
+            print_hex(memory[i]);
+        }
+        uart_send("\n");
+    }
+}

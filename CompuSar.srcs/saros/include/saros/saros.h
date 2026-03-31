@@ -4,8 +4,6 @@
 #include <saros/kernel/thread.h>
 #include <saros/spin_lock.h>
 
-#include <mutex>
-
 namespace Saros {
 
 class Saros {

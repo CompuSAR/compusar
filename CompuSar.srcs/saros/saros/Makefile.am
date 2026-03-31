@@ -18,7 +18,7 @@ ABI=-mabi=ilp32
 
 noinst_PROGRAMS=saros.elf
 
-saros_elf_SOURCES=main.cpp uart.cpp saros.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \
+saros_elf_SOURCES=main.cpp uart.cpp saros.cpp mutex.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \
                   start.s ../abort.cpp display.cpp crt.cpp sd.cpp \
                   assets/logo.cpp
 EXTRA_saros_elf_DEPENDENCIES=$(srcdir)/saros.ld kernel/libkernel.a

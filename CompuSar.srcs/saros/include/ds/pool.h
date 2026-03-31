@@ -90,7 +90,8 @@ public:
     }
 
     void operator()(T *ptr) { // Deleter implmenetation
-        free(ptr);
+        if( ptr!=nullptr )
+            free(ptr);
     }
 
     void free( T *element ) {
@@ -103,6 +104,9 @@ public:
         _firstFree = poolElement;
     }
 
+    Ptr emptyPtr() {
+        return Ptr(nullptr, *this);
+    }
 private:
     static PoolElement *convert(void *ptr) {
         return reinterpret_cast<PoolElement *>( reinterpret_cast<std::byte *>(ptr) );
