@@ -1,5 +1,7 @@
 #include "sd.h"
 
+#include "saros/fs/partition.h"
+
 #include "saros/csr.h"
 #include "saros/saros.h"
 
@@ -460,14 +462,10 @@ void SD::threadMain() noexcept {
                 continue;
             }
 
-            uart_send("Reading in partition table\n");
-            BlockPtr mbr = readBlock(0);
-            if( !mbr ) {
-                uart_send("E: Failed to read MBR\n");
-
+            if( !isInserted() )
                 continue;
-            }
-            dump_memory(mbr->data);
+
+            partitionTable.emplace(sd, 0);
 
             // Disable interrupts, set up the IRQ, and then sleep, which will re-enable interrupts
             Saros::csr_read_clr_bits<Saros::CSR::mstatus>( Saros::MSTATUS__MIE );
