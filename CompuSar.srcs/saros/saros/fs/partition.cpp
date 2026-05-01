@@ -8,35 +8,7 @@
 
 std::optional<PartitionTable> partitionTable;
 
-PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) {
-    struct PartitionLine {
-        enum class FsType : uint8_t {
-            Unused = 0x00,
-            Extended = 0x05,
-
-            Fat12 = 0x01,
-            Fat16 = 0x04,
-            Fat32 = 0x06,
-            Fat32Lba = 0x0b,
-        };
-        struct CHS {
-            uint8_t data[3];
-
-            uint8_t getHead() const { return data[0]; }
-            uint8_t getSect() const { return data[1] & ((1<<6) - 1); }
-            uint16_t getCyl() const { return (data[2]<<2) | (data[3]>>6); }
-        };
-
-        uint8_t boot;
-        CHS start;
-        FsType fsType;
-        CHS end;
-
-        uint32_t offset;
-        uint32_t size;
-    };
-    static_assert(sizeof(PartitionLine)==16);
-
+PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{sd} {
     uart_send("Reading in partition table\n");
     SD::BlockPtr mbr = sd.readBlock(0);
     if( !mbr ) {
@@ -57,7 +29,7 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) {
     static constexpr size_t FirstPartitionMbrOffset = 0x1be;
     size_t offset = FirstPartitionMbrOffset;
     for( int i=0; i<4; ++i ) {
-        PartitionLine part;
+        PartitionLine part = partitions_[i];
 
         memcpy(&part, &mbr->data.at(offset), sizeof(part));
         offset += sizeof(part);
@@ -80,12 +52,59 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) {
         print_hex(part.end.getSect());
 
         uart_send(" FS:");
-        print_hex(part.fsType);
+        print_hex(static_cast<uint64_t>(part.fsType));
 
         uart_send(" Start: ");
         print_hex(part.offset);
         uart_send(" Size: ");
         print_hex(part.size);
         uart_send("\n");
+
+        if( part.fsType!=FsType::Unused ) {
+            // Sanity checks
+            if( part.offset>=sd.getNumBlocks() ) {
+                uart_send("E: LBA offset points past the end of the device\n");
+                part.fsType = FsType::Unused;
+            }
+
+            if( part.offset==0 ) {
+                uart_send("E: LBA offset is zero\n");
+                part.fsType = FsType::Unused;
+            }
+
+            if( part.size==0 ) {
+                uart_send("E: LBA size is zero\n");
+                part.fsType = FsType::Unused;
+            }
+
+            if( part.offset + part.size >= sd.getNumBlocks() ) {
+                uart_send("E: Partition end past the end of the device\n");
+                part.fsType = FsType::Unused;
+            }
+        }
+
+        if( part.fsType!=FsType::Unused ) {
+            partitions_[i] = part;
+            maxPartition_ = i+1;
+        }
     }
+    // TODO if there are extended partitions, we should scan them as well.
+}
+
+const PartitionTable::PartitionLine &PartitionTable::at(size_t index) const {
+    assertWithMessage( index<maxPartition_, "F: Partition table index out of range" );
+
+    return partitions_[index];
+}
+
+Partition::Partition(const SD &sd, size_t offset, size_t size) : sd_{sd}, offset_{offset}, size_{size}
+{
+    assertWithMessage( offset<sd.getNumBlocks(), "Partition initialized with bad offset argument" );
+    assertWithMessage( (offset+size) < sd.getNumBlocks(), "Partition initialized with bad size" );
+}
+
+SD::BlockPtr Partition::readBlock(size_t blockNum) const {
+    assertWithMessage( blockNum<size_, "Partition readBlock out of range" );
+
+    return sd_.readBlock( blockNum + offset_ );
 }

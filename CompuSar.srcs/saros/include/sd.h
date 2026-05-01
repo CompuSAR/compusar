@@ -56,6 +56,9 @@ private:
     void initCard();
     void uninit();
 
+    [[nodiscard]] bool selectCard() const;
+    [[nodiscard]] bool deselectCard() const;
+
     [[nodiscard]] static bool isError(uint32_t status);
     [[nodiscard]] static bool isDataError(uint32_t status);
     [[nodiscard]] static bool isInserted();

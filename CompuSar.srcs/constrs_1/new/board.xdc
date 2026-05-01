@@ -24,6 +24,12 @@ set_property PACKAGE_PIN E13 [get_ports {debug[2]}]
 set_property PACKAGE_PIN D14 [get_ports {debug[3]}]
 set_property IOSTANDARD LVCMOS33 [get_ports {debug}]
 
+set_property PACKAGE_PIN C13 [get_ports {debug2[0]}]
+set_property PACKAGE_PIN A13 [get_ports {debug2[1]}]
+set_property PACKAGE_PIN C14 [get_ports {debug2[2]}]
+set_property PACKAGE_PIN A15 [get_ports {debug2[3]}]
+set_property IOSTANDARD LVCMOS33 [get_ports {debug2}]
+
 set_property PACKAGE_PIN G15 [get_ports uart_rx]
 set_property IOSTANDARD LVCMOS33 [get_ports uart_rx]
 

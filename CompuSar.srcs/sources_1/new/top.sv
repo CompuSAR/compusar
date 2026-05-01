@@ -29,6 +29,7 @@ module top
     input [3:0] switches,
 
     output logic[3:0] debug,
+    output logic[3:0] debug2,
 
     output uart_tx,
     input uart_rx,

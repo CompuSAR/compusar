@@ -33,7 +33,10 @@ module sd#(
 
     inout sd_cmd_io,
     inout [3:0] sd_data_io,
-    output sd_clk_o
+    output sd_clk_o,
+
+    output logic[3:0] debug = 4'b0,
+    output [3:0] debug2
 );
 
 logic sd_cmd_i, sd_cmd_o = 1'b1, sd_cmd_dir = 1'b1;
@@ -107,21 +110,19 @@ always_ff@(posedge ctrl_clock_i) begin
             case(ctrl_req_addr_i)
                 16'h0000: begin
                     cmd_cdc_data_ctrl <= { CMDCDC_ARG, ctrl_req_data_i };
-                    cmd_cdc_valid_ctrl <= 1'b1;
                 end
                 16'h0004: begin
                     cmd_cdc_data_ctrl <= { CMDCDC_CMD, ctrl_req_data_i };
-                    cmd_cdc_valid_ctrl <= 1'b1;
                     status_reply_received <= 1'b0;
                     status_cmd_error <= 4'b0000;
                     status_cmd_busy <= ctrl_req_data_i[8];
                 end
                 16'h0100: begin
                     dma_address <= ctrl_req_data_i;
+                    cmd_cdc_valid_ctrl <= 1'b0;
                 end
                 16'h0104: begin
                     cmd_cdc_data_ctrl <= { CMDCDC_DATA, ctrl_req_data_i };
-                    cmd_cdc_valid_ctrl <= 1'b1;
                 end
             endcase
         end else begin
@@ -349,6 +350,8 @@ task handle_cmd_idle();
 endtask
 
 task handle_send_cmd();
+    cdc_reply_error_sd <= { NUM_CMD_ERROR_BITS{1'b0} };
+
     cmd_io_buffer <= { cmd_io_buffer[REPLY_PAYLOAD_SIZE-2:0], 1'bX };
     cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
 
@@ -380,7 +383,6 @@ endtask
 
 task handle_recv_pend();
     cmd_io_buffer_fill <= cmd_io_buffer_fill - 1;
-    cdc_reply_error_sd <= { NUM_CMD_ERROR_BITS{1'b0} };
 
     if( sd_cmd_i == 1'b0 ) begin
         cmd_state <= CMD_RECV_HEADER;
