@@ -26,7 +26,7 @@ public:
 
             uint8_t getHead() const { return data[0]; }
             uint8_t getSect() const { return data[1] & ((1<<6) - 1); }
-            uint8_t getCyl() const { return (data[1]<<2) | (data[2]>>6); }
+            uint16_t getCyl() const { return ((data[1] & 0x03)<<8) | data[2]; }
         };
 
         uint8_t boot;
