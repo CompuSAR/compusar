@@ -31,6 +31,8 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
     for( int i=0; i<4; ++i ) {
         PartitionLine part;
 
+        static_assert(std::is_trivially_copyable_v<PartitionLine>, "Can't memcpy PartitionLine");
+        static_assert(std::is_standard_layout_v<PartitionLine>, "PartitionLine isn't stabely defined");
         memcpy(&part, &mbr->data.at(offset), sizeof(part));
         offset += sizeof(part);
 
