@@ -1,6 +1,7 @@
 #include "sd.h"
 
 #include "saros/fs/partition.h"
+#include "saros/fs/filesystem.h"
 
 #include "saros/csr.h"
 #include "saros/saros.h"
@@ -476,11 +477,10 @@ void SD::threadMain() noexcept {
                 if( partitionTable->at(i).fsType == PartitionTable::FsType::Fat32 || partitionTable->at(i).fsType == PartitionTable::FsType::Fat32Lba ) {
                     uart_send("Found FAT32 partition ");
                     print_dec(i);
-                    uart_send(", dumping first sector:\n");
+                    uart_send("\n");
 
                     Partition part(sd, partitionTable->at(i));
-                    auto block = part.readBlock(0);
-                    dump_memory(block->data);
+                    fs.emplace( part );
                 }
             }
 

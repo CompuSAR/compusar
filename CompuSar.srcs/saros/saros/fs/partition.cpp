@@ -29,7 +29,7 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
     static constexpr size_t FirstPartitionMbrOffset = 0x1be;
     size_t offset = FirstPartitionMbrOffset;
     for( int i=0; i<4; ++i ) {
-        PartitionLine part = partitions_[i];
+        PartitionLine part;
 
         memcpy(&part, &mbr->data.at(offset), sizeof(part));
         offset += sizeof(part);
