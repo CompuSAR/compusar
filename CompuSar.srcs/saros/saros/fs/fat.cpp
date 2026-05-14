@@ -29,7 +29,7 @@ struct __attribute__((packed)) BPB {
     uint8_t     bs_bootSig;
     uint32_t    bs_volId;
     char        bs_volLab[11];
-    char        bsFilSysType[8];
+    char        bs_filSysType[8];
 #else
     uint32_t    bpb_fatSz32;
     uint16_t    bpb_extFlags;
@@ -40,26 +40,68 @@ struct __attribute__((packed)) BPB {
     uint8_t     bpb_reserved[12];
     uint8_t     bs_drvNum;
     uint8_t     bs_reserved1;
+    uint8_t     bs_bootSig;
+    uint32_t    bs_volId;
+    char        bs_volLab[11];
+    char        bs_filSysType[8];
 #endif
 };
 
 #ifndef FAT32
 static_assert( sizeof(BPB)==55, "BPB is the wrong size" );
 #else
-static_assert( sizeof(BPB)==66, "BPB is the wrong size" );
+static_assert( sizeof(BPB)==90, "BPB is the wrong size" );
 #endif
 
 FAT::FAT(const Partition &partition) :
     _partition(partition)
 {
     auto block = partition.readBlock(0);
-    dump_memory(block->data);
+    // dump_memory(block->data);
 
     auto bpb = reinterpret_cast<const BPB *>(block->data.data());
-    uart_send("OEM name: ");
+    uart_send("  OEM name: ");
     for( unsigned i=0; i<8; ++i )
         uart_send(bpb->bs_oemName[i]);
-    uart_send("\nBytes per secotr: ");
+    uart_send("\n  Bytes per sector: ");
     print_dec(bpb->bpb_bytesPerSec);
+    uart_send("\n  Sectors per cluster: ");
+    print_dec(bpb->bpb_secPerClus);
+    uart_send("\n  Reserved sectors: ");
+    print_dec(bpb->bpb_rsvdSecCnt);
+    uart_send("\n  Num FATs: ");
+    print_dec(bpb->bpb_numFATs);
+    uart_send("\n  Root entry count: ");
+    print_dec(bpb->bpb_rootEndCnt);
+    uart_send("\n  Total sectors 16: ");
+    print_dec(bpb->bpb_totSec16);
+    uart_send(" 32: ");
+    print_dec(bpb->bpb_totSec32);
+    uart_send("\n  FAT size 16: ");
+    print_dec(bpb->bpb_fatSz16);
+    uart_send(" 32: ");
+    print_dec(bpb->bpb_fatSz32);
+    uart_send("\n  flags: ");
+    print_hex(bpb->bpb_extFlags);
+    uart_send("\n  FS version: ");
+    print_hex(bpb->bpb_fsVer);
+    uart_send("\n  Root cluster no: ");
+    print_dec(bpb->bpb_rootClus);
+    uart_send("\n  FS info cluster no: ");
+    print_dec(bpb->bpb_fsInfo);
+    uart_send("\n  Backup boot sec: ");
+    print_dec(bpb->bpb_bkBootSec);
+    uart_send("\n  Boot signature: ");
+    print_hex(bpb->bs_bootSig);
+    uart_send("\n  Volume ID: ");
+    print_hex(bpb->bs_volId);
+    uart_send("\n  Volume label: ");
+    for(unsigned i=0; i<11; ++i) {
+        uart_send(bpb->bs_volLab[i]);
+    }
+    uart_send("\n  FS type: ");
+    for(unsigned i=0; i<8; ++i) {
+        uart_send(bpb->bs_filSysType[i]);
+    }
     uart_send("\n");
 }

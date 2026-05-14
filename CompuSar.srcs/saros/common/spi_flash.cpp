@@ -118,7 +118,7 @@ void init() {
     SPI::interface_rescue();
 
     FlashId id = read_id();
-    uart_send("Flash Id (Single): ");
+    uart_send("  Flash ID (Single): ");
     unsigned len = id.id_length;
     len += 4;
     if( len>40 )
@@ -154,7 +154,7 @@ void init() {
     len += 4;
     if( len>40 )
         len = 40;
-    uart_send("Flash Id (Quad):   ");
+    uart_send("  Flash ID (Quad):   ");
     for( int i=0; i<len; ++i ) {
         uart_send(" ");
         print_hex(reinterpret_cast<const uint8_t *>(&id)[i]);

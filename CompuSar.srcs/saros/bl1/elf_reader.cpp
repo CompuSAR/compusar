@@ -84,7 +84,7 @@ EntryPoint load_os() {
 
     auto program_headers = by_offset<Elf32_Phdr>(OS_LOAD_BUFFER, 0);
     for( unsigned int i=0; i<header.e_phnum; ++i ) {
-        uart_send("Program header: type ");
+        uart_send("  Program header: type ");
         print_hex(program_headers[i].p_type);
         uart_send(" vaddr ");
         print_hex(program_headers[i].p_vaddr);
@@ -117,7 +117,7 @@ EntryPoint load_os() {
         if( section_headers[i].sh_type != SHT_NOBITS )
             continue;
 
-        uart_send("Clearing BSS section at ");
+        uart_send("  Clearing BSS section at ");
         print_hex(section_headers[i].sh_addr);
         uart_send(" size ");
         print_hex(section_headers[i].sh_size);

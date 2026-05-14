@@ -9,14 +9,12 @@
 std::optional<PartitionTable> partitionTable;
 
 PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{sd} {
-    uart_send("Reading in partition table\n");
     SD::BlockPtr mbr = sd.readBlock(0);
     if( !mbr ) {
         uart_send("E: Failed to read MBR\n");
 
         return;
     }
-    dump_memory(mbr->data);
 
     if( mbr->data[0x1fe]!=0x55 || mbr->data[0x1ff]!=0xaa ) {
         uart_send("Invalid MBR signature\n");
@@ -24,7 +22,7 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
         return;
     }
 
-    uart_send("\nPartition table:\n");
+    uart_send("Partition table:\n");
 
     static constexpr size_t FirstPartitionMbrOffset = 0x1be;
     size_t offset = FirstPartitionMbrOffset;
@@ -36,6 +34,7 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
         memcpy(&part, &mbr->data.at(offset), sizeof(part));
         offset += sizeof(part);
 
+        uart_send("  ");
         print_dec(i);
         uart_send(": Boot: ");
         print_hex(part.boot);
