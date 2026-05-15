@@ -9,7 +9,7 @@
 std::optional<PartitionTable> partitionTable;
 
 PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{sd} {
-    SD::BlockPtr mbr = sd.readBlock(0);
+    SD::BlockPtr mbr = sd.readBlock(partitionTableBlock);
     if( !mbr ) {
         uart_send("E: Failed to read MBR\n");
 

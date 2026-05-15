@@ -54,7 +54,7 @@ static_assert( sizeof(BPB)==90, "BPB is the wrong size" );
 #endif
 
 FAT::FAT(const Partition &partition) :
-    _partition(partition)
+    partition_(partition)
 {
     auto block = partition.readBlock(0);
     // dump_memory(block->data);
@@ -104,4 +104,65 @@ FAT::FAT(const Partition &partition) :
         uart_send(bpb->bs_filSysType[i]);
     }
     uart_send("\n");
+
+    // Sanity check the BPB
+    if( block->data[0x1fe]!=0x55 || block->data[0x1ff]!=0xaa ) {
+        uart_send("E: Boot block magic signature not found\n");
+        return;
+    }
+    if( bpb->bpb_secPerClus!=SECT_PER_CLUSTER ) {
+        uart_send("E: Only 1 sector per cluster is supported\n");
+        return;
+    }
+    if( bpb->bpb_rootClus!=ROOT_DIR_CLUSTER ) {
+        uart_send("E: Root dir cluster isn't 2\n");
+        return;
+    }
+    if( bpb->bpb_fatSz16!=0 ) {
+        uart_send("E: 16 bit FAT size must be 0\n");
+        return;
+    }
+    if( bpb->bpb_rootEndCnt!=0 ) {
+        uart_send("E: Root dir entries must be 0 for FAT32 filesystems\n");
+        return;
+    }
+    if( bpb->bpb_totSec16!=0 ) {
+        uart_send("E: 16 bit total sectors must be 0 for FAT32 filesystem\n");
+        return;
+    }
+    uint32_t totalSectors = bpb->bpb_totSec32;
+    if( totalSectors>partition_.size() ) {
+        uart_send("E: Corrupt: FS size is bigger than the partition size\n");
+        return;
+    }
+    uint32_t firstFatSector = bpb->bpb_rsvdSecCnt;
+    uint32_t firstDataSector = firstFatSector + bpb->bpb_numFATs * bpb->bpb_fatSz32; // + root dir sectors that is 0 for FAT32
+    if( firstDataSector>partition_.size() ) {
+        uart_send("E: Invalid data sectors start\n");
+        return;
+    }
+
+    uint32_t numClusters = (totalSectors - firstDataSector) * SECT_PER_CLUSTER;
+
+    // Microsoft's totally strange way of determining FS type
+    if( numClusters<65525 ) {
+        uart_send("D: num clusters ");
+        print_dec(numClusters);
+        uart_send("\n");
+
+        uart_send("E: FS is not FAT32 by size\n");
+        return;
+    }
+
+    uint32_t numFatSectors = (numClusters + CLUSTERS_PER_FAT_SECTOR - 1)/CLUSTERS_PER_FAT_SECTOR;
+    if( bpb->bpb_fatSz32 < numFatSectors ) {
+        uart_send("E: FAT area isn't big enough for the required FAT entries\n");
+        return;
+    }
+
+    auto fat = partition_.readBlock(firstFatSector);
+}
+
+SD::BlockPtr FAT::readCluster(uint32_t clusterNum) const {
+    //uint32_t sectorNum = ((clusterNum - FIRST_USABLE_CLUSTER) * SECT_PER_CLUSTER) + firstDataSector_;
 }

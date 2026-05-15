@@ -67,6 +67,7 @@ public:
     {}
 
     SD::BlockPtr readBlock(size_t blockNum) const;
+    size_t size() const { return size_; }
 };
 
 extern std::optional<PartitionTable> partitionTable;
