@@ -68,7 +68,8 @@ assign consolidator[EXPANSION_FACTOR_LOG-1].expanded = out_rsp_read_data_i;
 assign in_rsp_read_data_o = consolidator[0].consolidated;
 
 always_ff@(posedge clock_i) begin
-    cmd_segment <= cmd_segment_next;
+    if( in_cmd_valid_i && out_cmd_ready_i )
+        cmd_segment <= cmd_segment_next;
 end
 
 
