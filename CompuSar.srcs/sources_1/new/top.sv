@@ -155,7 +155,8 @@ bus_clocks bus_clocks(
 localparam CACHE_PORTS_NUM = 6;
 localparam CACHELINE_BITS = 128;
 localparam CACHELINE_BYTES = CACHELINE_BITS/8;
-localparam NUM_CACHELINES = 16*1024*8/CACHELINE_BITS;
+localparam CACHE_SIZE_BITS = 16*1024*8;
+localparam NUM_CACHELINES = CACHE_SIZE_BITS/CACHELINE_BITS;
 localparam DDR_MEM_SIZE = 256*1024*1024;
 localparam DMA_WRITE_ALL_SET = { CACHELINE_BYTES{1'b1} };
 localparam DMA_WRITE_ALL_CLEAR = { CACHELINE_BYTES{1'b0} };
@@ -213,31 +214,56 @@ localparam FIRST_EMPTY_IRQ = 5;
 
 logic [31:0]    iob_ddr_read_data;
 
-VexRiscv control_cpu(
+logic [0:0] cpu_fetch_req_id, cpu_fetch_rsp_id, cpu_data_req_id, cpu_data_rsp_id;
+logic cpu_data_read_pend = 1'b0;
+
+VexiiRiscv control_cpu(
     .clk(ctrl_cpu_clock),
     .reset(!ctrl_cpu_reset || !clocks_locked),
 
-    .timerInterrupt(ctrl_timer_interrupt),
-    .externalInterrupt(ctrl_ext_interrupt),
-    .softwareInterrupt(ctrl_software_interrupt),
+    .PrivilegedPlugin_logic_harts_0_int_m_timer(ctrl_timer_interrupt),
+    .PrivilegedPlugin_logic_harts_0_int_m_external(ctrl_ext_interrupt),
+    .PrivilegedPlugin_logic_harts_0_int_m_software(ctrl_software_interrupt),
 
-    .iBus_cmd_ready(inst_cache_port_cmd_ready_n[0]),
-    .iBus_cmd_valid(inst_cache_port_cmd_valid_s[0]),
-    .iBus_cmd_payload_pc(inst_cache_port_cmd_addr_s[0]),
-    .iBus_rsp_valid(inst_cache_port_rsp_valid_n[0]),
-    .iBus_rsp_payload_error(ctrl_iBus_rsp_payload_error),
-    .iBus_rsp_payload_inst(ctrl_iBus_rsp_payload_inst),
+    .FetchCachelessPlugin_logic_bus_cmd_valid(inst_cache_port_cmd_valid_s[0]),
+    .FetchCachelessPlugin_logic_bus_cmd_ready(inst_cache_port_cmd_ready_n[0]),
+    .FetchCachelessPlugin_logic_bus_cmd_payload_id(cpu_fetch_req_id),
+    .FetchCachelessPlugin_logic_bus_cmd_payload_address(inst_cache_port_cmd_addr_s[0]),
+    .FetchCachelessPlugin_logic_bus_rsp_valid(inst_cache_port_rsp_valid_n[0]),
+    .FetchCachelessPlugin_logic_bus_rsp_payload_id(cpu_fetch_rsp_id),
+    .FetchCachelessPlugin_logic_bus_rsp_payload_error(ctrl_iBus_rsp_payload_error),
+    .FetchCachelessPlugin_logic_bus_rsp_payload_word(ctrl_iBus_rsp_payload_inst),
 
-    .dBus_cmd_valid(ctrl_dBus_cmd_valid),
-    .dBus_cmd_payload_address(ctrl_dBus_cmd_payload_address),
-    .dBus_cmd_payload_wr(ctrl_dBus_cmd_payload_wr),
-    .dBus_cmd_payload_data(ctrl_dBus_cmd_payload_data),
-    .dBus_cmd_payload_size(ctrl_dBus_cmd_payload_size),
-    .dBus_cmd_ready(ctrl_dBus_cmd_ready),
-    .dBus_rsp_ready(ctrl_dBus_rsp_valid),
-    .dBus_rsp_error(ctrl_dBus_rsp_error),
-    .dBus_rsp_data(ctrl_dBus_rsp_data)
+    .LsuCachelessPlugin_logic_bus_cmd_valid(ctrl_dBus_cmd_valid),
+    .LsuCachelessPlugin_logic_bus_cmd_payload_id(cpu_data_req_id),
+    .LsuCachelessPlugin_logic_bus_cmd_payload_address(ctrl_dBus_cmd_payload_address),
+.LsuCachelessPlugin_logic_bus_cmd_payload_mask(),
+    .LsuCachelessPlugin_logic_bus_cmd_payload_write(ctrl_dBus_cmd_payload_wr),
+    .LsuCachelessPlugin_logic_bus_cmd_payload_data(ctrl_dBus_cmd_payload_data),
+    .LsuCachelessPlugin_logic_bus_cmd_payload_size(ctrl_dBus_cmd_payload_size),
+    .LsuCachelessPlugin_logic_bus_cmd_ready(ctrl_dBus_cmd_ready),
+.LsuCachelessPlugin_logic_bus_cmd_payload_io(),
+.LsuCachelessPlugin_logic_bus_cmd_payload_fromHart(),
+.LsuCachelessPlugin_logic_bus_cmd_payload_uopId(),
+    .LsuCachelessPlugin_logic_bus_rsp_valid(ctrl_dBus_rsp_valid || !cpu_data_read_pend),
+    .LsuCachelessPlugin_logic_bus_rsp_payload_id(cpu_data_rsp_id),
+    .LsuCachelessPlugin_logic_bus_rsp_payload_error(ctrl_dBus_rsp_error),
+    .LsuCachelessPlugin_logic_bus_rsp_payload_data(ctrl_dBus_rsp_data)
 );
+
+always_ff@(posedge ctrl_cpu_clock) begin
+    if( inst_cache_port_cmd_valid_s[0] && inst_cache_port_cmd_ready_n[0] )
+        cpu_fetch_rsp_id <= cpu_fetch_req_id;
+
+    if( ctrl_dBus_rsp_valid )
+        cpu_data_read_pend <= 1'b0;
+
+    if( ctrl_dBus_cmd_valid && ctrl_dBus_cmd_ready ) begin
+        cpu_data_rsp_id <= cpu_data_req_id;
+
+        cpu_data_read_pend <= !ctrl_dBus_cmd_payload_wr;
+    end
+end
 
 bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) iBus_width_adjuster(
         .clock_i(ctrl_cpu_clock),

@@ -265,13 +265,6 @@
           <Attr Name="UsedIn" Val="simulation"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/VexRiscv/new/VexRiscv_ooc.xdc">
-        <FileInfo>
-          <Attr Name="UsedIn" Val="synthesis"/>
-          <Attr Name="UsedIn" Val="implementation"/>
-          <Attr Name="UsedIn" Val="out_of_context"/>
-        </FileInfo>
-      </File>
       <File Path="$PSRCDIR/saros/boot_loader_state.mem">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
@@ -296,7 +289,7 @@
           <Attr Name="ScopedToCell" Val="mig_ddr_ctrl"/>
         </FileInfo>
       </File>
-      <File Path="$PSRCDIR/sources_1/new/VexRiscv.v">
+      <File Path="$PSRCDIR/VexRiscv/VexiiRiscv.v">
         <FileInfo>
           <Attr Name="UsedIn" Val="synthesis"/>
           <Attr Name="UsedIn" Val="implementation"/>
