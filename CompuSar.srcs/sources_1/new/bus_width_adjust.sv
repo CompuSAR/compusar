@@ -7,17 +7,17 @@ module bus_width_adjust#(
 )(
     input                                               clock_i,
 
-    input                                               in_cmd_valid_i,
-    input [ADDR_WIDTH-1:0]                              in_cmd_addr_i,
-    input [IN_WIDTH/8-1:0]                              in_cmd_write_mask_i,
-    input [IN_WIDTH-1:0]                                in_cmd_write_data_i,
-    output [IN_WIDTH-1:0]                               in_rsp_read_data_o,
+    input                                               north_cmd_valid_i,
+    input [ADDR_WIDTH-1:0]                              north_cmd_addr_i,
+    input [IN_WIDTH/8-1:0]                              north_cmd_write_mask_i,
+    input [IN_WIDTH-1:0]                                north_cmd_write_data_i,
+    output [IN_WIDTH-1:0]                               north_rsp_read_data_o,
 
-    input                                               out_cmd_ready_i,
-    output [OUT_WIDTH/8-1:0]                            out_cmd_write_mask_o,
-    output [OUT_WIDTH-1:0]                              out_cmd_write_data_o,
-    input                                               out_rsp_valid_i,
-    input [OUT_WIDTH-1:0]                               out_rsp_read_data_i
+    input                                               south_cmd_ready_i,
+    output [OUT_WIDTH/8-1:0]                            south_cmd_write_mask_o,
+    output [OUT_WIDTH-1:0]                              south_cmd_write_data_o,
+    input                                               south_rsp_valid_i,
+    input [OUT_WIDTH-1:0]                               south_rsp_read_data_i
 );
 
 initial begin
@@ -36,8 +36,8 @@ localparam SEGMENT_SELECTOR_HIGH = $clog2(OUT_WIDTH/8);
 logic [EXPANSION_FACTOR_LOG-1:0] cmd_segment, cmd_segment_next;
 
 always_comb begin
-    if( in_cmd_valid_i )
-        cmd_segment_next = in_cmd_addr_i[SEGMENT_SELECTOR_HIGH-1:SEGMENT_SELECTOR_LOW];
+    if( north_cmd_valid_i )
+        cmd_segment_next = north_cmd_addr_i[SEGMENT_SELECTOR_HIGH-1:SEGMENT_SELECTOR_LOW];
     else
         cmd_segment_next = cmd_segment;
 end
@@ -45,9 +45,9 @@ end
 genvar i;
 generate
     for( i=0; i<EXPANSION_FACTOR; ++i ) begin
-        assign out_cmd_write_data_o[(i+1)*IN_WIDTH-1:i*IN_WIDTH] = in_cmd_write_data_i;
-        assign out_cmd_write_mask_o[(i+1)*(IN_WIDTH/8)-1:i*(IN_WIDTH/8)] =
-            cmd_segment_next%EXPANSION_FACTOR == i ? in_cmd_write_mask_i : { (IN_WIDTH/8){1'b0} };
+        assign south_cmd_write_data_o[(i+1)*IN_WIDTH-1:i*IN_WIDTH] = north_cmd_write_data_i;
+        assign south_cmd_write_mask_o[(i+1)*(IN_WIDTH/8)-1:i*(IN_WIDTH/8)] =
+            cmd_segment_next%EXPANSION_FACTOR == i ? north_cmd_write_mask_i : { (IN_WIDTH/8){1'b0} };
     end
 
     // Select portion of reply that interests us
@@ -64,11 +64,11 @@ generate
 endgenerate
 
 // Set the boundary conditions
-assign consolidator[EXPANSION_FACTOR_LOG-1].expanded = out_rsp_read_data_i;
-assign in_rsp_read_data_o = consolidator[0].consolidated;
+assign consolidator[EXPANSION_FACTOR_LOG-1].expanded = south_rsp_read_data_i;
+assign north_rsp_read_data_o = consolidator[0].consolidated;
 
 always_ff@(posedge clock_i) begin
-    if( in_cmd_valid_i && out_cmd_ready_i )
+    if( north_cmd_valid_i && south_cmd_ready_i )
         cmd_segment <= cmd_segment_next;
 end
 
