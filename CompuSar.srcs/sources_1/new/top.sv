@@ -215,7 +215,7 @@ localparam FIRST_EMPTY_IRQ = 5;
 logic [31:0]    iob_ddr_read_data;
 
 logic [0:0] cpu_fetch_req_id, cpu_fetch_rsp_id, cpu_data_req_id, cpu_data_rsp_id;
-logic cpu_data_read_pend = 1'b0;
+logic cpu_data_write_rsp_pend = 1'b0;
 
 VexiiRiscv control_cpu(
     .clk(ctrl_cpu_clock),
@@ -245,7 +245,7 @@ VexiiRiscv control_cpu(
 .LsuCachelessPlugin_logic_bus_cmd_payload_io(),
 .LsuCachelessPlugin_logic_bus_cmd_payload_fromHart(),
 .LsuCachelessPlugin_logic_bus_cmd_payload_uopId(),
-    .LsuCachelessPlugin_logic_bus_rsp_valid(ctrl_dBus_rsp_valid || !cpu_data_read_pend),
+    .LsuCachelessPlugin_logic_bus_rsp_valid(ctrl_dBus_rsp_valid || cpu_data_write_rsp_pend),
     .LsuCachelessPlugin_logic_bus_rsp_payload_id(cpu_data_rsp_id),
     .LsuCachelessPlugin_logic_bus_rsp_payload_error(ctrl_dBus_rsp_error),
     .LsuCachelessPlugin_logic_bus_rsp_payload_data(ctrl_dBus_rsp_data)
@@ -255,13 +255,13 @@ always_ff@(posedge ctrl_cpu_clock) begin
     if( inst_cache_port_cmd_valid_s[0] && inst_cache_port_cmd_ready_n[0] )
         cpu_fetch_rsp_id <= cpu_fetch_req_id;
 
-    if( ctrl_dBus_rsp_valid )
-        cpu_data_read_pend <= 1'b0;
+    cpu_data_write_rsp_pend <= 1'b0;
 
     if( ctrl_dBus_cmd_valid && ctrl_dBus_cmd_ready ) begin
         cpu_data_rsp_id <= cpu_data_req_id;
 
-        cpu_data_read_pend <= !ctrl_dBus_cmd_payload_wr;
+        if( ctrl_dBus_cmd_payload_wr )
+            cpu_data_write_rsp_pend <= 1'b1;
     end
 end
 

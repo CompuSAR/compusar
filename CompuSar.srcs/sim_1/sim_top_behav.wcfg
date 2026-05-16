@@ -11,22 +11,17 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="16,696.360674 ns"></ZoomStartTime>
-      <ZoomEndTime time="17,142.112635 ns"></ZoomEndTime>
-      <Cursor1Time time="16,742.366000 ns"></Cursor1Time>
+      <ZoomStartTime time="16,322.500000 ns"></ZoomStartTime>
+      <ZoomEndTime time="18,335.500001 ns"></ZoomEndTime>
+      <Cursor1Time time="17,639.689000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="299"></NameColumnWidth>
-      <ValueColumnWidth column_width="138"></ValueColumnWidth>
+      <ValueColumnWidth column_width="134"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="40" />
+   <WVObjectSize size="42" />
    <wave_markers>
-      <marker label="" time="5870604633000" />
-      <marker label="" time="6319383193000" />
-      <marker label="" time="6323843399000" />
-      <marker label="" time="6334347319000" />
-      <marker label="" time="6336326698000" />
-      <marker label="" time="16729171000" />
+      <marker label="" time="17718863000" />
    </wave_markers>
    <wvobject type="array" fp_name="/sim_top/top_module/uart_ctrl/uart_send_data">
       <obj_property name="ElementShortName">uart_send_data[7:0]</obj_property>
@@ -103,6 +98,14 @@
    <wvobject type="array" fp_name="/sim_top/top_module/ctrl_iBus_rsp_payload_inst">
       <obj_property name="ElementShortName">ctrl_iBus_rsp_payload_inst[31:0]</obj_property>
       <obj_property name="ObjectShortName">ctrl_iBus_rsp_payload_inst[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/control_cpu/integer_RegFilePlugin_logic_regfile_fpga/asMem_ram">
+      <obj_property name="DisplayName">label</obj_property>
+      <obj_property name="ElementShortName">asMem_ram[0:31][31:0]</obj_property>
+      <obj_property name="ObjectShortName">asMem_ram[0:31][31:0]</obj_property>
+      <obj_property name="label">regfile[0:31][31:0]</obj_property>
+      <obj_property name="CustomSignalColor">#0000FF</obj_property>
+      <obj_property name="UseCustomSignalColor">true</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sim_top/top_module/ctrl_dBus_cmd_valid">
       <obj_property name="ElementShortName">ctrl_dBus_cmd_valid</obj_property>
@@ -200,5 +203,9 @@
    <wvobject type="array" fp_name="/sim_top/top_module/cache/active_port">
       <obj_property name="ElementShortName">active_port[2:0]</obj_property>
       <obj_property name="ObjectShortName">active_port[2:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/ddr/init_done">
+      <obj_property name="ElementShortName">init_done</obj_property>
+      <obj_property name="ObjectShortName">init_done</obj_property>
    </wvobject>
 </wave_config>
