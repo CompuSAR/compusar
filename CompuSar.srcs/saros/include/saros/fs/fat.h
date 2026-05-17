@@ -12,6 +12,11 @@ class FAT {
     static constexpr size_t ROOT_DIR_CLUSTER = FIRST_USABLE_CLUSTER;
     static constexpr size_t CLUSTERS_PER_FAT_SECTOR = SD::BlockSize / sizeof(uint32_t);
 public:
+
+    static constexpr uint32_t FREE_CLUSTER = 0x00000000;
+    static constexpr uint32_t END_OF_CHAIN = 0x0fffffff;
+    static constexpr uint32_t BAD_CLUSTER = 0x0ffffff7;
+
     FAT(const Partition &partition);
 
     FAT(const FAT &that) = delete;

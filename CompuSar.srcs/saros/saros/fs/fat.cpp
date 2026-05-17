@@ -161,6 +161,16 @@ FAT::FAT(const Partition &partition) :
     }
 
     auto fat = partition_.readBlock(firstFatSector);
+
+    uint32_t mediaState = reinterpret_cast<const uint32_t *>(fat->data.data())[1];
+    if( (mediaState & 0x08000000)==0 ) {
+        uart_send("E: FAT partition is not clean\n");
+        return;
+    }
+    if( (mediaState & 0x04000000)==0 ) {
+        uart_send("E: Bad sectors reported on volume\n");
+        return;
+    }
 }
 
 SD::BlockPtr FAT::readCluster(uint32_t clusterNum) const {
