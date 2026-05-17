@@ -28,7 +28,7 @@ int saros_main() {
     uart_send("Second stage!\n");
 
     saros.init(std::span<Saros::Kernel::ThreadStack>( __thread_stacks_start, &__thread_stacks_end ));
-    saros.run( startup_function, nullptr );
+    saros.run( startup_function, nullptr, "Startup thread"_fs );
     uart_send("Saros exit\n");
 
     halt();
@@ -68,7 +68,7 @@ void startup_function(void *) noexcept {
 
     static constexpr uint64_t delay1 = 1000000000, delay2 = 1333566645;
 
-    saros.createThread( logoCrawl, nullptr );
+    saros.createThread( logoCrawl, nullptr, "Logo crawl"_fs );
     start_8bit();
 }
 

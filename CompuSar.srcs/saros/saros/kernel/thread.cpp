@@ -7,7 +7,10 @@
 
 namespace Saros::Kernel {
 
-Thread::Thread( Scheduler *scheduler, void *stack_top, ThreadStackAllocator::Ptr stackPtr, Entrypoint functionEntry, void *param ) :
+Thread::Thread(
+        Scheduler *scheduler, void *stack_top, ThreadStackAllocator::Ptr stackPtr, Entrypoint functionEntry, void *param,
+        FixedString name
+) :
     _stack( std::move(stackPtr) ),
     _scheduler( scheduler )
 {
@@ -19,6 +22,8 @@ Thread::Thread( Scheduler *scheduler, void *stack_top, ThreadStackAllocator::Ptr
     _context.a0 = this;
     _context.a1 = reinterpret_cast<void*>(functionEntry);
     _context.a2 = param;
+
+    push( (void *)name.ptr() );
 
     push(nullptr);
     push(nullptr);

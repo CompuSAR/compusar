@@ -16,8 +16,8 @@ void Saros::init( std::span<Kernel::ThreadStack> stackArea ) {
     _scheduler.init( stackArea );
 }
 
-void Saros::run( Kernel::Entrypoint startupThreadFunction, void *threadParam ) {
-    Kernel::Thread *thread = _scheduler.createThread( startupThreadFunction, threadParam );
+void Saros::run( Kernel::Entrypoint startupThreadFunction, void *threadParam, FixedString name ) {
+    Kernel::Thread *thread = _scheduler.createThread( startupThreadFunction, threadParam, name );
 
     initIrq();
     uartInit();

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <saros/kernel/thread_stack.h>
+#include <fixed_string.hh>
 
 #define BOOST_INTRUSIVE_SAFE_HOOK_DEFAULT_ASSERT(cond) assertWithMessage(cond, "Boost assert failed")
 #include <boost/intrusive/list.hpp>
@@ -32,7 +33,9 @@ class Thread {
     friend Scheduler;
 public:
 
-    Thread( Scheduler *scheduler, void *stack_top, ThreadStackAllocator::Ptr stackPtr, Entrypoint functionEntry, void *param );
+    Thread(
+            Scheduler *scheduler, void *stack_top, ThreadStackAllocator::Ptr stackPtr, Entrypoint functionEntry, void *param,
+            FixedString name );
     Thread( const Thread & ) = delete;
     Thread &operator=( const Thread & ) = delete;
 

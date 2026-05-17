@@ -21,10 +21,10 @@ public:
     Saros &operator=(const Saros &) = delete;
 
     void init( std::span<Kernel::ThreadStack> stackArea );
-    void run( Kernel::Entrypoint startupThreadFunction, void *param );
+    void run( Kernel::Entrypoint startupThreadFunction, void *param, FixedString name );
 
-    void createThread( Entrypoint function, void *param, bool highPriority = false ) {
-        _scheduler.createThread( function, param, highPriority );
+    void createThread( Entrypoint function, void *param, FixedString name, bool highPriority = false ) {
+        _scheduler.createThread( function, param, name, highPriority );
     }
 
     template <typename T>

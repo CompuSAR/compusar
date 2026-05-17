@@ -507,7 +507,7 @@ void SD::threadMain() noexcept {
 }
 
 void SD::init() {
-    saros.createThread( [](void *) noexcept { sd.threadMain(); }, nullptr);
+    saros.createThread( [](void *) noexcept { sd.threadMain(); }, nullptr, "SD main thread"_fs);
 }
 
 void SD::irq_handler_insert() noexcept {

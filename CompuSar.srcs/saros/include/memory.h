@@ -24,3 +24,16 @@ static inline void wwb() {
 }
 
 void clrmem(uint32_t *ptr, size_t size);
+
+template <typename T>
+T readUnaligned(const T &src) {
+    auto srcPtr = reinterpret_cast<const uint8_t *>(&src);
+
+    T result = 0;
+    for( unsigned i=0; i<sizeof(T); ++i ) {
+        result <<= 8;
+        result |= srcPtr[i];
+    }
+
+    return result;
+}
