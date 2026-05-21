@@ -96,21 +96,6 @@ wire spi_clk;
 
 ///// 32 bit section
 
-function automatic [3:0] convert_byte_write( logic we, logic[1:0] address, logic[1:0] size );
-    if( we ) begin
-        logic[3:0] mask;
-        case(size)
-            0: mask = 4'b0001;
-            1: mask = 4'b0011;
-            2: mask = 4'b1111;
-            3: mask = 4'b0000;
-        endcase
-
-        convert_byte_write = mask<<address;
-    end else
-        convert_byte_write = 4'b0;
-endfunction
-
 //-----------------------------------------------------------------
 // Clocking / Reset
 //-----------------------------------------------------------------
@@ -191,6 +176,7 @@ logic [31:0]    ctrl_iBus_rsp_payload_inst;
 logic           ctrl_dBus_cmd_valid;
 logic [31:0]    ctrl_dBus_cmd_payload_address;
 logic           ctrl_dBus_cmd_payload_wr;
+logic [3:0]     ctrl_dBus_cmd_payload_mask;
 logic [31:0]    ctrl_dBus_cmd_payload_data;
 logic [1:0]     ctrl_dBus_cmd_payload_size;
 
@@ -231,6 +217,7 @@ VexRiscv control_cpu(
     .dBus_cmd_valid(ctrl_dBus_cmd_valid),
     .dBus_cmd_payload_address(ctrl_dBus_cmd_payload_address),
     .dBus_cmd_payload_wr(ctrl_dBus_cmd_payload_wr),
+    .dBus_cmd_payload_mask(ctrl_dBus_cmd_payload_mask),
     .dBus_cmd_payload_data(ctrl_dBus_cmd_payload_data),
     .dBus_cmd_payload_size(ctrl_dBus_cmd_payload_size),
     .dBus_cmd_ready(ctrl_dBus_cmd_ready),
@@ -260,13 +247,7 @@ bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) dBus_width_adjuster(
         .clock_i(ctrl_cpu_clock),
         .north_cmd_valid_i(cache_port_cmd_valid_s[CACHE_PORT_IDX_DBUS]),
         .north_cmd_addr_i(ctrl_dBus_cmd_payload_address),
-        .north_cmd_write_mask_i(
-            convert_byte_write(
-                ctrl_dBus_cmd_payload_wr,
-                ctrl_dBus_cmd_payload_address[1:0],
-                ctrl_dBus_cmd_payload_size
-            )
-        ),
+        .north_cmd_write_mask_i(ctrl_dBus_cmd_payload_wr ? ctrl_dBus_cmd_payload_mask : 4'b0000),
         .north_cmd_write_data_i(ctrl_dBus_cmd_payload_data),
         .north_rsp_read_data_o(iob_ddr_read_data),
 
