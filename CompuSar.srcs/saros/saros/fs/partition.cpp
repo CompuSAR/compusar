@@ -1,8 +1,11 @@
 #include <saros/fs/partition.h>
 
 #include "format.h"
+#include "dbglogger.hh"
+#include "format.h"
 #include "sd.h"
 #include "uart.h"
+#include "saros/saros.h"
 
 #include <string.h>
 
@@ -23,6 +26,7 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
     }
 
     uart_send("Partition table:\n");
+    dump_memory(mbr->data);
 
     static constexpr size_t FirstPartitionMbrOffset = 0x1be;
     size_t offset = FirstPartitionMbrOffset;
@@ -60,6 +64,9 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
         uart_send(" Size: ");
         print_hex(part.size);
         uart_send("\n");
+
+        dumpdbglogger();
+        halt();
 
         if( part.fsType!=FsType::Unused ) {
             // Sanity checks
