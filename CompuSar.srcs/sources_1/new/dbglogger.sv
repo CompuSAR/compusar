@@ -21,7 +21,7 @@
 
 
 module dbglogger#(
-    WIDTH = 69
+    WIDTH = 32
 ) (
     input clk_i,
     input rst_i,
@@ -39,7 +39,7 @@ module dbglogger#(
     output logic [31:0] ctrl_rsp_data_o
     );
 
-localparam Mask = 32'h00000fff;
+localparam Mask = 32'h00003fff;
 
 logic [13:0]write_ptr = 0, lookup_ptr;
 logic [WIDTH-1:0] lookup_data, return_data;
@@ -101,8 +101,6 @@ always_ff@(posedge clk_i) begin
                 end
                 16'h0004: ctrl_rsp_data_o <= Mask;      // Mask
                 16'h0010: ctrl_rsp_data_o <= return_data[31:0];
-                16'h0014: ctrl_rsp_data_o <= return_data[63:32];
-                16'h0018: ctrl_rsp_data_o <= return_data[68:64];
             endcase
         end
     end

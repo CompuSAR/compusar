@@ -698,28 +698,20 @@ always_ff@(posedge board_clock) begin
     blink_counter <= blink_counter-1;
 
     if( blink_counter == 0 ) begin
-        leds[3] <= !leds[3];
+        leds[2] <= !leds[2];
         blink_counter <= 50000000;
     end
 end
 
-logic [68:0]dbglogger_data, dbglogger_data_pending;
-logic dbglogger_trigger = 1'b0, dbglogger_trigger_pending = 1'b0;
+logic [31:0]dbglogger_data, dbglogger_data_pending;
+logic dbglogger_trigger = 1'b0;
 
 always_ff@(posedge ctrl_cpu_clock) begin
     dbglogger_trigger <= 1'b0;
 
-    if( dbglogger_trigger_pending && (ctrl_dBus_rsp_valid || dbglogger_data_pending[68]) ) begin
-        dbglogger_data <= dbglogger_data_pending;
-        if( !dbglogger_data_pending[68] ) 
-            dbglogger_data[31:0] <= ctrl_dBus_rsp_data;
+    if( inst_cache_port_cmd_ready_n[0] && inst_cache_port_cmd_valid_s[0] ) begin
+        dbglogger_data <= inst_cache_port_cmd_addr_s[0];
         dbglogger_trigger <= 1'b1;
-        dbglogger_trigger_pending <= 1'b0;
-    end
-
-    if( ctrl_dBus_cmd_valid && ctrl_dBus_cmd_ready && ctrl_dBus_cmd_payload_address[31:8]==24'h80817e ) begin
-        dbglogger_data_pending <= { ctrl_dBus_cmd_payload_wr, ctrl_dBus_cmd_payload_mask, ctrl_dBus_cmd_payload_address, ctrl_dBus_cmd_payload_data };
-        dbglogger_trigger_pending <= 1'b1;
     end
 end
 

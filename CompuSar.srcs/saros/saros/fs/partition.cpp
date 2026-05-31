@@ -36,8 +36,10 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
         static_assert(std::is_trivially_copyable_v<PartitionLine>, "Can't memcpy PartitionLine");
         static_assert(std::is_standard_layout_v<PartitionLine>, "PartitionLine isn't stabely defined");
         memcpy(&part, &mbr->data.at(offset), sizeof(part));
+        saros.sleep_ns(8'000);
         offset += sizeof(part);
 
+#if 0
         uart_send("  ");
         print_dec(i);
         uart_send(": Boot: ");
@@ -61,6 +63,7 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
 
         uart_send(" Start: ");
         print_hex(part.offset);
+#endif
         uart_send(" Size: ");
         print_hex(part.size);
         uart_send("\n");
