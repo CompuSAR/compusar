@@ -11,26 +11,23 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="6,328.028966000 us"></ZoomStartTime>
-      <ZoomEndTime time="6,340.028966001 us"></ZoomEndTime>
-      <Cursor1Time time="6,336.326698000 us"></Cursor1Time>
+      <ZoomStartTime time="140.289467906 us"></ZoomStartTime>
+      <ZoomEndTime time="151.418786419 us"></ZoomEndTime>
+      <Cursor1Time time="149.563900000 us"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="220"></NameColumnWidth>
-      <ValueColumnWidth column_width="205"></ValueColumnWidth>
+      <ValueColumnWidth column_width="177"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="35" />
-   <wave_markers>
-      <marker label="" time="5870604633000" />
-      <marker label="" time="6319383193000" />
-      <marker label="" time="6323843399000" />
-      <marker label="" time="6334347319000" />
-      <marker label="" time="6336326698000" />
-   </wave_markers>
+   <WVObjectSize size="66" />
    <wvobject type="array" fp_name="/sim_top/top_module/uart_ctrl/uart_send_data">
       <obj_property name="ElementShortName">uart_send_data[7:0]</obj_property>
       <obj_property name="ObjectShortName">uart_send_data[7:0]</obj_property>
       <obj_property name="Radix">ASCIIRADIX</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/uart_ctrl/uart_send_data">
+      <obj_property name="ElementShortName">uart_send_data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">uart_send_data[7:0]</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sim_top/top_module/board_clock">
       <obj_property name="ElementShortName">board_clock</obj_property>
@@ -51,7 +48,6 @@
    <wvobject type="array" fp_name="/sim_top/top_module/inst_cache_port_cmd_addr_s">
       <obj_property name="ElementShortName">inst_cache_port_cmd_addr_s[0:0][31:0]</obj_property>
       <obj_property name="ObjectShortName">inst_cache_port_cmd_addr_s[0:0][31:0]</obj_property>
-      <obj_property name="isExpanded"></obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sim_top/top_module/control_cpu/RegFilePlugin_regFile">
       <obj_property name="ElementShortName">RegFilePlugin_regFile[0:31][31:0]</obj_property>
@@ -168,5 +164,125 @@
    <wvobject type="array" fp_name="/sim_top/top_module/interrupt_controller/interrupt_cycle_high_latch">
       <obj_property name="ElementShortName">interrupt_cycle_high_latch[31:0]</obj_property>
       <obj_property name="ObjectShortName">interrupt_cycle_high_latch[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger_data_pending">
+      <obj_property name="ElementShortName">dbglogger_data_pending[68:0]</obj_property>
+      <obj_property name="ObjectShortName">dbglogger_data_pending[68:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger_data">
+      <obj_property name="ElementShortName">dbglogger_data[68:0]</obj_property>
+      <obj_property name="ObjectShortName">dbglogger_data[68:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger_trigger">
+      <obj_property name="ElementShortName">dbglogger_trigger</obj_property>
+      <obj_property name="ObjectShortName">dbglogger_trigger</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/clk_i">
+      <obj_property name="ElementShortName">clk_i</obj_property>
+      <obj_property name="ObjectShortName">clk_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/rst_i">
+      <obj_property name="ElementShortName">rst_i</obj_property>
+      <obj_property name="ObjectShortName">rst_i</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/log_data_i">
+      <obj_property name="ElementShortName">log_data_i[68:0]</obj_property>
+      <obj_property name="ObjectShortName">log_data_i[68:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/log_enable_i">
+      <obj_property name="ElementShortName">log_enable_i</obj_property>
+      <obj_property name="ObjectShortName">log_enable_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/ctrl_req_valid_i">
+      <obj_property name="ElementShortName">ctrl_req_valid_i</obj_property>
+      <obj_property name="ObjectShortName">ctrl_req_valid_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/ctrl_rsp_valid_o">
+      <obj_property name="ElementShortName">ctrl_rsp_valid_o</obj_property>
+      <obj_property name="ObjectShortName">ctrl_rsp_valid_o</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/ctrl_req_data_i">
+      <obj_property name="ElementShortName">ctrl_req_data_i[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ctrl_req_data_i[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/ctrl_req_addr_i">
+      <obj_property name="ElementShortName">ctrl_req_addr_i[15:0]</obj_property>
+      <obj_property name="ObjectShortName">ctrl_req_addr_i[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/ctrl_req_write_i">
+      <obj_property name="ElementShortName">ctrl_req_write_i</obj_property>
+      <obj_property name="ObjectShortName">ctrl_req_write_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/ctrl_req_ack_o">
+      <obj_property name="ElementShortName">ctrl_req_ack_o</obj_property>
+      <obj_property name="ObjectShortName">ctrl_req_ack_o</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/ctrl_rsp_data_o">
+      <obj_property name="ElementShortName">ctrl_rsp_data_o[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ctrl_rsp_data_o[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/write_ptr">
+      <obj_property name="ElementShortName">write_ptr[13:0]</obj_property>
+      <obj_property name="ObjectShortName">write_ptr[13:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/lookup_ptr">
+      <obj_property name="ElementShortName">lookup_ptr[13:0]</obj_property>
+      <obj_property name="ObjectShortName">lookup_ptr[13:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/lookup_data">
+      <obj_property name="ElementShortName">lookup_data[68:0]</obj_property>
+      <obj_property name="ObjectShortName">lookup_data[68:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/return_data">
+      <obj_property name="ElementShortName">return_data[68:0]</obj_property>
+      <obj_property name="ObjectShortName">return_data[68:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/lookup_enable">
+      <obj_property name="ElementShortName">lookup_enable</obj_property>
+      <obj_property name="ObjectShortName">lookup_enable</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/active">
+      <obj_property name="ElementShortName">active</obj_property>
+      <obj_property name="ObjectShortName">active</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/WIDTH">
+      <obj_property name="ElementShortName">WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/ram/clka">
+      <obj_property name="ElementShortName">clka</obj_property>
+      <obj_property name="ObjectShortName">clka</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/ram/ena">
+      <obj_property name="ElementShortName">ena</obj_property>
+      <obj_property name="ObjectShortName">ena</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/ram/wea">
+      <obj_property name="ElementShortName">wea[0:0]</obj_property>
+      <obj_property name="ObjectShortName">wea[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/ram/addra">
+      <obj_property name="ElementShortName">addra[12:0]</obj_property>
+      <obj_property name="ObjectShortName">addra[12:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/ram/dina">
+      <obj_property name="ElementShortName">dina[68:0]</obj_property>
+      <obj_property name="ObjectShortName">dina[68:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/ram/clkb">
+      <obj_property name="ElementShortName">clkb</obj_property>
+      <obj_property name="ObjectShortName">clkb</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_top/top_module/dbglogger/ram/enb">
+      <obj_property name="ElementShortName">enb</obj_property>
+      <obj_property name="ObjectShortName">enb</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/ram/addrb">
+      <obj_property name="ElementShortName">addrb[12:0]</obj_property>
+      <obj_property name="ObjectShortName">addrb[12:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_top/top_module/dbglogger/ram/doutb">
+      <obj_property name="ElementShortName">doutb[68:0]</obj_property>
+      <obj_property name="ObjectShortName">doutb[68:0]</obj_property>
    </wvobject>
 </wave_config>

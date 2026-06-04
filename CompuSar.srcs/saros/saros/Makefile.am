@@ -19,7 +19,7 @@ ABI=-mabi=ilp32
 noinst_PROGRAMS=saros.elf
 noinst_LIBRARIES=libcommon.a
 
-libcommon_a_SOURCES=$(commondir)/string.cpp
+libcommon_a_SOURCES=$(commondir)/string.cpp $(commondir)/dbglogger.cc
 libcommon_a_CXXFLAGS=-ffreestanding
 
 saros_elf_SOURCES=main.cpp uart.cpp saros.cpp mutex.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \

@@ -1,8 +1,11 @@
 #include <saros/fs/partition.h>
 
 #include "format.h"
+#include "dbglogger.hh"
+#include "format.h"
 #include "sd.h"
 #include "uart.h"
+#include "saros/saros.h"
 
 #include <string.h>
 
@@ -23,6 +26,7 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
     }
 
     uart_send("Partition table:\n");
+    dump_memory(mbr->data);
 
     static constexpr size_t FirstPartitionMbrOffset = 0x1be;
     size_t offset = FirstPartitionMbrOffset;
@@ -32,6 +36,7 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
         static_assert(std::is_trivially_copyable_v<PartitionLine>, "Can't memcpy PartitionLine");
         static_assert(std::is_standard_layout_v<PartitionLine>, "PartitionLine isn't stabely defined");
         memcpy(&part, &mbr->data.at(offset), sizeof(part));
+        saros.sleep_ns(8'000);
         offset += sizeof(part);
 
         uart_send("  ");
@@ -64,6 +69,9 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
         if( part.fsType!=FsType::Unused ) {
             // Sanity checks
             if( part.offset>=sd.getNumBlocks() ) {
+dumpdbglogger();
+halt();
+
                 uart_send("E: LBA offset points past the end of the device\n");
                 part.fsType = FsType::Unused;
             }
