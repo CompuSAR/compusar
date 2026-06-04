@@ -39,7 +39,6 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
         saros.sleep_ns(8'000);
         offset += sizeof(part);
 
-#if 0
         uart_send("  ");
         print_dec(i);
         uart_send(": Boot: ");
@@ -63,17 +62,16 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
 
         uart_send(" Start: ");
         print_hex(part.offset);
-#endif
         uart_send(" Size: ");
         print_hex(part.size);
         uart_send("\n");
 
-        dumpdbglogger();
-        halt();
-
         if( part.fsType!=FsType::Unused ) {
             // Sanity checks
             if( part.offset>=sd.getNumBlocks() ) {
+dumpdbglogger();
+halt();
+
                 uart_send("E: LBA offset points past the end of the device\n");
                 part.fsType = FsType::Unused;
             }
