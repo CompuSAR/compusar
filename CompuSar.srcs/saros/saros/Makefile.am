@@ -1,7 +1,7 @@
 SUBDIRS=kernel fs .
 
 AM_CCASFLAGS=$(ARCH) $(ABI)
-AM_CXXFLAGS=$(ARCH) $(ABI)
+AM_CXXFLAGS=$(ARCH) $(ABI) -ffreestanding
 AM_CFLAGS=$(ARCH) $(ABI)
 AM_CPPFLAGS=-I$(top_srcdir)/include -DSAROS
 
@@ -20,7 +20,6 @@ noinst_PROGRAMS=saros.elf
 noinst_LIBRARIES=libcommon.a
 
 libcommon_a_SOURCES=$(commondir)/string.cpp
-libcommon_a_CXXFLAGS=-ffreestanding
 
 saros_elf_SOURCES=main.cpp uart.cpp saros.cpp mutex.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \
                   start.s ../abort.cpp display.cpp crt.cpp sd.cpp \

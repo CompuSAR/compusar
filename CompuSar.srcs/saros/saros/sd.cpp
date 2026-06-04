@@ -12,7 +12,7 @@
 #include "reg.h"
 #include "uart.h"
 
-#include <mutex>
+#include "mutex.hh"
 
 /* In this file, any comment referencing a standard section refers to "SD Physical Layer Simplified Specification Ver 9.00"
  */
@@ -197,7 +197,7 @@ SD::BlockPtr SD::readBlock(uint32_t blockNum) const {
         return _blocksPool.emptyPtr();
     }
 
-    std::unique_lock dataLock(_dataLock);
+    unique_lock dataLock(_dataLock);
 
     waitDataIdle();
 
