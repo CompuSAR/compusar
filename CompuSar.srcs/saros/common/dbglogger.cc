@@ -60,3 +60,7 @@ void dumpdbglogger() {
 
     uart_send("Dumped\n\n");
 }
+
+void dbglogger_stop() {
+    reg_read_32(DeviceId, GetEndPtr);
+}

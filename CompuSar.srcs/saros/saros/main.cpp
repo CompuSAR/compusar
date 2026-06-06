@@ -3,6 +3,7 @@
 #include "format.h"
 
 #include <saros/kernel/timer.h>
+#include <saros/kernel/thread_stack.h>
 #include <saros/fs/filesystem.h>
 
 #include "assets/logo.h"
@@ -18,8 +19,6 @@ extern void startup_function(void *) noexcept;
 extern "C" void (*__init_array_start[])();
 extern "C" void (*__init_array_end)();
 
-extern "C" Saros::Kernel::ThreadStack __thread_stacks_start[], __thread_stacks_end;
-
 extern "C"
 int saros_main() {
     // Run "pre main" functions
@@ -28,7 +27,7 @@ int saros_main() {
 
     uart_send("Second stage!\n");
 
-    saros.init(std::span<Saros::Kernel::ThreadStack>( __thread_stacks_start, &__thread_stacks_end ));
+    saros.init(std::span<Saros::Kernel::ThreadStack>( Saros::Kernel::__thread_stacks_start, &Saros::Kernel::__thread_stacks_end ));
     saros.run( startup_function, nullptr, "Startup thread"_fs );
     uart_send("Saros exit\n");
 

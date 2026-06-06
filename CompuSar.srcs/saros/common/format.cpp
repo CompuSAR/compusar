@@ -24,6 +24,17 @@ void print_hex(uint64_t number, bool sync) {
     }
 }
 
+void print_hex(void *ptr, bool sync) {
+#ifdef SAROS
+    if( sync )
+        uart_sync_message("0x");
+    else
+#endif
+        uart_send("0x");
+
+    print_hex(reinterpret_cast<uint32_t>(ptr), sync);
+}
+
 void print_dec(uint64_t number) {
     char buffer[25];
     int i=0;

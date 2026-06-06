@@ -26,6 +26,7 @@ class Thread {
     ThreadStackAllocator::Ptr _stack;
     Scheduler *_scheduler;
     boost::intrusive::list_member_hook< boost::intrusive::link_mode<boost::intrusive::auto_unlink> > _listHook;
+    FixedString _name;
     enum class State { Ready, Sleeping, Dead } _state = State::Dead;
 
     unsigned _priority = 1;
@@ -39,6 +40,13 @@ public:
     Thread( const Thread & ) = delete;
     Thread &operator=( const Thread & ) = delete;
 
+    Context getContext() const {
+        return _context;
+    }
+
+    const char *getName() const {
+        return _name;
+    }
 private:
     [[noreturn]] static void threadTrampoline(Thread *self, Entrypoint functionEntry, void *param);
 
