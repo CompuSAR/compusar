@@ -114,7 +114,7 @@ FAT::FAT(const Partition &partition) :
         uart_send("E: Only 1 sector per cluster is supported\n");
         return;
     }
-    if( bpb->bpb_rootClus!=ROOT_DIR_CLUSTER ) {
+    if( bpb->bpb_rootClus!=RootDirCluster.num ) {
         uart_send("E: Root dir cluster isn't 2\n");
         return;
     }
@@ -171,8 +171,20 @@ FAT::FAT(const Partition &partition) :
         uart_send("E: Bad sectors reported on volume\n");
         return;
     }
+
+    firstDataSector_ = firstDataSector;
+    firstFatSector_ = firstDataSector;
+    totalSectors_ = totalSectors;
 }
 
-SD::BlockPtr FAT::readCluster(uint32_t clusterNum) const {
-    //uint32_t sectorNum = ((clusterNum - FIRST_USABLE_CLUSTER) * SECT_PER_CLUSTER) + firstDataSector_;
+SD::BlockPtr FAT::readCluster(ClusterNum clusterNum) const {
+    uint32_t sectorNum = ((clusterNum.num - FIRST_USABLE_CLUSTER) * SECT_PER_CLUSTER) + firstDataSector_;
+
+    return partition_.readBlock(sectorNum);
+}
+
+void FAT::Directory::dir() const {
+    auto dirBuffer = fs_.readCluster(dirStart_);
+
+    dump_memory(dirBuffer->data);
 }

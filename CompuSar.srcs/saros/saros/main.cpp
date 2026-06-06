@@ -3,6 +3,7 @@
 #include "format.h"
 
 #include <saros/kernel/timer.h>
+#include <saros/fs/filesystem.h>
 
 #include "assets/logo.h"
 #include "display.h"
@@ -66,11 +67,11 @@ void logoCrawl(void *) noexcept {
 void startup_function(void *) noexcept {
     SD::init();
 
-    static constexpr uint64_t delay1 = 1000000000, delay2 = 1333566645;
-
     saros.createThread( logoCrawl, nullptr, "Logo crawl"_fs );
     start_8bit();
 }
 
 void  __attribute__((weak)) start_8bit() {
+    auto dir = fs->getRootDir();
+    dir.dir();
 }

@@ -49,7 +49,7 @@ localparam CMDCDC_ARG = 2'b01, CMDCDC_CMD = 2'b00, CMDCDC_DATA = 2'b10;
 
 localparam MAX_DATA_TRANSFER = 2048;
 localparam MAX_DATA_TRANSFER_BITS = $clog2(MAX_DATA_TRANSFER + 1);
-localparam DATA_START_WAIT_TIMEOUT = 25000;     // Give the card 1ms to respond
+localparam DATA_START_WAIT_TIMEOUT = 50000;     // Give the card 2ms to respond
 localparam DATA_CRC_BITS = 16;
 
 localparam SD_CDC_PIPELINE_LEN = 4;
@@ -230,7 +230,7 @@ enum logic[3:0] {
 
 localparam CMD_PAYLOAD_SIZE = 40;
 localparam REPLY_PAYLOAD_SIZE = 128 + 6;
-localparam REPLY_WAIT_CYCLES = 20;
+localparam REPLY_WAIT_CYCLES = 64;
 
 wire cmd_crc_reset, cmd_crc_valid;
 wire [6:0] cmd_crc_init_value;

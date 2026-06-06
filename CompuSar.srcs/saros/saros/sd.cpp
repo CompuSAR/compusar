@@ -474,13 +474,21 @@ void SD::threadMain() noexcept {
             partitionTable.emplace(sd, 0);
 
             for( unsigned i=0; i<partitionTable->size(); ++i ) {
-                if( partitionTable->at(i).fsType == PartitionTable::FsType::Fat32 || partitionTable->at(i).fsType == PartitionTable::FsType::Fat32Lba ) {
+                if  (
+                        !fs && (
+                            partitionTable->at(i).fsType == PartitionTable::FsType::Fat32 ||
+                            partitionTable->at(i).fsType == PartitionTable::FsType::Fat32Lba
+                        )
+                    )
+                {
                     uart_send("Found FAT32 partition ");
                     print_dec(i);
                     uart_send("\n");
 
                     Partition part(sd, partitionTable->at(i));
                     fs.emplace( part );
+                    if( !*fs )
+                        fs.reset();
                 }
             }
 
