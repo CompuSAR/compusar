@@ -185,6 +185,64 @@ SD::BlockPtr FAT::readCluster(ClusterNum clusterNum) const {
 
 void FAT::Directory::dir() const {
     auto dirBuffer = fs_.readCluster(dirStart_);
+    auto dirEntries = reinterpret_cast<const DirEntry *>(dirBuffer->data.data());
 
-    dump_memory(dirBuffer->data);
+    for( unsigned i=0; i<DirEntriesPerSector; ++i ) {
+        if( dirEntries[i].dirName[0]==DirEntry::EndMarker )
+            break;
+        if( dirEntries[i].dirName[0]==DirEntry::FreeMarker )
+            continue;
+        if( (dirEntries[i].dirAttr & DirEntry::AttributeLongName) == DirEntry::AttributeLongName )
+            continue;
+
+        for(unsigned j=0; j<8; ++j) {
+            uart_send(dirEntries[i].dirName[j]);
+        }
+        uart_send("     ");
+        for(unsigned j=8; j<11; ++j) {
+            uart_send(dirEntries[i].dirName[j]);
+        }
+        uart_send("  ");
+
+        if( dirEntries[i].dirAttr & DirEntry::AttrArchive ) {
+            uart_send('A');
+        } else {
+            uart_send('-');
+        }
+
+        if( dirEntries[i].dirAttr & DirEntry::AttrDirectory ) {
+            uart_send('D');
+        } else {
+            uart_send('-');
+        }
+
+        if( dirEntries[i].dirAttr & DirEntry::AttrVolumeId ) {
+            uart_send('V');
+        } else {
+            uart_send('-');
+        }
+
+        if( dirEntries[i].dirAttr & DirEntry::AttrSystem ) {
+            uart_send('S');
+        } else {
+            uart_send('-');
+        }
+
+        if( dirEntries[i].dirAttr & DirEntry::AttrHidden ) {
+            uart_send('H');
+        } else {
+            uart_send('-');
+        }
+
+        if( dirEntries[i].dirAttr & DirEntry::AttrReadOnly ) {
+            uart_send('R');
+        } else {
+            uart_send('-');
+        }
+
+        uart_send("   ");
+        print_dec(dirEntries[i].dirFileSize);
+
+        uart_send("\n");
+    }
 }

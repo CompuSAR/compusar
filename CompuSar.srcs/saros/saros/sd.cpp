@@ -487,8 +487,11 @@ void SD::threadMain() noexcept {
 
                     Partition part(sd, partitionTable->at(i));
                     fs.emplace( part );
-                    if( !*fs )
+                    if( !*fs ) {
                         fs.reset();
+                    } else {
+                        fsChanged.signal();
+                    }
                 }
             }
 

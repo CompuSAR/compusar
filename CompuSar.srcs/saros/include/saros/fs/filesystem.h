@@ -7,3 +7,5 @@
 using Filesystem = FAT;
 
 extern std::optional<Filesystem> fs;
+// XXX This is not even a little thread safe
+extern Saros::Sync::Signal fsChanged;

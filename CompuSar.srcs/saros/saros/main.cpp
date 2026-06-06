@@ -71,6 +71,9 @@ void startup_function(void *) noexcept {
 }
 
 void  __attribute__((weak)) start_8bit() {
+    while( !fs ) {
+        fsChanged.wait();
+    }
     auto dir = fs->getRootDir();
     dir.dir();
 }
