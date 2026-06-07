@@ -26,7 +26,7 @@ PartitionTable::PartitionTable(const SD &sd, size_t partitionTableBlock) : sd_{s
     }
 
     uart_send("Partition table:\n");
-    dump_memory(mbr->data);
+    //dump_memory(mbr->data);
 
     static constexpr size_t FirstPartitionMbrOffset = 0x1be;
     size_t offset = FirstPartitionMbrOffset;
