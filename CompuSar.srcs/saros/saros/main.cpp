@@ -74,6 +74,34 @@ void  __attribute__((weak)) start_8bit() {
     while( !fs ) {
         fsChanged.wait();
     }
-    auto dir = fs->getRootDir();
-    dir.dir();
+    auto rootDir = fs->getRootDir();
+    for( auto dirEntry : rootDir ) {
+        if( dirEntry.dirAttr == FAT::Directory::DirEntry::AttributeLongName )
+            continue;
+
+        if( dirEntry.dirName[8]=='T' && dirEntry.dirName[9]=='X' && dirEntry.dirName[10]=='T' ) {
+            uart_send("Dumping content of ");
+            for(unsigned i = 0; i<8; ++i) {
+                uart_send(static_cast<char>(dirEntry.dirName[i]));
+            }
+            uart_send('.');
+            for(unsigned i = 8; i<11; ++i) {
+                uart_send(static_cast<char>(dirEntry.dirName[i]));
+            }
+            uart_send(":\n");
+
+            FAT::File textFile( dirEntry, *fs );
+            SD::BlockPtr data;
+            size_t blockFill = textFile.readBlock(data);
+            while( blockFill!=0 ) {
+                for( unsigned i=0; i<blockFill; ++i ) {
+                    uart_send( static_cast<char>( data->data[i] ) );
+                }
+
+                blockFill = textFile.readBlock(data);
+            }
+
+            uart_send("\n\n");
+        }
+    }
 }

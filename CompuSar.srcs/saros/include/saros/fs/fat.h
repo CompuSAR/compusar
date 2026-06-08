@@ -111,6 +111,17 @@ public:
         void dir() const;
     };
 
+    class File {
+        const FAT *fs_ = nullptr;
+        size_t size_ = 0;
+        ClusterNum currentCluster_;
+
+    public:
+        explicit File(const Directory::DirEntry &dirEntry, const FAT &fs);
+
+        size_t readBlock(SD::BlockPtr &data);
+    };
+
     FAT(const Partition &partition);
 
     FAT(const FAT &that) = delete;

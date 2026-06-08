@@ -314,3 +314,27 @@ void FAT::Directory::dir() const {
         uart_send("\n");
     }
 }
+
+FAT::File::File(const Directory::DirEntry &dirEntry, const FAT &fs) :
+    fs_(&fs),
+    size_(dirEntry.dirFileSize),
+    currentCluster_( dirEntry.dirFstClusHi<<16 | dirEntry.dirFstClusLo )
+{
+}
+
+size_t FAT::File::readBlock(SD::BlockPtr &data) {
+    if( !currentCluster_.isValid() || size_==0 ) {
+        return 0;
+    }
+
+    data = fs_->readCluster(currentCluster_);
+    if( size_ <= SD::BlockSize ) {
+        size_t ret = size_;
+        size_ = 0;
+        return ret;
+    }
+
+    currentCluster_ = fs_->nextCluster(currentCluster_);
+    size_ -= SD::BlockSize;
+    return SD::BlockSize;
+}
