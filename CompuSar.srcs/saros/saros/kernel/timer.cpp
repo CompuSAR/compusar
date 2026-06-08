@@ -75,6 +75,7 @@ TimerHandle registerTimer(uint64_t triggerTime, uint64_t repeatDuration) {
         set_timer_cycles( triggerTime );
     }
 
+    // TODO: Ptr is now movable. That would be better semantics
     return TimerHandle(eventPtr.release());
 }
 

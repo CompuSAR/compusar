@@ -26,16 +26,15 @@ public:
         bool isEoc() const {
             return num >= 0x0FFFFFF8;
         }
+
+        bool operator==(ClusterNum that) const {
+            return num == that.num;
+        }
     };
     static constexpr ClusterNum RootDirCluster{FIRST_USABLE_CLUSTER};
 
     class Directory {
-        ClusterNum dirStart_;
-        const FAT &fs_;
-
-        explicit Directory(const FAT &fs, ClusterNum dirStart) : dirStart_(dirStart), fs_(fs) {}
-        friend FAT;
-
+    public:
         struct __attribute__((packed)) DirEntry {
             static constexpr uint8_t AttrReadOnly = 0x01;
             static constexpr uint8_t AttrHidden = 0x02;
@@ -65,9 +64,50 @@ public:
         static_assert(std::is_standard_layout_v<DirEntry>);
         static_assert(std::is_trivially_copyable_v<DirEntry>);
 
+    private:
+        ClusterNum dirStart_;
+        const FAT &fs_;
+
+        explicit Directory(const FAT &fs, ClusterNum dirStart) : dirStart_(dirStart), fs_(fs) {}
+        friend FAT;
+
         static constexpr size_t DirEntriesPerSector = SD::BlockSize / sizeof(DirEntry);
         static_assert( DirEntriesPerSector * sizeof(DirEntry) == SD::BlockSize, "Block size not a multiple of directory entry" );
     public:
+
+        class ConstIterator {
+            const FAT *fs_ = nullptr;
+            mutable SD::BlockPtr dirBlock_;
+            ClusterNum dirCluster_;
+            uint32_t dirIndex_ = 0;
+
+            friend Directory;
+
+            ConstIterator(const FAT &fs, ClusterNum firstCluster) : fs_(&fs), dirCluster_(firstCluster) {}
+        public:
+            ConstIterator() = default;
+
+            // Output iterator
+            DirEntry operator*() const;
+            ConstIterator &operator++();
+
+            bool operator==(const ConstIterator &that) const {
+                if( fs_==nullptr && that.fs_==nullptr )
+                    return true;
+
+                return
+                        fs_ == that.fs_ &&
+                        dirCluster_ == that.dirCluster_ &&
+                        dirIndex_ == that.dirIndex_;
+            }
+
+            private:
+                bool iterNext();
+        };
+
+        ConstIterator begin() const;
+        ConstIterator end() const;
+
         void dir() const;
     };
 

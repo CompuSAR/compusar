@@ -195,78 +195,122 @@ FAT::ClusterNum FAT::nextCluster(ClusterNum cluster) const {
     return ClusterNum(nextCluster);
 }
 
+FAT::Directory::DirEntry FAT::Directory::ConstIterator::operator*() const {
+    assertWithMessage( fs_ != nullptr, "Dereferencing an empty directory iterator" );
+
+    if( fs_ != nullptr && !dirBlock_ )
+        dirBlock_ = fs_->readCluster( dirCluster_ );
+
+    return reinterpret_cast<const DirEntry *>( dirBlock_->data.data() )[dirIndex_];
+}
+
+FAT::Directory::ConstIterator &FAT::Directory::ConstIterator::operator++() {
+    while(iterNext()) {
+        const DirEntry &entry = reinterpret_cast<const DirEntry *>( dirBlock_->data.data() )[dirIndex_];
+        if( entry.dirName[0]==DirEntry::EndMarker )
+            break;
+        if( entry.dirName[0]==DirEntry::FreeMarker )
+            continue;
+
+        return *this;
+    }
+
+    // No more entries
+    dirBlock_.clear();
+    fs_ = nullptr;
+    dirIndex_ = 0;
+
+    return *this;
+}
+
+FAT::Directory::ConstIterator FAT::Directory::begin() const {
+    return ConstIterator(fs_, dirStart_);
+}
+
+FAT::Directory::ConstIterator FAT::Directory::end() const {
+    return ConstIterator();
+}
+
+bool FAT::Directory::ConstIterator::iterNext() {
+    assertWithMessage(fs_ != nullptr, "Attempt advance directory iterator past the end");
+    dirIndex_++;
+
+    if( dirIndex_ == DirEntriesPerSector ) {
+        dirIndex_ = 0;
+        dirCluster_ = fs_->nextCluster(dirCluster_);
+
+        if( !dirCluster_.isValid() ) {
+            // We're done
+            if( !dirCluster_.isEoc() ) {
+                uart_send("E: Directory traversal links to bad cluster ");
+                print_hex(dirCluster_.num);
+                uart_send("\n");
+            }
+            dirCluster_ = ClusterNum();
+            fs_ = nullptr;
+
+            return false;
+        }
+
+        dirBlock_ = fs_->readCluster(dirCluster_);
+    }
+
+    return true;
+}
+
 void FAT::Directory::dir() const {
-    bool done = false;
+    for( auto dirEntry : *this ) {
+        if( dirEntry.dirAttr == DirEntry::AttributeLongName )
+            continue;
 
-    ClusterNum dirCluster = dirStart_;
-    while( !done && dirCluster.isValid() ) {
-        auto dirBuffer = fs_.readCluster(dirCluster);
-        auto dirEntries = reinterpret_cast<const DirEntry *>(dirBuffer->data.data());
+        for(unsigned j=0; j<8; ++j) {
+            uart_send(dirEntry.dirName[j]);
+        }
+        uart_send("     ");
+        for(unsigned j=8; j<11; ++j) {
+            uart_send(dirEntry.dirName[j]);
+        }
+        uart_send("  ");
 
-        for( unsigned i=0; i<DirEntriesPerSector; ++i ) {
-            const DirEntry &entry = dirEntries[i%DirEntriesPerSector];
-            if( entry.dirName[0]==DirEntry::EndMarker ) {
-                done = true;
-                break;
-            }
-            if( entry.dirName[0]==DirEntry::FreeMarker )
-                continue;
-            if( (entry.dirAttr & DirEntry::AttributeLongName) == DirEntry::AttributeLongName )
-                continue;
-
-            for(unsigned j=0; j<8; ++j) {
-                uart_send(entry.dirName[j]);
-            }
-            uart_send("     ");
-            for(unsigned j=8; j<11; ++j) {
-                uart_send(entry.dirName[j]);
-            }
-            uart_send("  ");
-
-            if( entry.dirAttr & DirEntry::AttrArchive ) {
-                uart_send('A');
-            } else {
-                uart_send('-');
-            }
-
-            if( entry.dirAttr & DirEntry::AttrDirectory ) {
-                uart_send('D');
-            } else {
-                uart_send('-');
-            }
-
-            if( entry.dirAttr & DirEntry::AttrVolumeId ) {
-                uart_send('V');
-            } else {
-                uart_send('-');
-            }
-
-            if( entry.dirAttr & DirEntry::AttrSystem ) {
-                uart_send('S');
-            } else {
-                uart_send('-');
-            }
-
-            if( entry.dirAttr & DirEntry::AttrHidden ) {
-                uart_send('H');
-            } else {
-                uart_send('-');
-            }
-
-            if( entry.dirAttr & DirEntry::AttrReadOnly ) {
-                uart_send('R');
-            } else {
-                uart_send('-');
-            }
-
-            uart_send("   ");
-            print_dec(dirEntries[i].dirFileSize);
-
-            uart_send("\n");
+        if( dirEntry.dirAttr & DirEntry::AttrArchive ) {
+            uart_send('A');
+        } else {
+            uart_send('-');
         }
 
-        if( !done ) {
-            dirCluster = fs_.nextCluster(dirCluster);
+        if( dirEntry.dirAttr & DirEntry::AttrDirectory ) {
+            uart_send('D');
+        } else {
+            uart_send('-');
         }
+
+        if( dirEntry.dirAttr & DirEntry::AttrVolumeId ) {
+            uart_send('V');
+        } else {
+            uart_send('-');
+        }
+
+        if( dirEntry.dirAttr & DirEntry::AttrSystem ) {
+            uart_send('S');
+        } else {
+            uart_send('-');
+        }
+
+        if( dirEntry.dirAttr & DirEntry::AttrHidden ) {
+            uart_send('H');
+        } else {
+            uart_send('-');
+        }
+
+        if( dirEntry.dirAttr & DirEntry::AttrReadOnly ) {
+            uart_send('R');
+        } else {
+            uart_send('-');
+        }
+
+        uart_send("   ");
+        print_dec(dirEntry.dirFileSize);
+
+        uart_send("\n");
     }
 }
