@@ -26,7 +26,9 @@ LDFLAGS="-g"
 AC_CONFIG_FILES([Makefile
                  bl1/Makefile
                  saros/Makefile
-                 saros/kernel/Makefile])
+                 saros/kernel/Makefile
+                 saros/fs/Makefile
+])
 
 AC_SUBST([HOST_TRIPLET], [$host])
 

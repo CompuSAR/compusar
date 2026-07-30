@@ -64,10 +64,20 @@ module io_block#(
     input passthrough_uart_rsp_valid,
     input [31:0] passthrough_uart_rsp_data,
 
+    output logic passthrough_sd_enable,
+    input passthrough_sd_req_ack,
+    input passthrough_sd_rsp_valid,
+    input [31:0] passthrough_sd_rsp_data,
+
     output logic passthrough_display_enable,
     input passthrough_display_req_ack,
     input passthrough_display_rsp_valid,
     input [31:0] passthrough_display_rsp_data,
+
+    output logic passthrough_dbglogger_enable,
+    input passthrough_dbglogger_req_ack,
+    input passthrough_dbglogger_rsp_valid,
+    input [31:0] passthrough_dbglogger_rsp_data,
 
     output logic passthrough_apple_pager_enable,
     input passthrough_apple_pager_req_ack,
@@ -110,6 +120,8 @@ task default_state_current();
     passthrough_irq_enable = 1'b0;
     passthrough_spi_enable = 1'b0;
     passthrough_display_enable = 1'b0;
+    passthrough_dbglogger_enable = 1'b0;
+    passthrough_sd_enable = 1'b0;
     passthrough_apple_pager_enable = 1'b0;
     passthrough_apple_io_enable = 1'b0;
 endtask
@@ -157,6 +169,14 @@ always_comb begin
                 8'h5: begin                     // Display controller
                     rsp_valid = passthrough_display_rsp_valid;
                     data_out = passthrough_display_rsp_data;
+                end
+                8'h6: begin                     // SD
+                    rsp_valid = passthrough_sd_rsp_valid;
+                    data_out = passthrough_sd_rsp_data;
+                end
+                8'h10: begin                     // Debug logger
+                    rsp_valid = passthrough_dbglogger_rsp_valid;
+                    data_out = passthrough_dbglogger_rsp_data;
                 end
                 8'h80: begin                    // Apple II pager
                     rsp_valid = passthrough_apple_pager_rsp_valid;
@@ -212,6 +232,14 @@ always_comb begin
                 8'h5: begin                 // Display controller
                     passthrough_display_enable = 1'b1;
                     req_ack = passthrough_display_req_ack;
+                end
+                8'h6: begin                // SD
+                    passthrough_sd_enable = 1'b1;
+                    req_ack = passthrough_sd_req_ack;
+                end
+                8'h10: begin                // Debug logger
+                    passthrough_dbglogger_enable = 1'b1;
+                    req_ack = passthrough_dbglogger_req_ack;
                 end
                 8'h80: begin               // Apple II pager
                     passthrough_apple_pager_enable = 1'b1;

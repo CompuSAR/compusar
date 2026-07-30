@@ -1,6 +1,6 @@
 # What's all this?
 
-This project is the base project from which all CompuSAR computers derive. It's a SystemVerilog implementation of a RiscV CPU for the CompuSAR FPGA (a Spartan-7 board from QMTech). This project contains only the "overhead" part: the 32 bit parts that are meant to communicate with the hardware. The payload parts, the 8-bit computers implemented, are in separate repositories forked from this one.
+This project is the base project from which all CompuSAR computers derive. It's a SystemVerilog implementation of a RiscV CPU for the CompuSAR FPGA (an Artix-7 board from Alinx). This branch contains only the "overhead" part: the 32 bit parts that are meant to communicate with the hardware. The payload parts, the 8-bit computers implemented, are in branches of this project.
 
 ## How to checkout and build
 Follow the following steps to build the project:
@@ -9,7 +9,7 @@ Follow the following steps to build the project:
 * If you want to change the software running you'll need the `riscv32-unknown-elf` toolchain. The makefiles search for it in the path, but there is a script called `setpath` in the root of the project that adds `/opt/riscv/bin` to the search path.
 
 ### Checking out
-* Run `git clone https://github.com/CompuSAR/control_cpu.git`
+* Run `git clone https://github.com/CompuSAR/compusar.git`
 * Run `git submodule update --init --recursive` to get all dependent projects.
 
 ### Modifying the software

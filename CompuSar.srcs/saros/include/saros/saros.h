@@ -4,8 +4,6 @@
 #include <saros/kernel/thread.h>
 #include <saros/spin_lock.h>
 
-#include <mutex>
-
 namespace Saros {
 
 class Saros {
@@ -23,10 +21,15 @@ public:
     Saros &operator=(const Saros &) = delete;
 
     void init( std::span<Kernel::ThreadStack> stackArea );
-    void run( Kernel::Entrypoint startupThreadFunction, void *param );
+    void run( Kernel::Entrypoint startupThreadFunction, void *param, FixedString name );
 
-    void createThread( Entrypoint function, void *param, bool highPriority = false ) {
-        _scheduler.createThread( function, param, highPriority );
+    void createThread( Entrypoint function, void *param, FixedString name, bool highPriority = false ) {
+        _scheduler.createThread( function, param, name, highPriority );
+    }
+
+    template <typename T>
+    void createThread( void (T::*method)() noexcept, T &instance, bool highPriority = false ) {
+        createThread( [](void *p) noexcept { reinterpret_cast<T *>(p)->method(); }, &instance, highPriority );
     }
 
     [[nodiscard]] bool isRunning() const {
@@ -47,6 +50,7 @@ public:
         csr_read_clr_bits<CSR::mie>( MIE__MSIE_MASK );
     }
 
+    void sleep_ns( uint64_t delay );
 private:
     void initIrq();
 };

@@ -134,7 +134,7 @@ void start_8bit() {
 
     // Take the 6502 and the clock divider out of reset
     uart_send("Start the Apple II\n");
-    reset_gpio_bits(0, GPIO0__6502_RESET | GPIO0__FREQ_DIV_RESET);
+    reset_gpio_bits(0, GPO0__6502_RESET | GPO0__FREQ_DIV_RESET);
 }
 
 union IoOp {

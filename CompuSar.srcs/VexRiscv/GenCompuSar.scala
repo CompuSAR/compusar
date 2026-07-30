@@ -23,9 +23,14 @@ object GenCompuSar extends App{
           catchAddressMisaligned = true,
           catchAccessFault = true
         ),
-        new CsrPlugin(CsrPluginConfig.smallest .copy(mtvecAccess=CsrAccess.READ_WRITE,
-            mscratchGen=true, mepcAccess=CsrAccess.READ_WRITE, mcauseAccess=CsrAccess.READ_ONLY,
-            mbadaddrAccess=CsrAccess.READ_ONLY )),
+        new CsrPlugin(CsrPluginConfig.smallest .copy(
+            mtvecAccess=CsrAccess.READ_WRITE,
+            mscratchGen=true,
+            mepcAccess=CsrAccess.READ_WRITE,
+            mcauseAccess=CsrAccess.READ_ONLY,
+            mbadaddrAccess=CsrAccess.READ_ONLY,
+            ebreakGen=true
+        )),
         new DecoderSimplePlugin(
           catchIllegalInstruction = false
         ),

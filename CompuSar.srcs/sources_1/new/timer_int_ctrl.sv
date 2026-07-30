@@ -21,7 +21,7 @@ module timer_int_ctrl#(
     input [31:0]        irqs_i,
 
     // Control lines
-    output logic        ctrl_timer_interrupt_o,
+    output logic        ctrl_timer_interrupt_o = 1'b0,
     output logic        ctrl_ext_interrupt_o,
     input               ctrl_software_interrupt_i
 );

@@ -1,5 +1,6 @@
 #include <saros/saros.h>
 
+#include <saros/kernel/timer.h>
 #include <saros/csr.h>
 
 #include <irq.h>
@@ -15,8 +16,8 @@ void Saros::init( std::span<Kernel::ThreadStack> stackArea ) {
     _scheduler.init( stackArea );
 }
 
-void Saros::run( Kernel::Entrypoint startupThreadFunction, void *threadParam ) {
-    Kernel::Thread *thread = _scheduler.createThread( startupThreadFunction, threadParam );
+void Saros::run( Kernel::Entrypoint startupThreadFunction, void *threadParam, FixedString name ) {
+    Kernel::Thread *thread = _scheduler.createThread( startupThreadFunction, threadParam, name );
 
     initIrq();
     uartInit();
@@ -48,6 +49,13 @@ void Saros::wakeAllThreads( Kernel::Scheduler::ThreadQueue &queue ) {
     }
 }
 
+void Saros::sleep_ns( uint64_t delay ) {
+    csr_read_clr_bits<CSR::mstatus>( MSTATUS__MIE );
+
+    TimerHandle handle = registerTimerNs(delay);
+    handle.event().wait();
+}
+
 namespace {
 
 extern "C"
@@ -67,7 +75,7 @@ void Saros::initIrq() {
 
     irq_external_mask(0xffffffff);
 
-    csr_read_set_bits<CSR::mie>( MIE__MEIE_MASK );
+    csr_read_set_bits<CSR::mie>( MIE__MEIE_MASK | MIE__MTIE_MASK );
     csr_read_set_bits<CSR::mstatus>( MSTATUS__MIE );
 }
 

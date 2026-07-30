@@ -1,6 +1,7 @@
 #pragma once
 
 #include <saros/kernel/thread.h>
+#include <fixed_string.hh>
 
 #include <irq.h>
 
@@ -27,12 +28,13 @@ public:
 
     void init( std::span<ThreadStack> stackArea );
 
-    Thread *createThread( Entrypoint function, void *param, bool highPriority = false );
+    Thread *createThread( Entrypoint function, void *param, FixedString name, bool highPriority = false );
 
     void run( Thread *thread );
 
     void sleepOn( ThreadQueue &queue );
     void schedule( Thread *thread );
+
 private:
     // Methods to be called by Thread
     [[noreturn]] void stopThread();

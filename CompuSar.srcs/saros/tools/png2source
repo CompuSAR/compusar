@@ -15,7 +15,7 @@ parser.add_argument('--name', type=str, help='Use a symbol name other than the p
 args = parser.parse_args()
 
 image = png.Reader(args.png_file)
-width, height, data, attributes = image.asRGBA8()
+width, height, data, attributes = image.asRGBA()
 padding = (16 - width % 16) % 16
 
 name = pathlib.Path(args.png_file).stem

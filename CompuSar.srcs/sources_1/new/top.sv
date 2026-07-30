@@ -29,6 +29,7 @@ module top
     input [3:0] switches,
 
     output logic[3:0] debug,
+    output logic[3:0] debug2,
 
     output uart_tx,
     input uart_rx,
@@ -39,6 +40,12 @@ module top
 `ifndef SYNTHESIS
     output                  spi_clk,
 `endif
+
+    // SD card
+    inout                   sd_cmd,
+    inout [3:0]             sd_data,
+    output                  sd_clk,
+    input                   sd_card_detect_n,
 
     // DDR3 SDRAM
     output  wire            ddr3_reset_n,
@@ -81,31 +88,17 @@ localparam GPIO_IN_PORTS=1, GPIO_OUT_PORTS=1;
 
 localparam GPIO_OUT0__DDR_RESET = 0;
 localparam GPIO_OUT0__DISPLAY32_RESET = 1;
+localparam GPIO_OUT0__DISPLAY8_RESET = 2;
+localparam GPIO_OUT0__SD_CARD_POLARITY = 3;
 
 localparam GPIO_OUT0__6502_RESET = 16;
 localparam GPIO_OUT0__FREQ_DIV_RESET = 17;
-localparam GPIO_OUT0__DISPLAY8_RESET = 18;
 
 `ifdef SYNTHESIS
 wire spi_clk;
 `endif
 
 ///// 32 bit section
-
-function automatic [3:0] convert_byte_write( logic we, logic[1:0] address, logic[1:0] size );
-    if( we ) begin
-        logic[3:0] mask;
-        case(size)
-            0: mask = 4'b0001;
-            1: mask = 4'b0011;
-            2: mask = 4'b1111;
-            3: mask = 4'b0000;
-        endcase
-
-        convert_byte_write = mask<<address;
-    end else
-        convert_byte_write = 4'b0;
-endfunction
 
 //-----------------------------------------------------------------
 // Clocking / Reset
@@ -119,6 +112,8 @@ wire clk_ref_w;
 wire clock_feedback;
 
 wire ctrl_cpu_reset;
+
+logic bus_clock_25, bus_clock_50, bus_clock_200, bus_clock_feedback;
 
 xpm_cdc_sync_rst reset_synchronizer(
     .dest_rst(ctrl_cpu_reset),
@@ -136,11 +131,23 @@ clk_converter clocks(
     .locked(clocks_locked)
 );
 
-localparam CACHE_PORTS_NUM = 6;
+bus_clocks bus_clocks(
+    .clk_in1(board_clock),
+    .clkfb_in(bus_clock_feedback),
+
+    .clk_25(bus_clock_25),
+    .clk_50(bus_clock_50),
+    .clk_200(bus_clock_200),
+    .clkfb_out(bus_clock_feedback)
+);
+
+localparam CACHE_PORTS_NUM = 7;
 localparam CACHELINE_BITS = 128;
 localparam CACHELINE_BYTES = CACHELINE_BITS/8;
 localparam NUM_CACHELINES = 16*1024*8/CACHELINE_BITS;
 localparam DDR_MEM_SIZE = 256*1024*1024;
+localparam DMA_WRITE_ALL_SET = { CACHELINE_BYTES{1'b1} };
+localparam DMA_WRITE_ALL_CLEAR = { CACHELINE_BYTES{1'b0} };
 
 localparam INST_CACHE_NUM_CACHELINES = 1024*8/CACHELINE_BITS;
 
@@ -154,10 +161,11 @@ logic [CACHELINE_BITS-1:0]              cache_port_rsp_read_data_n[CACHE_PORTS_N
 
 localparam CACHE_PORT_IDX_DISPLAY8 = 0;
 localparam CACHE_PORT_IDX_DISPLAY32 = 1;
-localparam CACHE_PORT_IDX_6502 = 2;
-localparam CACHE_PORT_IDX_DBUS = 3;
-localparam CACHE_PORT_IDX_IBUS = 4;
-localparam CACHE_PORT_IDX_SPI_FLASH = 5;
+localparam CACHE_PORT_IDX_SD = 2;
+localparam CACHE_PORT_IDX_6502 = 3;
+localparam CACHE_PORT_IDX_DBUS = 4;
+localparam CACHE_PORT_IDX_IBUS = 5;
+localparam CACHE_PORT_IDX_SPI_FLASH = 6;
 
 logic                                   inst_cache_port_cmd_valid_s[0:0];
 logic [31:0]                            inst_cache_port_cmd_addr_s[0:0];
@@ -173,6 +181,7 @@ logic [31:0]    ctrl_iBus_rsp_payload_inst;
 logic           ctrl_dBus_cmd_valid;
 logic [31:0]    ctrl_dBus_cmd_payload_address;
 logic           ctrl_dBus_cmd_payload_wr;
+logic [3:0]     ctrl_dBus_cmd_payload_mask;
 logic [31:0]    ctrl_dBus_cmd_payload_data;
 logic [1:0]     ctrl_dBus_cmd_payload_size;
 
@@ -189,8 +198,13 @@ logic [31:0]    irq_lines;
 localparam UART_SEND_IRQ = 0;
 localparam UART_RECV_IRQ = 1;
 localparam VSYNC_IRQ = 2;
+localparam SD_INSERT_IRQ = 3;
+localparam SD_DATA_IDLE = 4;
+localparam FIRST_EMPTY_IRQ = 5;
 
 logic [31:0]    iob_ddr_read_data;
+
+wire [31:0] gp_out[GPIO_OUT_PORTS];
 
 VexRiscv control_cpu(
     .clk(ctrl_cpu_clock),
@@ -210,6 +224,7 @@ VexRiscv control_cpu(
     .dBus_cmd_valid(ctrl_dBus_cmd_valid),
     .dBus_cmd_payload_address(ctrl_dBus_cmd_payload_address),
     .dBus_cmd_payload_wr(ctrl_dBus_cmd_payload_wr),
+    .dBus_cmd_payload_mask(ctrl_dBus_cmd_payload_mask),
     .dBus_cmd_payload_data(ctrl_dBus_cmd_payload_data),
     .dBus_cmd_payload_size(ctrl_dBus_cmd_payload_size),
     .dBus_cmd_ready(ctrl_dBus_cmd_ready),
@@ -220,40 +235,34 @@ VexRiscv control_cpu(
 
 bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) iBus_width_adjuster(
         .clock_i(ctrl_cpu_clock),
-        .in_cmd_valid_i(inst_cache_port_cmd_valid_s[0]),
-        .in_cmd_addr_i(inst_cache_port_cmd_addr_s[0]),
-        .in_cmd_write_mask_i(4'b0000),
-        .in_cmd_write_data_i(32'h0),
-        .in_rsp_read_data_o(ctrl_iBus_rsp_payload_inst),
+        .north_cmd_valid_i(inst_cache_port_cmd_valid_s[0]),
+        .north_cmd_addr_i(inst_cache_port_cmd_addr_s[0]),
+        .north_cmd_write_mask_i(4'b0000),
+        .north_cmd_write_data_i(32'h0),
+        .north_rsp_read_data_o(ctrl_iBus_rsp_payload_inst),
 
-        .out_cmd_ready_i(inst_cache_port_cmd_ready_n[0]),
-        .out_cmd_write_mask_o(),
-        .out_cmd_write_data_o(),
-        .out_rsp_valid_i(inst_cache_port_rsp_valid_n[0]),
-        .out_rsp_read_data_i(inst_cache_port_rsp_read_data_n[0])
+        .south_cmd_ready_i(inst_cache_port_cmd_ready_n[0]),
+        .south_cmd_write_mask_o(),
+        .south_cmd_write_data_o(),
+        .south_rsp_valid_i(inst_cache_port_rsp_valid_n[0]),
+        .south_rsp_read_data_i(inst_cache_port_rsp_read_data_n[0])
     );
 assign inst_cache_port_cmd_write_mask_s[0] = 0;
 
 assign cache_port_cmd_addr_s[CACHE_PORT_IDX_DBUS] = ctrl_dBus_cmd_payload_address;
 bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) dBus_width_adjuster(
         .clock_i(ctrl_cpu_clock),
-        .in_cmd_valid_i(cache_port_cmd_valid_s[CACHE_PORT_IDX_DBUS]),
-        .in_cmd_addr_i(ctrl_dBus_cmd_payload_address),
-        .in_cmd_write_mask_i(
-            convert_byte_write(
-                ctrl_dBus_cmd_payload_wr,
-                ctrl_dBus_cmd_payload_address[1:0],
-                ctrl_dBus_cmd_payload_size
-            )
-        ),
-        .in_cmd_write_data_i(ctrl_dBus_cmd_payload_data),
-        .in_rsp_read_data_o(iob_ddr_read_data),
+        .north_cmd_valid_i(cache_port_cmd_valid_s[CACHE_PORT_IDX_DBUS]),
+        .north_cmd_addr_i(ctrl_dBus_cmd_payload_address),
+        .north_cmd_write_mask_i(ctrl_dBus_cmd_payload_wr ? ctrl_dBus_cmd_payload_mask : 4'b0000),
+        .north_cmd_write_data_i(ctrl_dBus_cmd_payload_data),
+        .north_rsp_read_data_o(iob_ddr_read_data),
 
-        .out_cmd_ready_i(ctrl_dBus_cmd_ready),
-        .out_cmd_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DBUS]),
-        .out_cmd_write_data_o(cache_port_cmd_write_data_s[CACHE_PORT_IDX_DBUS]),
-        .out_rsp_valid_i(ctrl_dBus_rsp_valid),
-        .out_rsp_read_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DBUS])
+        .south_cmd_ready_i(ctrl_dBus_cmd_ready),
+        .south_cmd_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DBUS]),
+        .south_cmd_write_data_o(cache_port_cmd_write_data_s[CACHE_PORT_IDX_DBUS]),
+        .south_rsp_valid_i(ctrl_dBus_rsp_valid),
+        .south_rsp_read_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DBUS])
     );
 
 assign ctrl_iBus_rsp_payload_error = 0;
@@ -274,6 +283,10 @@ logic uart_enable, uart_req_ack, uart_rsp_valid;
 logic [31:0] uart_rsp_data;
 logic display_enable, display_req_ack, display_rsp_valid;
 logic [31:0] display_rsp_data;
+logic sd_enable, sd_req_ack, sd_rsp_valid;
+logic [31:0] sd_rsp_data;
+logic dbglogger_enable, dbglogger_req_ack, dbglogger_rsp_valid;
+logic [31:0] dbglogger_rsp_data;
 logic apple_pager_enable, apple_pager_req_ack, apple_pager_rsp_valid;
 logic [31:0] apple_pager_rsp_data;
 logic ctl_apple_io_enable, ctl_apple_io_req_ack, ctl_apple_io_rsp_valid;
@@ -326,6 +339,16 @@ io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .passthrough_display_rsp_data(display_rsp_data),
     .passthrough_display_rsp_valid(display_rsp_valid),
 
+    .passthrough_sd_enable(sd_enable),
+    .passthrough_sd_req_ack(sd_req_ack),
+    .passthrough_sd_rsp_data(sd_rsp_data),
+    .passthrough_sd_rsp_valid(sd_rsp_valid),
+
+    .passthrough_dbglogger_enable(dbglogger_enable),
+    .passthrough_dbglogger_req_ack(dbglogger_req_ack),
+    .passthrough_dbglogger_rsp_data(dbglogger_rsp_data),
+    .passthrough_dbglogger_rsp_valid(dbglogger_rsp_valid),
+
     .passthrough_apple_pager_enable(apple_pager_enable),
     .passthrough_apple_pager_req_ack(apple_pager_req_ack),
     .passthrough_apple_pager_rsp_valid(apple_pager_rsp_valid),
@@ -335,7 +358,6 @@ io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .passthrough_apple_io_req_ack(ctl_apple_io_req_ack),
     .passthrough_apple_io_rsp_valid(ctl_apple_io_rsp_valid),
     .passthrough_apple_io_rsp_data(ctl_apple_io_rsp_data)
-
 );
 
 cache#(
@@ -371,7 +393,7 @@ cache#(
     .backend_rsp_read_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_IBUS])
 );
 
-assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_IBUS] = { CACHELINE_BYTES{1'b0} };
+assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_IBUS] = DMA_WRITE_ALL_CLEAR;
 
 cache#(
     .CACHELINE_BITS(CACHELINE_BITS),
@@ -550,7 +572,15 @@ input_delay#(.NUM_BITS(4)) switches_delay(
     .out(buffered_switches)
 );
 
-wire [31:0]gp_out[GPIO_OUT_PORTS];
+logic sd_card_detect_debounced_n;
+
+debouncer#(.DEBOUNCE_CYCLES(75000)) sd_card_detect_debouncer(
+    .clock_i(ctrl_cpu_clock),
+    .signal_i(sd_card_detect_n),
+    .signal_o(sd_card_detect_debounced_n)
+);
+
+assign irq_lines[SD_INSERT_IRQ] = sd_card_detect_debounced_n ^ gp_out[0][GPIO_OUT0__SD_CARD_POLARITY];
 
 gpio#(
     .NUM_IN_PORTS(GPIO_IN_PORTS),
@@ -566,17 +596,19 @@ gpio(
     .rsp_data_o(gpio_rsp_data),
     .rsp_valid_o(gpio_rsp_valid),
 
-    .gp_in( '{ {28'b0, buffered_switches} } ),
+    .gp_in( '{ {26'b0, sd_data_idle, sd_card_detect_debounced_n, buffered_switches} } ),
     .gp_out( gp_out )
 );
 
 wire spi_flash_dma_write;
+
+assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_SPI_FLASH] = spi_flash_dma_write ? DMA_WRITE_ALL_SET : DMA_WRITE_ALL_CLEAR;
+
 spi_ctrl#(.MEM_DATA_WIDTH(CACHELINE_BITS)) spi_flash(
     .cpu_clock_i(ctrl_cpu_clock),
+    //.spi_ref_clock_i(bus_clock_50),
     .spi_ref_clock_i(board_clock),
     .irq(),
-
- //   .debug(debug),
 
     .ctrl_cmd_valid_i(spi_enable),
     .ctrl_cmd_address_i(ctrl_dBus_cmd_payload_address[15:0]),
@@ -620,6 +652,44 @@ uart_ctrl#(.ClockDivider(SIM_MODE ? 10 : CTRL_CLOCK_HZ / UART_BAUD), .SimMode(SI
     .uart_rx(uart_rx)
 );
 
+logic sd_dma_write, sd_data_idle;
+
+assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_SD] = sd_dma_write ? DMA_WRITE_ALL_SET : DMA_WRITE_ALL_CLEAR;
+assign irq_lines[SD_DATA_IDLE] = sd_data_idle;
+
+sd sd_ctrl(
+    .ctrl_clock_i(ctrl_cpu_clock),
+
+    .ctrl_req_valid_i(sd_enable),
+    .ctrl_req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
+    .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
+    .ctrl_req_data_i(ctrl_dBus_cmd_payload_data),
+    .ctrl_req_ack_o(sd_req_ack),
+
+    .ctrl_rsp_valid_o(sd_rsp_valid),
+    .ctrl_rsp_data_o(sd_rsp_data),
+
+    .ctrl_data_idle_irq_o(sd_data_idle),
+
+
+    .dma_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_SD]),
+    .dma_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_SD]),
+    .dma_req_write_o(sd_dma_write),
+    .dma_req_data_o(cache_port_cmd_write_data_s[CACHE_PORT_IDX_SD]),
+    .dma_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_SD]),
+
+    .dma_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_SD]),
+    .dma_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_SD]),
+
+
+    .sd_default_speed_clock_i(bus_clock_25),
+    .sd_high_speed_clock_i(bus_clock_50),
+
+    .sd_cmd_io(sd_cmd),
+    .sd_data_io(sd_data),
+    .sd_clk_o(sd_clk)
+);
+
 STARTUPE2 startup_cfg(
     .GSR(1'b0),
     .GTS(1'b0),
@@ -634,13 +704,8 @@ STARTUPE2 startup_cfg(
 
 genvar i;
 generate
-    for(i=3; i<32; ++i)
+    for(i=FIRST_EMPTY_IRQ; i<32; ++i)
         assign irq_lines[i] = 1'b0;
-endgenerate
-
-generate
-    for(i=0; i<CACHELINE_BYTES; ++i)
-        assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_SPI_FLASH][i] = spi_flash_dma_write;
 endgenerate
 
 always_ff@(posedge ctrl_cpu_clock) begin
@@ -658,6 +723,57 @@ always_ff@(posedge board_clock) begin
     end
 end
 
+logic [68:0]dbglogger_data, dbglogger_data_pending;
+logic dbglogger_trigger = 1'b0, dbglogger_trigger_pending = 1'b0;
+logic dbglogging = 1'b0;
+
+always_ff@(posedge ctrl_cpu_clock) begin
+    dbglogger_trigger <= 1'b0;
+
+    if( dbglogger_trigger_pending && (ctrl_dBus_rsp_valid || dbglogger_data_pending[68]) ) begin
+        dbglogger_data <= dbglogger_data_pending;
+        if( !dbglogger_data_pending[68] ) 
+            dbglogger_data[31:0] <= ctrl_dBus_rsp_data;
+        dbglogger_trigger <= 1'b1;
+        dbglogger_trigger_pending <= 1'b0;
+    end
+
+    if( ctrl_dBus_cmd_valid && ctrl_dBus_cmd_ready && ctrl_dBus_cmd_payload_address[31:16]==16'h8081 && dbglogging ) begin
+        dbglogger_data_pending <= { ctrl_dBus_cmd_payload_wr, ctrl_dBus_cmd_payload_mask, ctrl_dBus_cmd_payload_address, ctrl_dBus_cmd_payload_data };
+        dbglogger_trigger_pending <= 1'b1;
+    end
+
+    if( inst_cache_port_cmd_ready_n[0] && inst_cache_port_cmd_valid_s[0] && inst_cache_port_cmd_addr_s[0]==32'h80014e24 )
+        dbglogging <= 1'b1;
+end
+
+dbglogger dbglogger(
+    .clk_i(ctrl_cpu_clock),
+    .rst_i(!ctrl_cpu_reset || !clocks_locked),
+
+    .log_data_i(dbglogger_data),
+    .log_enable_i(dbglogger_trigger),
+
+    .ctrl_req_valid_i(dbglogger_enable),
+    .ctrl_req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
+    .ctrl_req_data_i(ctrl_dBus_cmd_payload_data),
+    .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
+    .ctrl_req_ack_o(dbglogger_req_ack),
+
+    .ctrl_rsp_valid_o(dbglogger_rsp_valid),
+    .ctrl_rsp_data_o(dbglogger_rsp_data)
+);
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Start of Apple II only hardware region
+////////////////////////////////////////////////////////////////////////////////
 wire bus8_req_valid, bus8_mem_req_valid, bus8_req_ack, bus8_rsp_valid, bus8_mem_rsp_valid;
 wire apple_io_req_ack;
 wire bus8_req_write, bus8_mem_req_write;

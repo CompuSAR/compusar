@@ -29,4 +29,6 @@ using ThreadStackAllocator = DS::PoolAllocator<ThreadStack, 0>;
 
 using Entrypoint = void(*)(void *) noexcept;
 
+extern "C" ThreadStack __thread_stacks_start[], __thread_stacks_end;
+
 } // namespace Saros::Kernel

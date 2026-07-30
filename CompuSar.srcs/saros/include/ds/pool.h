@@ -13,7 +13,7 @@ template <typename T, size_t NumElements>
 struct PoolAllocatorData {
     static constexpr size_t ElementSize = sizeof(T);
     static constexpr size_t ElementAlignment = alignof(T);
-    
+
     union PoolElement {
         alignas(ElementAlignment) std::byte element[ElementSize];
         PoolElement *next;
@@ -27,7 +27,7 @@ template <typename T>
 struct PoolAllocatorData<T, 0> {
     static constexpr size_t ElementSize = sizeof(T);
     static constexpr size_t ElementAlignment = alignof(T);
-    
+
     union PoolElement {
         alignas(ElementAlignment) std::byte element[ElementSize];
         PoolElement *next;
@@ -45,7 +45,71 @@ class PoolAllocator {
     PoolElement *_firstFree;
 public:
 
-    using Ptr = std::unique_ptr<T, PoolAllocator&>;
+    class Ptr {
+        PoolAllocator *pool_ = nullptr;
+        T *element_ = nullptr;
+
+    public:
+        Ptr() = default;
+        Ptr(T *element, PoolAllocator &pool) : pool_(&pool), element_(element) {}
+        Ptr(const Ptr &) = delete;
+        Ptr(Ptr && that) : pool_(that.pool_), element_(that.element_) {
+            that.pool_ = nullptr;
+            that.element_ = nullptr;
+        }
+        Ptr &operator=(Ptr that) {
+            swap(that);
+
+            return *this;
+        }
+
+        ~Ptr() {
+            clear();
+        }
+
+        T &operator*() {
+            assertWithMessage(element_ != nullptr, "Dereferencing NULL allocator pointer");
+            return *element_;
+        }
+
+        T *operator->() {
+            return &**this;
+        }
+
+        const T &operator*() const {
+            assertWithMessage(element_ != nullptr, "Dereferencing NULL allocator pointer");
+            return *element_;
+        }
+
+        const T *operator->() const {
+            return &**this;
+        }
+
+        T *release() {
+            T *dup = element_;
+            element_ = nullptr;
+            pool_ = nullptr;
+
+            return dup;
+        }
+
+        explicit operator bool() const {
+            return element_ != nullptr;
+        }
+
+        void swap(Ptr &that) {
+            std::swap(pool_, that.pool_);
+            std::swap(element_, that.element_);
+        }
+
+        void clear() {
+            if( pool_ != nullptr )
+                pool_->free(element_);
+
+            pool_ = nullptr;
+            element_ = nullptr;
+        }
+    };
 
     PoolAllocator() requires (NumElements != 0) : _firstFree(&_pool.pool[0]) {
 
@@ -89,10 +153,6 @@ public:
         return Ptr( new (retVal) T(std::forward<Args>(args)...), *this );
     }
 
-    void operator()(T *ptr) { // Deleter implmenetation
-        free(ptr);
-    }
-
     void free( T *element ) {
         PoolElement *poolElement = convert(element);
         assertWithMessage(
@@ -103,6 +163,9 @@ public:
         _firstFree = poolElement;
     }
 
+    Ptr emptyPtr() {
+        return Ptr(nullptr, *this);
+    }
 private:
     static PoolElement *convert(void *ptr) {
         return reinterpret_cast<PoolElement *>( reinterpret_cast<std::byte *>(ptr) );

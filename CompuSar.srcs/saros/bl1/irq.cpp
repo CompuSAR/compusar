@@ -31,7 +31,7 @@ void set_timer_ns(uint64_t nanoseconds) {
 }
 
 void set_timer_cycles(uint64_t cycles_num) {
-    reg_write_32(DEVICE_NUM, REG_INT_CYCLE+1, cycles_num>>32);
+    reg_write_32(DEVICE_NUM, REG_INT_CYCLE+4, cycles_num>>32);
     wwb();
     reg_write_32(DEVICE_NUM, REG_INT_CYCLE, cycles_num & 0xffffffff);
 }

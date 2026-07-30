@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="crc_sim_top_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="crc_sim_top" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="936.807 ns"></ZoomEndTime>
+      <Cursor1Time time="0.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="110"></NameColumnWidth>
+      <ValueColumnWidth column_width="60"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="7" />
+   <wvobject type="logic" fp_name="/crc_sim_top/clock">
+      <obj_property name="ElementShortName">clock</obj_property>
+      <obj_property name="ObjectShortName">clock</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/crc_sim_top/reset">
+      <obj_property name="ElementShortName">reset</obj_property>
+      <obj_property name="ObjectShortName">reset</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/crc_sim_top/valid7">
+      <obj_property name="ElementShortName">valid7</obj_property>
+      <obj_property name="ObjectShortName">valid7</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/crc_sim_top/valid16">
+      <obj_property name="ElementShortName">valid16</obj_property>
+      <obj_property name="ObjectShortName">valid16</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/crc_sim_top/value">
+      <obj_property name="ElementShortName">value</obj_property>
+      <obj_property name="ObjectShortName">value</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/crc_sim_top/current_crc7">
+      <obj_property name="ElementShortName">current_crc7[6:0]</obj_property>
+      <obj_property name="ObjectShortName">current_crc7[6:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/crc_sim_top/current_crc16">
+      <obj_property name="ElementShortName">current_crc16[15:0]</obj_property>
+      <obj_property name="ObjectShortName">current_crc16[15:0]</obj_property>
+   </wvobject>
+</wave_config>

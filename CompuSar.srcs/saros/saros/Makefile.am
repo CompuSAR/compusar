@@ -1,4 +1,4 @@
-SUBDIRS=kernel .
+SUBDIRS=kernel fs .
 
 AM_CCASFLAGS=$(ARCH) $(ABI)
 AM_CXXFLAGS=$(ARCH) $(ABI)
@@ -17,13 +17,17 @@ ARCH=-march=rv32i
 ABI=-mabi=ilp32
 
 noinst_PROGRAMS=saros.elf
+noinst_LIBRARIES=libcommon.a
 
-saros_elf_SOURCES=main.cpp uart.cpp saros.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \
-                  start.s ../abort.cpp display.cpp crt.cpp \
+libcommon_a_SOURCES=$(commondir)/string.cpp $(commondir)/dbglogger.cc
+libcommon_a_CXXFLAGS=-ffreestanding
+
+saros_elf_SOURCES=main.cpp uart.cpp saros.cpp mutex.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \
+                  start.s ../abort.cpp display.cpp crt.cpp sd.cpp \
                   apple2.cpp apple2_display.cpp roms/Apple2_Plus_rom.s roms/charset_us_bin.s
-EXTRA_saros_elf_DEPENDENCIES=$(srcdir)/saros.ld kernel/libkernel.a
+EXTRA_saros_elf_DEPENDENCIES=$(srcdir)/saros.ld kernel/libkernel.a fs/libfs.a libcommon.a
 saros_elf_LDFLAGS=-T $(srcdir)/saros.ld --orphan-handling=error
-saros_elf_LDADD=$(TOOLCHAIN_LIB_PATH)/libgcc.a $(TOOLCHAIN_PATH)/$(HOST_TRIPLET)/lib/libc.a kernel/libkernel.a
+saros_elf_LDADD=$(TOOLCHAIN_LIB_PATH)/libgcc.a $(TOOLCHAIN_PATH)/$(HOST_TRIPLET)/lib/libc.a kernel/libkernel.a fs/libfs.a libcommon.a
 
 main.$(OBJEXT): assets/logo.h
 
@@ -37,6 +41,9 @@ saros.bin: saros.elf$(EXEEXT)
 
 kernel/%:
 	$(MAKE) -C kernel "$*"
+
+fs/%:
+	$(MAKE) -C fs "$*"
 
 assets/%.cpp assets/%.h: $(srcdir)/assets/%.png $(top_srcdir)/tools/png2source
 	mkdir -p assets

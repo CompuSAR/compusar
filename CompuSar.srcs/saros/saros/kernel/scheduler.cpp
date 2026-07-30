@@ -38,7 +38,7 @@ void Scheduler::init( std::span<ThreadStack> stackArea ) {
 
     // Reset any waiting counters
     reset_timer_cycles();
-    Thread *idleThread = createThread( idleLoop, nullptr, false );
+    Thread *idleThread = createThread( idleLoop, nullptr, "Idle loop"_fs, false );
 
     // There's no need to lock, as interrupts have not yet been enabled
     idleThread->_listHook.unlink();
@@ -46,13 +46,13 @@ void Scheduler::init( std::span<ThreadStack> stackArea ) {
     _readyThreads[idleThread->_priority].push_back(*idleThread);
 }
 
-Thread *Scheduler::createThread( Entrypoint function, void *param, bool highPriority ) {
+Thread *Scheduler::createThread( Entrypoint function, void *param, FixedString name, bool highPriority ) {
     assertWithMessage( _threadStackAllocator.has_value(), "Saros::Scheduler::createThread called without init" );
 
     auto newStack = _threadStackAllocator->alloc();
 
     uint32_t *stackTop = &newStack->back() - ThreadClassSizeInt;
-    Thread *thread = new (stackTop) Thread(this, stackTop, std::move(newStack), function, param);
+    Thread *thread = new (stackTop) Thread(this, stackTop, std::move(newStack), function, param, name);
 
     if( highPriority )
         thread->_priority = 0;

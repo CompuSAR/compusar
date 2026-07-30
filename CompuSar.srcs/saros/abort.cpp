@@ -17,6 +17,7 @@ void abortWithMessage( const char *message ) {
     uart_sync_message(message);
     uart_sync_message("\n");
 
+    asm("ebreak");
     halt();
 }
 
