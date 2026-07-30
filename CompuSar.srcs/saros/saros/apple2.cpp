@@ -128,7 +128,7 @@ void start_8bit() {
     for( auto ptr = reinterpret_cast<uint32_t *>(BANK0_BASE); ptr != reinterpret_cast<uint32_t *>(BANK0_BASE + 64*1024); ++ptr )
         *ptr = 0xff00ff00;
 
-    saros.createThread( uartHandler, nullptr );
+    saros.createThread( uartHandler, nullptr, "UART keyboard"_fs );
 
     saros.enableSoftwareInterrupt();
 

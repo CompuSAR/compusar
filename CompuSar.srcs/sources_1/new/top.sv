@@ -783,17 +783,17 @@ wire [31:0] bus8_paged_req_addr;
 
 bus_width_adjust#(.IN_WIDTH(8), .OUT_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(32)) bus8_width_adjuster(
     .clock_i( ctrl_cpu_clock ),
-    .in_cmd_valid_i( cache_port_cmd_valid_s[CACHE_PORT_IDX_6502] ),
-    .in_cmd_addr_i( bus8_paged_req_addr ),
-    .in_cmd_write_mask_i( bus8_mem_req_write ),
-    .in_cmd_write_data_i( bus8_mem_req_data ),
-    .in_rsp_read_data_o( bus8_mem_rsp_data ),
+    .north_cmd_valid_i( cache_port_cmd_valid_s[CACHE_PORT_IDX_6502] ),
+    .north_cmd_addr_i( bus8_paged_req_addr ),
+    .north_cmd_write_mask_i( bus8_mem_req_write ),
+    .north_cmd_write_data_i( bus8_mem_req_data ),
+    .north_rsp_read_data_o( bus8_mem_rsp_data ),
 
-    .out_cmd_ready_i( bus8_mem_req_ack ),
-    .out_cmd_write_mask_o( cache_port_cmd_write_mask_s[CACHE_PORT_IDX_6502] ),
-    .out_cmd_write_data_o( cache_port_cmd_write_data_s[CACHE_PORT_IDX_6502] ),
-    .out_rsp_valid_i( cache_port_rsp_valid_n[CACHE_PORT_IDX_6502] ),
-    .out_rsp_read_data_i( cache_port_rsp_read_data_n[CACHE_PORT_IDX_6502] )
+    .south_cmd_ready_i( bus8_mem_req_ack ),
+    .south_cmd_write_mask_o( cache_port_cmd_write_mask_s[CACHE_PORT_IDX_6502] ),
+    .south_cmd_write_data_o( cache_port_cmd_write_data_s[CACHE_PORT_IDX_6502] ),
+    .south_rsp_valid_i( cache_port_rsp_valid_n[CACHE_PORT_IDX_6502] ),
+    .south_rsp_read_data_i( cache_port_rsp_read_data_n[CACHE_PORT_IDX_6502] )
 );
 
 freq_div_bus#() freq_div_6502(

@@ -135,17 +135,17 @@ logic [REQ_BUS_BITS-1:0] dma_narrow_rsp_data;
 bus_width_adjust#(.IN_WIDTH(REQ_BUS_BITS), .OUT_WIDTH(SOUTH_BUS_WIDTH), .ADDR_WIDTH(32)) dma_width_adjust(
     .clock_i(ctrl_clock_i),
 
-    .in_cmd_valid_i(dma_req_valid_o),
-    .in_cmd_addr_i(dma_req_addr_o),
-    .in_cmd_write_mask_i(0),
-    .in_cmd_write_data_i(),
-    .in_rsp_read_data_o(dma_narrow_rsp_data),
+    .north_cmd_valid_i(dma_req_valid_o),
+    .north_cmd_addr_i(dma_req_addr_o),
+    .north_cmd_write_mask_i(0),
+    .north_cmd_write_data_i(),
+    .north_rsp_read_data_o(dma_narrow_rsp_data),
 
-    .out_cmd_ready_i(dma_req_ack_i),
-    .out_cmd_write_mask_o(),
-    .out_cmd_write_data_o(),
-    .out_rsp_valid_i(dma_rsp_valid_i),
-    .out_rsp_read_data_i(dma_rsp_data_i)
+    .south_cmd_ready_i(dma_req_ack_i),
+    .south_cmd_write_mask_o(),
+    .south_cmd_write_data_o(),
+    .south_rsp_valid_i(dma_rsp_valid_i),
+    .south_rsp_read_data_i(dma_rsp_data_i)
 );
 
 localparam PIPELINE_STAGES = 5;
