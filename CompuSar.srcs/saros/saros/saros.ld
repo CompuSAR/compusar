@@ -67,6 +67,10 @@ SECTIONS
          *(.data*)
     } >mem_rw
 
+    .uninitialized (NOLOAD) : ALIGN(16) {
+        *(.uninitialized)
+    } >mem_rw
+
     /DISCARD/ : { *(.eh_frame) *(.note.GNU-stack) }
 
     .debug_info         0 : { *(.debug_info) }

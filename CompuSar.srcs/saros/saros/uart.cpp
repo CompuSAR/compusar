@@ -31,7 +31,8 @@ static bool uart_rx_ready() {
     return (reg_read_32( DeviceNum, RegUartStatus ) & UartStatus__RxReady) != 0;
 }
 
-static P1C1<char, 4096> uartTxBuffer, uartRxBuffer;
+// Manually verified constructor is called at program init 2-Aug-26
+static __attribute__((section(".uninitialized"))) P1C1<char, 4096> uartTxBuffer, uartRxBuffer;
 static Saros::Sync::Event uartTxReady, uartRxReady;
 
 void handle_uart_tx_ready_irq() {
