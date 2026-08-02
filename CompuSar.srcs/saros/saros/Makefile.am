@@ -51,7 +51,7 @@ assets/%.cpp assets/%.h: $(srcdir)/assets/%.png $(top_srcdir)/tools/png2source
 
 roms/%_rom.s: $(srcdir)/roms/%.rom $(ASSEMBLIFY)
 	mkdir -p roms
-	$(ASSEMBLIFY) --section '.apple2_rom' '$<' '$@'
+	$(ASSEMBLIFY) --section '.apple2_rom' --section-flags 'a' '$<' '$@'
 
 roms/%_bin.s: $(srcdir)/roms/%.bin $(ASSEMBLIFY)
 	mkdir -p roms
