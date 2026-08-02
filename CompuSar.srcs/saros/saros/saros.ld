@@ -16,83 +16,95 @@ ENTRY(_start)
 PROVIDE( __thread_stacks_start = MEM_BASE + 8M );
 PROVIDE( __thread_stacks_end = MEM8BIT_START );
 PROVIDE( __trap_stack_end = MEM_BASE + 64K );
+
+PHDRS
+{
+    text        PT_LOAD;
+    rom         PT_LOAD;
+    rw          PT_LOAD;
+    apple2      PT_LOAD;
+}
+
 SECTIONS
 {
     .text : ALIGN(16) {
         start.o (.text*)
         * (.text*)
-    } >exe
+    } >exe :text
     .init_array : ALIGN(4) {
         __init_array_start = .;
         * (.init_array.00000)
         * (.init_array*)
         __init_array_end = .;
-    } >readonly
+    } >readonly :rom
     .fini_array : ALIGN(4) {
         * (.fini_array)
-    } >readonly
+    } >readonly :rom
 
     .got : ALIGN(4) {
         *(.got)
-    } >readonly
+    } >readonly :rom
 
     .got.plt : ALIGN(4) {
         *(.got.plt)
-    } >readonly
+    } >readonly :rom
 
     .rodata : ALIGN(16) {
         *(.rodata*)
-    } >readonly
+    } >readonly :rom
 
     # Must be last section in the read only memory
     # All s* sections need to be grouped together.
     .srodata : ALIGN(16) {
         #. = 1M - SIZEOF(THIS SECTION);
         *(.srodata*)
-    } >readonly
+    } >readonly :rom
 
     .sdata : ALIGN(16) {
         __global_pointer$ = . + 2K;
          *(.sdata*)
-    } >mem_rw
+    } >mem_rw :rw
 
-    .sbss : ALIGN(16) {
+    .sbss (NOLOAD) : ALIGN(16) {
         * (.sbss*)
-    } >mem_rw
+    } >mem_rw :rw
 
     .bss : ALIGN(16) {
         * (.bss*)
-    } >mem_rw
+    } >mem_rw :rw
 
     .data : ALIGN(16) {
          *(.data*)
-    } >mem_rw
+    } >mem_rw :rw
 
     .uninitialized (NOLOAD) : ALIGN(16) {
         *(.uninitialized)
-    } >mem_rw
+    } >mem_rw :NONE
+
+    .uninit_apple2_rom (NOLOAD) : {
+        . = 0xd000;
+    } >mem_16_rom :NONE
 
     .apple2_rom : {
-        . = 0xd000;     # ROM start address in 16bit address space
         __apple2_rom = .;
         Apple2*_rom.o (.apple2_rom);
-    } >mem_16_rom
+    } >mem_16_rom :apple2
 
     /DISCARD/ : { *(.eh_frame) *(.note.GNU-stack) }
 
-    .debug_info         0 : { *(.debug_info) }
-    .debug_abbrev       0 : { *(.debug_abbrev) }
-    .debug_loc          0 : { *(.debug_loc) }
-    .debug_aranges      0 : { *(.debug_aranges) }
-    .debug_line         0 : { *(.debug_line) }
-    .debug_str          0 : { *(.debug_str) }
-    .debug_ranges       0 : { *(.debug_ranges) }
-    .debug_line_str     0 : { *(.debug_line_str) }
-    .debug_loclists     0 : { *(.debug_loclists) }
-    .debug_rnglists     0 : { *(.debug_rnglists) }
-    .debug_frame        0 : { *(.debug_frame) }
-    .rela.text : { *(.rela.text*) }
+    .debug_info         0 : { *(.debug_info) } :NONE
+    .debug_abbrev       0 : { *(.debug_abbrev) } :NONE
+    .debug_loc          0 : { *(.debug_loc) } :NONE
+    .debug_aranges      0 : { *(.debug_aranges) } :NONE
+    .debug_line         0 : { *(.debug_line) } :NONE
+    .debug_str          0 : { *(.debug_str) } :NONE
+    .debug_ranges       0 : { *(.debug_ranges) } :NONE
+    .debug_line_str     0 : { *(.debug_line_str) } :NONE
+    .debug_loclists     0 : { *(.debug_loclists) } :NONE
+    .debug_rnglists     0 : { *(.debug_rnglists) } :NONE
+    .debug_frame        0 : { *(.debug_frame) } :NONE
+    .rela.text : { *(.rela.text*) } :NONE
 
-    .riscv.attributes : { *(.riscv.attributes) }
-    .comment : { *(.comment) }
+    .riscv.attributes : { *(.riscv.attributes) } :NONE
+    .comment : { *(.comment) } :NONE
 }
