@@ -68,6 +68,10 @@ SECTIONS
          *(.data*)
     } >mem_rw
 
+    .uninitialized (NOLOAD) : ALIGN(16) {
+        *(.uninitialized)
+    } >mem_rw
+
     .apple2_rom : {
         . = 0xd000;     # ROM start address in 16bit address space
         __apple2_rom = .;
@@ -76,17 +80,17 @@ SECTIONS
 
     /DISCARD/ : { *(.eh_frame) *(.note.GNU-stack) }
 
-    .debug_info : { *(.debug_info) }
-    .debug_abbrev : { *(.debug_abbrev) }
-    .debug_loc : { *(.debug_loc) }
-    .debug_aranges : { *(.debug_aranges) }
-    .debug_line : { *(.debug_line) }
-    .debug_str : { *(.debug_str) }
-    .debug_ranges : { *(.debug_ranges) }
-    .debug_line_str : { *(.debug_line_str) }
-    .debug_loclists : { *(.debug_loclists) }
-    .debug_rnglists : { *(.debug_rnglists) }
-    .debug_frame : { *(.debug_frame) }
+    .debug_info         0 : { *(.debug_info) }
+    .debug_abbrev       0 : { *(.debug_abbrev) }
+    .debug_loc          0 : { *(.debug_loc) }
+    .debug_aranges      0 : { *(.debug_aranges) }
+    .debug_line         0 : { *(.debug_line) }
+    .debug_str          0 : { *(.debug_str) }
+    .debug_ranges       0 : { *(.debug_ranges) }
+    .debug_line_str     0 : { *(.debug_line_str) }
+    .debug_loclists     0 : { *(.debug_loclists) }
+    .debug_rnglists     0 : { *(.debug_rnglists) }
+    .debug_frame        0 : { *(.debug_frame) }
     .rela.text : { *(.rela.text*) }
 
     .riscv.attributes : { *(.riscv.attributes) }
