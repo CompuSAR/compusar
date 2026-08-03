@@ -9,7 +9,7 @@
 
 #include <stddef.h>
 
-extern uint8_t OS_LOAD_BUFFER[], OS_LOAD_BUFFER_END[];
+extern uint8_t OS_LOAD_BUFFER_PHDR[], OS_LOAD_BUFFER_PHDR_END[], OS_LOAD_BUFFER_SECT[], OS_LOAD_BUFFER_SECT_END[];
 
 namespace ElfReader {
 
@@ -36,7 +36,7 @@ static const T *by_offset(const uint8_t *base, size_t offset) {
 
 // Return the entry point, or null if there was a problem
 EntryPoint load_os() {
-    const size_t BufferSize = &OS_LOAD_BUFFER_END[0] - &OS_LOAD_BUFFER[0];
+    const size_t BufferSize = &OS_LOAD_BUFFER_PHDR_END[0] - &OS_LOAD_BUFFER_PHDR[0];
 
     struct HeaderBuffer {
         Elf32_Ehdr header;
@@ -79,10 +79,22 @@ EntryPoint load_os() {
         return nullptr;
     }
 
-    SPI_FLASH::initiate_read(OS_FLASH_ADDRESS + header.e_phoff, sizeof(Elf32_Ehdr)*header.e_phnum, &OS_LOAD_BUFFER[0]);
+    if( header.e_shnum * sizeof(Elf32_Shdr) > BufferSize ) {
+        uart_send("ERROR: ELF section headers need ");
+        print_hex(header.e_shnum * sizeof(Elf32_Phdr));
+        uart_send(" bytes. Num section headers ");
+        print_hex(header.e_shnum);
+        uart_send(".\n");
+
+        SPI_FLASH::deinit();
+        halt();
+        return nullptr;
+    }
+
+    SPI_FLASH::initiate_read(OS_FLASH_ADDRESS + header.e_phoff, sizeof(Elf32_Ehdr)*header.e_phnum, &OS_LOAD_BUFFER_PHDR[0]);
     SPI_FLASH::wait_done();
 
-    auto program_headers = by_offset<Elf32_Phdr>(OS_LOAD_BUFFER, 0);
+    auto program_headers = by_offset<Elf32_Phdr>(OS_LOAD_BUFFER_PHDR, 0);
     for( unsigned int i=0; i<header.e_phnum; ++i ) {
         uart_send("  Program header: type ");
         print_hex(program_headers[i].p_type);
@@ -109,15 +121,35 @@ EntryPoint load_os() {
     }
 
     SPI_FLASH::wait_done();
-    SPI_FLASH::initiate_read(OS_FLASH_ADDRESS + header.e_shoff, sizeof(Elf32_Shdr)*header.e_shnum, OS_LOAD_BUFFER);
+    SPI_FLASH::initiate_read(OS_FLASH_ADDRESS + header.e_shoff, sizeof(Elf32_Shdr)*header.e_shnum, OS_LOAD_BUFFER_SECT);
     SPI_FLASH::wait_done();
 
-    auto section_headers = by_offset<Elf32_Shdr>(OS_LOAD_BUFFER, 0);
+    auto section_headers = by_offset<Elf32_Shdr>(OS_LOAD_BUFFER_SECT, 0);
     for( unsigned int i=0; i<header.e_shnum; ++i ) {
         if( section_headers[i].sh_type != SHT_NOBITS )
             continue;
 
-        uart_send("  Clearing BSS section at ");
+        // Make sure this section header is within the program headers. Otherwise, we asked for it to be completely uninitialized.
+        bool found = false;
+        const Elf32_Addr sectionEnd = section_headers[i].sh_addr + section_headers[i].sh_size;
+        for( unsigned j=0; &found && j<header.e_phnum; ++j ) {
+            const Elf32_Addr programEnd = program_headers[j].p_vaddr + program_headers[j].p_memsz;
+            if( section_headers[i].sh_addr>=program_headers[j].p_vaddr && sectionEnd <= programEnd ) {
+                found = true;
+            }
+        }
+
+        if( !found ) {
+            uart_send("  Not clearing out-of-program NOBITS section at ");
+            print_hex(section_headers[i].sh_addr);
+            uart_send(" size ");
+            print_hex(section_headers[i].sh_size);
+            uart_send("\n");
+
+            continue;
+        }
+
+        uart_send("  Clearing NOBITS section at ");
         print_hex(section_headers[i].sh_addr);
         uart_send(" size ");
         print_hex(section_headers[i].sh_size);
