@@ -44,6 +44,7 @@ wire[3:0] debugs;
 top top_module(
     .board_clock(clock), .nReset(nReset),
     .spi_cs_n(spi_flash_cs), .spi_dq(spi_flash_dq), .spi_clk(spi_flash_clock), .debug(debugs),
+    .sd_card_detect_n(1'b1),
     .ddr3_dqs_p(ddr3_dqs_p), .ddr3_dqs_n(ddr3_dqs_n), .ddr3_dq(ddr3_dq),
     .uart_rx(uart_in)
 );

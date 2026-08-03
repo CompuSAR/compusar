@@ -37,9 +37,12 @@ SECTIONS
         BSS_END = .;
 
         . = ALIGN(16);
-        OS_LOAD_BUFFER = .;
-        . = . + 4096;
-        OS_LOAD_BUFFER_END = .;
+        OS_LOAD_BUFFER_PHDR = .;
+        . = . + 2048;
+        OS_LOAD_BUFFER_PHDR_END = .;
+        OS_LOAD_BUFFER_SECT = .;
+        . = . + 2048;
+        OS_LOAD_BUFFER_SECT_END = .;
     } >preload
 
     .data : ALIGN(16) {
