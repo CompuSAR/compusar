@@ -789,7 +789,7 @@ bus_width_adjust#(.IN_WIDTH(8), .OUT_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(32)) bus
     .north_cmd_write_data_i( bus8_mem_req_data ),
     .north_rsp_read_data_o( bus8_mem_rsp_data ),
 
-    .south_cmd_ready_i( bus8_mem_req_ack ),
+    .south_cmd_ready_i( cache_port_cmd_valid_s[CACHE_PORT_IDX_6502] ),
     .south_cmd_write_mask_o( cache_port_cmd_write_mask_s[CACHE_PORT_IDX_6502] ),
     .south_cmd_write_data_o( cache_port_cmd_write_data_s[CACHE_PORT_IDX_6502] ),
     .south_rsp_valid_i( cache_port_rsp_valid_n[CACHE_PORT_IDX_6502] ),
