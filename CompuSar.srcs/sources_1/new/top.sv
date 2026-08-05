@@ -574,7 +574,7 @@ input_delay#(.NUM_BITS(4)) switches_delay(
 
 logic sd_card_detect_debounced_n;
 
-debouncer#(.DEBOUNCE_CYCLES(75000)) sd_card_detect_debouncer(
+debouncer#(.DEBOUNCE_CYCLES(75000), .DEFAULT_OUT(1'b1)) sd_card_detect_debouncer(
     .clock_i(ctrl_cpu_clock),
     .signal_i(sd_card_detect_n),
     .signal_o(sd_card_detect_debounced_n)

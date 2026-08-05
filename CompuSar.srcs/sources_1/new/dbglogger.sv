@@ -54,6 +54,8 @@ dbglogger_ram ram(
     .wea(1'b1),
     .ena(log_enable_i),
 
+    .clkb(clk_i),
+
     .addrb(lookup_ptr),
     .doutb(lookup_data),
     .enb(lookup_enable)

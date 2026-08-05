@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="sim_debouncer_top_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="glbl" />
+            <top_module name="sim_debouncer_top" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0 ps"></ZoomStartTime>
+      <ZoomEndTime time="4,136 ps"></ZoomEndTime>
+      <Cursor1Time time="0 ps"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="138"></NameColumnWidth>
+      <ValueColumnWidth column_width="60"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="13" />
+   <wvobject type="logic" fp_name="/sim_debouncer_top/clock">
+      <obj_property name="ElementShortName">clock</obj_property>
+      <obj_property name="ObjectShortName">clock</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_debouncer_top/sd_card_detect_debouncer/clock_i">
+      <obj_property name="ElementShortName">clock_i</obj_property>
+      <obj_property name="ObjectShortName">clock_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_debouncer_top/sd_card_detect_debouncer/signal_i">
+      <obj_property name="ElementShortName">signal_i</obj_property>
+      <obj_property name="ObjectShortName">signal_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_debouncer_top/sd_card_detect_debouncer/signal_o">
+      <obj_property name="ElementShortName">signal_o</obj_property>
+      <obj_property name="ObjectShortName">signal_o</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_debouncer_top/sd_card_detect_debouncer/in_signal">
+      <obj_property name="ElementShortName">in_signal</obj_property>
+      <obj_property name="ObjectShortName">in_signal</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_debouncer_top/sd_card_detect_debouncer/counter">
+      <obj_property name="ElementShortName">counter[16:0]</obj_property>
+      <obj_property name="ObjectShortName">counter[16:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_debouncer_top/sd_card_detect_debouncer/input_delay/clock_i">
+      <obj_property name="ElementShortName">clock_i</obj_property>
+      <obj_property name="ObjectShortName">clock_i</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_debouncer_top/sd_card_detect_debouncer/input_delay/in">
+      <obj_property name="ElementShortName">in[0:0]</obj_property>
+      <obj_property name="ObjectShortName">in[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_debouncer_top/sd_card_detect_debouncer/input_delay/out">
+      <obj_property name="ElementShortName">out[0:0]</obj_property>
+      <obj_property name="ObjectShortName">out[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/sim_debouncer_top/sd_card_detect_debouncer/input_delay/clock_i">
+      <obj_property name="ElementShortName">clock_i</obj_property>
+      <obj_property name="ObjectShortName">clock_i</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_debouncer_top/sd_card_detect_debouncer/input_delay/in">
+      <obj_property name="ElementShortName">in[0:0]</obj_property>
+      <obj_property name="ObjectShortName">in[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_debouncer_top/sd_card_detect_debouncer/input_delay/out">
+      <obj_property name="ElementShortName">out[0:0]</obj_property>
+      <obj_property name="ObjectShortName">out[0:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/sim_debouncer_top/sd_card_detect_debouncer/input_delay/buffer">
+      <obj_property name="ElementShortName">buffer[0:2][0:0]</obj_property>
+      <obj_property name="ObjectShortName">buffer[0:2][0:0]</obj_property>
+   </wvobject>
+</wave_config>

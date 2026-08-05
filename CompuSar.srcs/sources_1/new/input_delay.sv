@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module input_delay#(NUM_BITS = 1, LATENCY = 3)
+module input_delay#(NUM_BITS = 1, LATENCY = 3, DEFAULT_OUT = 1'b0)
 (
     input clock_i,
 
@@ -9,7 +9,7 @@ module input_delay#(NUM_BITS = 1, LATENCY = 3)
     output [NUM_BITS-1:0]out
 );
 
-logic [NUM_BITS-1:0]buffer[LATENCY];
+logic [NUM_BITS-1:0]buffer[LATENCY] = '{default: DEFAULT_OUT};
 
 assign out = buffer[LATENCY-1];
 
