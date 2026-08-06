@@ -20,3 +20,4 @@ static constexpr size_t GPI0__SD_CARD_DATA_IDLE = 0x00000020;
 // Apple II GPIOs
 static constexpr size_t GPO0__6502_RESET        = 0x00010000;
 static constexpr size_t GPO0__FREQ_DIV_RESET    = 0x00020000;
+static constexpr size_t GPO0__A2_DISK_CTRL_RESET= 0x00040000;

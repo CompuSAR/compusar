@@ -93,6 +93,7 @@ localparam GPIO_OUT0__SD_CARD_POLARITY = 3;
 
 localparam GPIO_OUT0__6502_RESET = 16;
 localparam GPIO_OUT0__FREQ_DIV_RESET = 17;
+localparam GPIO_OUT0__A2_DISK_CTRL_RESET = 18;
 
 `ifdef SYNTHESIS
 wire spi_clk;
@@ -141,7 +142,7 @@ bus_clocks bus_clocks(
     .clkfb_out(bus_clock_feedback)
 );
 
-localparam CACHE_PORTS_NUM = 7;
+localparam CACHE_PORTS_NUM = 8;
 localparam CACHELINE_BITS = 128;
 localparam CACHELINE_BYTES = CACHELINE_BITS/8;
 localparam NUM_CACHELINES = 16*1024*8/CACHELINE_BITS;
@@ -166,6 +167,7 @@ localparam CACHE_PORT_IDX_6502 = 3;
 localparam CACHE_PORT_IDX_DBUS = 4;
 localparam CACHE_PORT_IDX_IBUS = 5;
 localparam CACHE_PORT_IDX_SPI_FLASH = 6;
+localparam CACHE_PORT_IDX_APPLE_DISK = 7;
 
 logic                                   inst_cache_port_cmd_valid_s[0:0];
 logic [31:0]                            inst_cache_port_cmd_addr_s[0:0];
@@ -291,6 +293,8 @@ logic apple_pager_enable, apple_pager_req_ack, apple_pager_rsp_valid;
 logic [31:0] apple_pager_rsp_data;
 logic ctl_apple_io_enable, ctl_apple_io_req_ack, ctl_apple_io_rsp_valid;
 logic [31:0] ctl_apple_io_rsp_data;
+logic a2_disk_enable, a2_disk_req_ack, a2_disk_rsp_valid;
+logic [31:0] a2_disk_rsp_data;
 
 io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .clock(ctrl_cpu_clock),
@@ -357,7 +361,12 @@ io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .passthrough_apple_io_enable(ctl_apple_io_enable),
     .passthrough_apple_io_req_ack(ctl_apple_io_req_ack),
     .passthrough_apple_io_rsp_valid(ctl_apple_io_rsp_valid),
-    .passthrough_apple_io_rsp_data(ctl_apple_io_rsp_data)
+    .passthrough_apple_io_rsp_data(ctl_apple_io_rsp_data),
+
+    .passthrough_apple_diskette_ctrl_enable(a2_disk_enable),
+    .passthrough_apple_diskette_ctrl_req_ack(a2_disk_req_ack),
+    .passthrough_apple_diskette_ctrl_rsp_valid(a2_disk_rsp_valid),
+    .passthrough_apple_diskette_ctrl_rsp_data(a2_disk_rsp_data)
 );
 
 cache#(
@@ -883,6 +892,31 @@ apple_pager pager(
 );
 
 assign cache_port_cmd_addr_s[CACHE_PORT_IDX_6502] = bus8_paged_req_addr;
+
+apple2_diskette_controller a2_disk(
+    .clk_i(ctrl_cpu_clock),
+    .reset_i(gp_out[0][GPIO_OUT0__A2_DISK_CTRL_RESET]),
+
+    .ctrl_req_valid_i(a2_disk_enable),
+    .ctrl_req_ack_o(a2_disk_req_ack),
+    .ctrl_req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
+    .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
+    .ctrl_req_write_data_i(ctrl_dBus_cmd_payload_data),
+
+    .ctrl_rsp_valid_o(a2_disk_rsp_valid),
+    .ctrl_rsp_read_data_o(a2_disk_rsp_data),
+
+    .dma_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_APPLE_DISK]),
+    .dma_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_APPLE_DISK]),
+    .dma_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_APPLE_DISK]),
+    .dma_req_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_APPLE_DISK]),
+    .dma_req_write_data_o(cache_port_cmd_write_data_s[CACHE_PORT_IDX_APPLE_DISK]),
+
+    .dma_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_APPLE_DISK]),
+    .dma_rsp_read_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_APPLE_DISK])
+);
+
+
 
 logic[4*6-1:0] debug_display_data = 24'hffffff;
 logic[5:0] debug_display_point = 6'b000000;
