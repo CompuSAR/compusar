@@ -158,21 +158,17 @@ localparam CACHE_PORT_IDX_SPI_FLASH = 5;
 
 sync_bus_write_mask#(.DATA_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(32)) inst_cache_ports[1]();
 
+sync_bus_write_mask ctrl_dbus();
+
 logic           ctrl_iBus_rsp_payload_error;
 logic [31:0]    ctrl_iBus_rsp_payload_inst;
 
-logic           ctrl_dBus_cmd_valid;
-logic [31:0]    ctrl_dBus_cmd_payload_address;
 logic           ctrl_dBus_cmd_payload_wr;
 logic [3:0]     ctrl_dBus_cmd_payload_mask;
-logic [31:0]    ctrl_dBus_cmd_payload_data;
 logic [1:0]     ctrl_dBus_cmd_payload_size;
 
 
-logic           ctrl_dBus_cmd_ready;
-logic           ctrl_dBus_rsp_valid;
 logic           ctrl_dBus_rsp_error;
-logic [31:0]    ctrl_dBus_rsp_data;
 
 logic           ctrl_timer_interrupt;
 logic           ctrl_ext_interrupt;
@@ -204,17 +200,19 @@ VexRiscv control_cpu(
     .iBus_rsp_payload_error(ctrl_iBus_rsp_payload_error),
     .iBus_rsp_payload_inst(ctrl_iBus_rsp_payload_inst),
 
-    .dBus_cmd_valid(ctrl_dBus_cmd_valid),
-    .dBus_cmd_payload_address(ctrl_dBus_cmd_payload_address),
+    .dBus_cmd_valid(ctrl_dbus.req_valid),
+    .dBus_cmd_payload_address(ctrl_dbus.req_addr),
     .dBus_cmd_payload_wr(ctrl_dBus_cmd_payload_wr),
     .dBus_cmd_payload_mask(ctrl_dBus_cmd_payload_mask),
-    .dBus_cmd_payload_data(ctrl_dBus_cmd_payload_data),
+    .dBus_cmd_payload_data(ctrl_dbus.req_data),
     .dBus_cmd_payload_size(ctrl_dBus_cmd_payload_size),
-    .dBus_cmd_ready(ctrl_dBus_cmd_ready),
-    .dBus_rsp_ready(ctrl_dBus_rsp_valid),
+    .dBus_cmd_ready(ctrl_dbus.req_ack),
+    .dBus_rsp_ready(ctrl_dbus.rsp_valid),
     .dBus_rsp_error(ctrl_dBus_rsp_error),
-    .dBus_rsp_data(ctrl_dBus_rsp_data)
+    .dBus_rsp_data(ctrl_dbus.rsp_data)
 );
+
+assign ctrl_dbus.req_write_mask = ctrl_dBus_cmd_payload_wr ? ctrl_dBus_cmd_payload_mask : 4'b0000;
 
 bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) iBus_width_adjuster(
         .clock_i(ctrl_cpu_clock),
@@ -232,19 +230,20 @@ bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) iBus_width_adjuster(
     );
 assign inst_cache_ports[0].req_write_mask = 0;
 
-assign cache_ports[CACHE_PORT_IDX_DBUS].req_addr = ctrl_dBus_cmd_payload_address;
+assign cache_ports[CACHE_PORT_IDX_DBUS].req_addr = ctrl_dbus.req_addr; // XXX Replace with follow on bus
+
 bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) dBus_width_adjuster(
         .clock_i(ctrl_cpu_clock),
         .north_cmd_valid_i(cache_ports[CACHE_PORT_IDX_DBUS].req_valid),
-        .north_cmd_addr_i(ctrl_dBus_cmd_payload_address),
-        .north_cmd_write_mask_i(ctrl_dBus_cmd_payload_wr ? ctrl_dBus_cmd_payload_mask : 4'b0000),
-        .north_cmd_write_data_i(ctrl_dBus_cmd_payload_data),
+        .north_cmd_addr_i(ctrl_dbus.req_addr),
+        .north_cmd_write_mask_i(ctrl_dbus.req_write_mask),
+        .north_cmd_write_data_i(ctrl_dbus.req_data),
         .north_rsp_read_data_o(iob_ddr_read_data),
 
-        .south_cmd_ready_i(ctrl_dBus_cmd_ready),
+        .south_cmd_ready_i(cache_ports[CACHE_PORT_IDX_DBUS].req_ack),
         .south_cmd_write_mask_o(cache_ports[CACHE_PORT_IDX_DBUS].req_write_mask),
         .south_cmd_write_data_o(cache_ports[CACHE_PORT_IDX_DBUS].req_data),
-        .south_rsp_valid_i(ctrl_dBus_rsp_valid),
+        .south_rsp_valid_i(cache_ports[CACHE_PORT_IDX_DBUS].rsp_valid),
         .south_rsp_read_data_i(cache_ports[CACHE_PORT_IDX_DBUS].rsp_data)
     );
 
@@ -271,17 +270,12 @@ logic [31:0] sd_rsp_data;
 logic dbglogger_enable, dbglogger_req_ack, dbglogger_rsp_valid;
 logic [31:0] dbglogger_rsp_data;
 
-io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
+io_block iob(
     .clock(ctrl_cpu_clock),
 
-    .address(ctrl_dBus_cmd_payload_address),
-    .address_valid(ctrl_dBus_cmd_valid),
-    .write(ctrl_dBus_cmd_payload_wr),
-    .data_out(ctrl_dBus_rsp_data),
-
-    .req_ack(ctrl_dBus_cmd_ready),
+    .cpu_port(ctrl_dbus),
     .rsp_error(ctrl_dBus_rsp_error),
-    .rsp_valid(ctrl_dBus_rsp_valid),
+
 
     .passthrough_ddr_enable(cache_ports[CACHE_PORT_IDX_DBUS].req_valid),
     .passthrough_ddr_req_ack(cache_ports[CACHE_PORT_IDX_DBUS].req_ack),
@@ -394,8 +388,8 @@ display display_ctrl(
 
     .ctrl_req_valid_i(display_enable),
     .ctrl_req_ack_o(display_req_ack),
-    .ctrl_req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
-    .ctrl_req_data_i(ctrl_dBus_cmd_payload_data),
+    .ctrl_req_addr_i(ctrl_dbus.req_addr[15:0]),
+    .ctrl_req_data_i(ctrl_dbus.req_data),
     .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
     .ctrl_rsp_valid_o(display_rsp_valid),
     .ctrl_rsp_data_o(display_rsp_data),
@@ -503,8 +497,8 @@ mig_ddr_ctrl ddr_ctrl(
 
 timer_int_ctrl#(.CLOCK_HZ(CTRL_CLOCK_HZ)) interrupt_controller(
     .clock(ctrl_cpu_clock),
-    .req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
-    .req_data_i(ctrl_dBus_cmd_payload_data),
+    .req_addr_i(ctrl_dbus.req_addr[15:0]),
+    .req_data_i(ctrl_dbus.req_data),
     .req_write_i(ctrl_dBus_cmd_payload_wr),
     .req_valid_i(irq_enable),
     .req_ready_o(irq_req_ack),
@@ -542,8 +536,8 @@ gpio#(
     .NUM_OUT_PORTS(GPIO_OUT_PORTS))
 gpio(
     .clock_i(ctrl_cpu_clock),
-    .req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
-    .req_data_i(ctrl_dBus_cmd_payload_data),
+    .req_addr_i(ctrl_dbus.req_addr[15:0]),
+    .req_data_i(ctrl_dbus.req_data),
     .req_write_i(ctrl_dBus_cmd_payload_wr),
     .req_valid_i(gpio_enable),
     .req_ready_o(gpio_req_ack),
@@ -566,8 +560,8 @@ spi_ctrl#(.MEM_DATA_WIDTH(CACHELINE_BITS)) spi_flash(
     .irq(),
 
     .ctrl_cmd_valid_i(spi_enable),
-    .ctrl_cmd_address_i(ctrl_dBus_cmd_payload_address[15:0]),
-    .ctrl_cmd_data_i(ctrl_dBus_cmd_payload_data),
+    .ctrl_cmd_address_i(ctrl_dbus.req_addr[15:0]),
+    .ctrl_cmd_data_i(ctrl_dbus.req_data),
     .ctrl_cmd_write_i(ctrl_dBus_cmd_payload_wr),
     .ctrl_cmd_ack_o(spi_req_ack),
 
@@ -592,8 +586,8 @@ uart_ctrl#(.ClockDivider(SIM_MODE ? 10 : CTRL_CLOCK_HZ / UART_BAUD), .SimMode(SI
     .clock( ctrl_cpu_clock ),
 
     .req_valid_i(uart_enable),
-    .req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
-    .req_data_i(ctrl_dBus_cmd_payload_data),
+    .req_addr_i(ctrl_dbus.req_addr[15:0]),
+    .req_data_i(ctrl_dbus.req_data),
     .req_write_i(ctrl_dBus_cmd_payload_wr),
     .req_ack_o(uart_req_ack),
 
@@ -616,9 +610,9 @@ sd sd_ctrl(
     .ctrl_clock_i(ctrl_cpu_clock),
 
     .ctrl_req_valid_i(sd_enable),
-    .ctrl_req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
+    .ctrl_req_addr_i(ctrl_dbus.req_addr[15:0]),
     .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
-    .ctrl_req_data_i(ctrl_dBus_cmd_payload_data),
+    .ctrl_req_data_i(ctrl_dbus.req_data),
     .ctrl_req_ack_o(sd_req_ack),
 
     .ctrl_rsp_valid_o(sd_rsp_valid),
@@ -684,16 +678,16 @@ logic dbglogging = 1'b0;
 always_ff@(posedge ctrl_cpu_clock) begin
     dbglogger_trigger <= 1'b0;
 
-    if( dbglogger_trigger_pending && (ctrl_dBus_rsp_valid || dbglogger_data_pending[68]) ) begin
+    if( dbglogger_trigger_pending && (ctrl_dbus.rsp_valid || dbglogger_data_pending[68]) ) begin
         dbglogger_data <= dbglogger_data_pending;
         if( !dbglogger_data_pending[68] ) 
-            dbglogger_data[31:0] <= ctrl_dBus_rsp_data;
+            dbglogger_data[31:0] <= ctrl_dbus.rsp_data;
         dbglogger_trigger <= 1'b1;
         dbglogger_trigger_pending <= 1'b0;
     end
 
-    if( ctrl_dBus_cmd_valid && ctrl_dBus_cmd_ready && ctrl_dBus_cmd_payload_address[31:16]==16'h8081 && dbglogging ) begin
-        dbglogger_data_pending <= { ctrl_dBus_cmd_payload_wr, ctrl_dBus_cmd_payload_mask, ctrl_dBus_cmd_payload_address, ctrl_dBus_cmd_payload_data };
+    if( ctrl_dbus.req_valid && ctrl_dbus.req_ack && ctrl_dbus.req_addr[31:16]==16'h8081 && dbglogging ) begin
+        dbglogger_data_pending <= { ctrl_dBus_cmd_payload_wr, ctrl_dBus_cmd_payload_mask, ctrl_dbus.req_addr, ctrl_dbus.req_data };
         dbglogger_trigger_pending <= 1'b1;
     end
 
@@ -709,8 +703,8 @@ dbglogger dbglogger(
     .log_enable_i(dbglogger_trigger),
 
     .ctrl_req_valid_i(dbglogger_enable),
-    .ctrl_req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
-    .ctrl_req_data_i(ctrl_dBus_cmd_payload_data),
+    .ctrl_req_addr_i(ctrl_dbus.req_addr[15:0]),
+    .ctrl_req_data_i(ctrl_dbus.req_data),
     .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
     .ctrl_req_ack_o(dbglogger_req_ack),
 

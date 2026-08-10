@@ -20,19 +20,11 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 
-module io_block#(
-    parameter CLOCK_HZ = 50000000
-)
-(
+module io_block(
     input clock,
 
-    input [31:0] address,
-    input address_valid,
-    input write,
-    output logic [31:0] data_out,
-    output logic req_ack,
+    sync_bus_write_mask.SLAVE cpu_port,
     output logic rsp_error,
-    output logic rsp_valid,
 
     output logic passthrough_ddr_enable,
     input passthrough_ddr_req_ack,
@@ -80,16 +72,19 @@ module io_block#(
     input [31:0] passthrough_dbglogger_rsp_data
 );
 
+logic write;
+assign write = cpu_port.req_write_mask != 0;
+
 logic [31:0] previous_address, previous_address_next;
 logic previous_valid=1'b0;
 
 always_ff@(posedge clock) begin
     previous_address <= previous_address_next;
 
-    if( previous_valid && !rsp_valid )
+    if( previous_valid && !cpu_port.rsp_valid )
         // Previous cycle still waiting for response. Don't advance.
         previous_valid <= 1'b1;
-    else if( address_valid && req_ack )
+    else if( cpu_port.req_valid && cpu_port.req_ack )
         previous_valid = !write;
     else
         previous_valid = 1'b0;
@@ -100,8 +95,8 @@ logic uart_recv_ready;
 
 task default_state_current();
     uart_send_data_ready = 1'b0;
-    req_ack = 1'b1;
-    previous_address_next = address;
+    cpu_port.req_ack = 1'b1;
+    previous_address_next = cpu_port.req_addr;
 
     passthrough_uart_enable = 1'b0;
     passthrough_ddr_enable = 1'b0;
@@ -124,50 +119,50 @@ endfunction
 
 always_comb begin
     // Previous cycle analysis
-    rsp_valid = 1'bX;
+    cpu_port.rsp_valid = 1'bX;
     rsp_error = 1'b0;
-    data_out = 32'bX;
+    cpu_port.rsp_data = 32'bX;
 
     if( previous_valid ) begin
         if( is_ddr(previous_address) ) begin
-            data_out = passthrough_ddr_data;
-            rsp_valid = passthrough_ddr_rsp_valid;
+            cpu_port.rsp_data = passthrough_ddr_data;
+            cpu_port.rsp_valid = passthrough_ddr_rsp_valid;
         end else begin
             case( previous_address[23:16] )
                 8'h0: begin                     // UART
-                    rsp_valid = passthrough_uart_rsp_valid;
-                    data_out = passthrough_uart_rsp_data;
+                    cpu_port.rsp_valid = passthrough_uart_rsp_valid;
+                    cpu_port.rsp_data = passthrough_uart_rsp_data;
                 end
                 8'h1: begin                     // DDR control
-                    rsp_valid = passthrough_ddr_ctrl_rsp_valid;
-                    data_out = passthrough_ddr_ctrl_data;
+                    cpu_port.rsp_valid = passthrough_ddr_ctrl_rsp_valid;
+                    cpu_port.rsp_data = passthrough_ddr_ctrl_data;
                 end
                 8'h2: begin                     // GPIO
-                    rsp_valid = passthrough_gpio_rsp_valid;
-                    data_out = passthrough_gpio_rsp_data;
+                    cpu_port.rsp_valid = passthrough_gpio_rsp_valid;
+                    cpu_port.rsp_data = passthrough_gpio_rsp_data;
                 end
                 8'h3: begin                     // Interrupt controller
-                    rsp_valid = passthrough_irq_rsp_valid;
-                    data_out = passthrough_irq_rsp_data;
+                    cpu_port.rsp_valid = passthrough_irq_rsp_valid;
+                    cpu_port.rsp_data = passthrough_irq_rsp_data;
                 end
                 8'h4: begin                     // SPI controller
-                    rsp_valid = passthrough_spi_rsp_valid;
-                    data_out = passthrough_spi_rsp_data;
+                    cpu_port.rsp_valid = passthrough_spi_rsp_valid;
+                    cpu_port.rsp_data = passthrough_spi_rsp_data;
                 end
                 8'h5: begin                     // Display controller
-                    rsp_valid = passthrough_display_rsp_valid;
-                    data_out = passthrough_display_rsp_data;
+                    cpu_port.rsp_valid = passthrough_display_rsp_valid;
+                    cpu_port.rsp_data = passthrough_display_rsp_data;
                 end
                 8'h6: begin                     // SD
-                    rsp_valid = passthrough_sd_rsp_valid;
-                    data_out = passthrough_sd_rsp_data;
+                    cpu_port.rsp_valid = passthrough_sd_rsp_valid;
+                    cpu_port.rsp_data = passthrough_sd_rsp_data;
                 end
                 8'h10: begin                     // Debug logger
-                    rsp_valid = passthrough_dbglogger_rsp_valid;
-                    data_out = passthrough_dbglogger_rsp_data;
+                    cpu_port.rsp_valid = passthrough_dbglogger_rsp_valid;
+                    cpu_port.rsp_data = passthrough_dbglogger_rsp_data;
                 end
                 default: begin                  // Invalid memory access
-                    rsp_valid = 1'b1;
+                    cpu_port.rsp_valid = 1'b1;
                     rsp_error = 1'b1;
                 end
             endcase
@@ -179,47 +174,47 @@ always_comb begin
     default_state_current();
 
     // Current cycle analysis
-    if( previous_valid && !rsp_valid ) begin
+    if( previous_valid && !cpu_port.rsp_valid ) begin
         // Previous cycle still waiting for response. Don't advance.
         previous_address_next = previous_address;
-        req_ack = 1'b0;
+        cpu_port.req_ack = 1'b0;
     end else begin
-        if( is_ddr(address) ) begin
-            passthrough_ddr_enable = address_valid;
-            req_ack = passthrough_ddr_req_ack;
-        end else if(address_valid) begin
-            case( address[23:16] )
+        if( is_ddr(cpu_port.req_addr) ) begin
+            passthrough_ddr_enable = cpu_port.req_valid;
+            cpu_port.req_ack = passthrough_ddr_req_ack;
+        end else if(cpu_port.req_valid) begin
+            case( cpu_port.req_addr[23:16] )
                 8'h0: begin                // UART
                     passthrough_uart_enable = 1'b1;
-                    req_ack = passthrough_uart_req_ack;
+                    cpu_port.req_ack = passthrough_uart_req_ack;
                 end
                 8'h1: begin                // DDR control
                     passthrough_ddr_ctrl_enable = 1'b1;
-                    req_ack = 1'b1;
+                    cpu_port.req_ack = 1'b1;
                 end
                 8'h2: begin                 // GPIO
                     passthrough_gpio_enable = 1'b1;
-                    req_ack = passthrough_gpio_req_ack;
+                    cpu_port.req_ack = passthrough_gpio_req_ack;
                 end
                 8'h3: begin                 // Interrupt/timer controller
                     passthrough_irq_enable = 1'b1;
-                    req_ack = passthrough_irq_req_ack;
+                    cpu_port.req_ack = passthrough_irq_req_ack;
                 end
                 8'h4: begin                 // SPI controller
                     passthrough_spi_enable = 1'b1;
-                    req_ack = passthrough_spi_req_ack;
+                    cpu_port.req_ack = passthrough_spi_req_ack;
                 end
                 8'h5: begin                 // Display controller
                     passthrough_display_enable = 1'b1;
-                    req_ack = passthrough_display_req_ack;
+                    cpu_port.req_ack = passthrough_display_req_ack;
                 end
                 8'h6: begin                // SD
                     passthrough_sd_enable = 1'b1;
-                    req_ack = passthrough_sd_req_ack;
+                    cpu_port.req_ack = passthrough_sd_req_ack;
                 end
                 8'h10: begin                // Debug logger
                     passthrough_dbglogger_enable = 1'b1;
-                    req_ack = passthrough_dbglogger_req_ack;
+                    cpu_port.req_ack = passthrough_dbglogger_req_ack;
                 end
                 default: begin
                     // Bus error case. If it's a read, it's handled with the
