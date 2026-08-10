@@ -158,7 +158,7 @@ localparam CACHE_PORT_IDX_SPI_FLASH = 5;
 
 sync_bus_write_mask#(.DATA_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(32)) inst_cache_ports[1]();
 
-sync_bus_write_mask ctrl_dbus();
+sync_bus_write_mask ctrl_dbus(), ctrl_ddr_bus();
 
 logic           ctrl_iBus_rsp_payload_error;
 logic [31:0]    ctrl_iBus_rsp_payload_inst;
@@ -180,8 +180,6 @@ localparam VSYNC_IRQ = 2;
 localparam SD_INSERT_IRQ = 3;
 localparam SD_DATA_IDLE = 4;
 localparam FIRST_EMPTY_IRQ = 5;
-
-logic [31:0]    iob_ddr_read_data;
 
 wire [31:0] gp_out[GPIO_OUT_PORTS];
 
@@ -232,13 +230,18 @@ assign inst_cache_ports[0].req_write_mask = 0;
 
 assign cache_ports[CACHE_PORT_IDX_DBUS].req_addr = ctrl_dbus.req_addr; // XXX Replace with follow on bus
 
+assign cache_ports[CACHE_PORT_IDX_DBUS].req_valid = ctrl_ddr_bus.req_valid;
+assign ctrl_ddr_bus.req_ack = cache_ports[CACHE_PORT_IDX_DBUS].req_ack;
+assign ctrl_ddr_bus.rsp_valid = cache_ports[CACHE_PORT_IDX_DBUS].rsp_valid;
+
 bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) dBus_width_adjuster(
         .clock_i(ctrl_cpu_clock),
-        .north_cmd_valid_i(cache_ports[CACHE_PORT_IDX_DBUS].req_valid),
-        .north_cmd_addr_i(ctrl_dbus.req_addr),
-        .north_cmd_write_mask_i(ctrl_dbus.req_write_mask),
-        .north_cmd_write_data_i(ctrl_dbus.req_data),
-        .north_rsp_read_data_o(iob_ddr_read_data),
+
+        .north_cmd_valid_i(ctrl_ddr_bus.req_valid),
+        .north_cmd_addr_i(ctrl_ddr_bus.req_addr),
+        .north_cmd_write_mask_i(ctrl_ddr_bus.req_write_mask),
+        .north_cmd_write_data_i(ctrl_ddr_bus.req_data),
+        .north_rsp_read_data_o(ctrl_ddr_bus.rsp_data),
 
         .south_cmd_ready_i(cache_ports[CACHE_PORT_IDX_DBUS].req_ack),
         .south_cmd_write_mask_o(cache_ports[CACHE_PORT_IDX_DBUS].req_write_mask),
@@ -276,11 +279,7 @@ io_block iob(
     .cpu_port(ctrl_dbus),
     .rsp_error(ctrl_dBus_rsp_error),
 
-
-    .passthrough_ddr_enable(cache_ports[CACHE_PORT_IDX_DBUS].req_valid),
-    .passthrough_ddr_req_ack(cache_ports[CACHE_PORT_IDX_DBUS].req_ack),
-    .passthrough_ddr_rsp_valid(cache_ports[CACHE_PORT_IDX_DBUS].rsp_valid),
-    .passthrough_ddr_data(iob_ddr_read_data),
+    .ddr_port(ctrl_ddr_bus),
 
     .passthrough_ddr_ctrl_enable(ddr_ctrl_cmd_valid),
     .passthrough_ddr_ctrl_req_ack(ddr_ctrl_cmd_ready),

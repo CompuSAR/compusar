@@ -26,10 +26,7 @@ module io_block(
     sync_bus_write_mask.SLAVE cpu_port,
     output logic rsp_error,
 
-    output logic passthrough_ddr_enable,
-    input passthrough_ddr_req_ack,
-    input passthrough_ddr_rsp_valid,
-    input [31:0] passthrough_ddr_data,
+    sync_bus_write_mask.MASTER ddr_port,
 
     output logic passthrough_ddr_ctrl_enable,
     input passthrough_ddr_ctrl_req_ack,
@@ -78,6 +75,13 @@ assign write = cpu_port.req_write_mask != 0;
 logic [31:0] previous_address, previous_address_next;
 logic previous_valid=1'b0;
 
+always_comb begin
+    // The ports that get forwarded with no logic
+    ddr_port.req_addr = cpu_port.req_addr;
+    ddr_port.req_data = cpu_port.req_data;
+    ddr_port.req_write_mask = cpu_port.req_write_mask;
+end
+
 always_ff@(posedge clock) begin
     previous_address <= previous_address_next;
 
@@ -98,8 +102,9 @@ task default_state_current();
     cpu_port.req_ack = 1'b1;
     previous_address_next = cpu_port.req_addr;
 
+    ddr_port.req_valid = 1'b0;
+
     passthrough_uart_enable = 1'b0;
-    passthrough_ddr_enable = 1'b0;
     passthrough_ddr_ctrl_enable = 1'b0;
     passthrough_gpio_enable = 1'b0;
     passthrough_irq_enable = 1'b0;
@@ -125,8 +130,8 @@ always_comb begin
 
     if( previous_valid ) begin
         if( is_ddr(previous_address) ) begin
-            cpu_port.rsp_data = passthrough_ddr_data;
-            cpu_port.rsp_valid = passthrough_ddr_rsp_valid;
+            cpu_port.rsp_data = ddr_port.rsp_data;
+            cpu_port.rsp_valid = ddr_port.rsp_valid;
         end else begin
             case( previous_address[23:16] )
                 8'h0: begin                     // UART
@@ -180,8 +185,8 @@ always_comb begin
         cpu_port.req_ack = 1'b0;
     end else begin
         if( is_ddr(cpu_port.req_addr) ) begin
-            passthrough_ddr_enable = cpu_port.req_valid;
-            cpu_port.req_ack = passthrough_ddr_req_ack;
+            ddr_port.req_valid = cpu_port.req_valid;
+            cpu_port.req_ack = ddr_port.req_ack;
         end else if(cpu_port.req_valid) begin
             case( cpu_port.req_addr[23:16] )
                 8'h0: begin                // UART
