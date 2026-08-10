@@ -1,8 +1,6 @@
 `timescale 1ns / 1ps
 
 module cache#(
-        ADDR_BITS = 32,
-        CACHELINE_BITS = 128,
         NUM_CACHELINES = 1024,
         BACKEND_SIZE_BYTES = 0,
         INIT_FILE = "none",
@@ -19,13 +17,7 @@ module cache#(
         output                                                          ctrl_rsp_valid_o,
         output [31:0]                                                   ctrl_rsp_data_o,
 
-        input                                                           port_cmd_valid_i[NUM_PORTS],
-        input [ADDR_BITS-1:0]                                           port_cmd_addr_i[NUM_PORTS],
-        output                                                          port_cmd_ready_o[NUM_PORTS],
-        input [CACHELINE_BITS/8-1:0]                                    port_cmd_write_mask_i[NUM_PORTS],
-        input [CACHELINE_BITS-1:0]                                      port_cmd_write_data_i[NUM_PORTS],
-        output                                                          port_rsp_valid_o[NUM_PORTS],
-        output [CACHELINE_BITS-1:0]                                     port_rsp_read_data_o[NUM_PORTS],
+        sync_bus_write_mask.SLAVE                                       ports[NUM_PORTS],
 
         output logic                                                    backend_cmd_valid_o,
         output logic [ADDR_BITS-1:0]                                    backend_cmd_addr_o,
@@ -35,6 +27,9 @@ module cache#(
         input                                                           backend_rsp_valid_i,
         input  [CACHELINE_BITS-1:0]                                     backend_rsp_read_data_i
     );
+
+localparam ADDR_BITS = $bits(ports[0].req_addr);
+localparam CACHELINE_BITS = $bits(ports[0].req_data);
 
 localparam LINES_ADDR_BITS = $clog2(NUM_CACHELINES);
 localparam BACKEND_COMPLEMENTARY_ADDRESS = $clog2(BACKEND_SIZE_BYTES) - LINES_ADDR_BITS - $clog2(CACHELINE_BITS/8);
@@ -68,6 +63,16 @@ typedef struct packed {
     logic                                               dirty;
     logic [BACKEND_COMPLEMENTARY_ADDRESS-1:0]           source_address;
 } CachelineMetadata;
+
+// interface conversion
+logic                                                           port_cmd_valid_i[NUM_PORTS];
+logic [ADDR_BITS-1:0]                                           port_cmd_addr_i[NUM_PORTS];
+logic                                                           port_cmd_ready_o[NUM_PORTS];
+logic [CACHELINE_BITS/8-1:0]                                    port_cmd_write_mask_i[NUM_PORTS];
+logic [CACHELINE_BITS-1:0]                                      port_cmd_write_data_i[NUM_PORTS];
+logic                                                           port_rsp_valid_o[NUM_PORTS];
+logic [CACHELINE_BITS-1:0]                                      port_rsp_read_data_o[NUM_PORTS];
+
 
 logic [LINES_ADDR_BITS-1:0]             rd_addr, wr_addr,
                                         prev_rd_addr = {{LINES_ADDR_BITS-1{1'b1}}, 1'b0}, // Any address that is not the first one.
@@ -193,6 +198,19 @@ byte_selector#(CACHELINE_BITS/8) result_selector(
 
 
 genvar i;
+
+generate
+    for(i=0; i<NUM_PORTS; i++) begin
+        assign port_cmd_valid_i[i] = ports[i].req_valid;
+        assign port_cmd_addr_i[i] = ports[i].req_addr;
+        assign ports[i].req_ack = port_cmd_ready_o[i];
+        assign port_cmd_write_mask_i[i] = ports[i].req_write_mask;
+        assign port_cmd_write_data_i[i] = ports[i].req_data;
+        assign ports[i].rsp_valid = port_rsp_valid_o[i];
+        assign ports[i].rsp_data = port_rsp_read_data_o[i];
+    end
+endgenerate
+
 generate
     for(i=0; i<NUM_PORTS; i++) begin : port_state
         wire pending, prev_pending;

@@ -147,13 +147,7 @@ localparam DMA_WRITE_ALL_CLEAR = { CACHELINE_BYTES{1'b0} };
 
 localparam INST_CACHE_NUM_CACHELINES = 1024*8/CACHELINE_BITS;
 
-logic                                   cache_port_cmd_valid_s[CACHE_PORTS_NUM];
-logic [31:0]                            cache_port_cmd_addr_s[CACHE_PORTS_NUM];
-logic                                   cache_port_cmd_ready_n[CACHE_PORTS_NUM];
-logic [CACHELINE_BYTES-1:0]             cache_port_cmd_write_mask_s[CACHE_PORTS_NUM];
-logic [CACHELINE_BITS-1:0]              cache_port_cmd_write_data_s[CACHE_PORTS_NUM];
-logic                                   cache_port_rsp_valid_n[CACHE_PORTS_NUM];
-logic [CACHELINE_BITS-1:0]              cache_port_rsp_read_data_n[CACHE_PORTS_NUM];
+sync_bus_write_mask#(.DATA_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(32)) cache_ports[CACHE_PORTS_NUM]();
 
 localparam CACHE_PORT_IDX_DISPLAY8 = 0;
 localparam CACHE_PORT_IDX_DISPLAY32 = 1;
@@ -162,13 +156,7 @@ localparam CACHE_PORT_IDX_DBUS = 3;
 localparam CACHE_PORT_IDX_IBUS = 4;
 localparam CACHE_PORT_IDX_SPI_FLASH = 5;
 
-logic                                   inst_cache_port_cmd_valid_s[0:0];
-logic [31:0]                            inst_cache_port_cmd_addr_s[0:0];
-logic                                   inst_cache_port_cmd_ready_n[0:0];
-logic [CACHELINE_BYTES-1:0]             inst_cache_port_cmd_write_mask_s[0:0];
-logic [CACHELINE_BITS-1:0]              inst_cache_port_cmd_write_data_s[0:0];
-logic                                   inst_cache_port_rsp_valid_n[0:0];
-logic [CACHELINE_BITS-1:0]              inst_cache_port_rsp_read_data_n[0:0];
+sync_bus_write_mask#(.DATA_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(32)) inst_cache_ports[1]();
 
 logic           ctrl_iBus_rsp_payload_error;
 logic [31:0]    ctrl_iBus_rsp_payload_inst;
@@ -209,10 +197,10 @@ VexRiscv control_cpu(
     .externalInterrupt(ctrl_ext_interrupt),
     .softwareInterrupt(ctrl_software_interrupt),
 
-    .iBus_cmd_ready(inst_cache_port_cmd_ready_n[0]),
-    .iBus_cmd_valid(inst_cache_port_cmd_valid_s[0]),
-    .iBus_cmd_payload_pc(inst_cache_port_cmd_addr_s[0]),
-    .iBus_rsp_valid(inst_cache_port_rsp_valid_n[0]),
+    .iBus_cmd_ready(inst_cache_ports[0].req_ack),
+    .iBus_cmd_valid(inst_cache_ports[0].req_valid),
+    .iBus_cmd_payload_pc(inst_cache_ports[0].req_addr),
+    .iBus_rsp_valid(inst_cache_ports[0].rsp_valid),
     .iBus_rsp_payload_error(ctrl_iBus_rsp_payload_error),
     .iBus_rsp_payload_inst(ctrl_iBus_rsp_payload_inst),
 
@@ -230,34 +218,34 @@ VexRiscv control_cpu(
 
 bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) iBus_width_adjuster(
         .clock_i(ctrl_cpu_clock),
-        .north_cmd_valid_i(inst_cache_port_cmd_valid_s[0]),
-        .north_cmd_addr_i(inst_cache_port_cmd_addr_s[0]),
+        .north_cmd_valid_i(inst_cache_ports[0].req_valid),
+        .north_cmd_addr_i(inst_cache_ports[0].req_addr),
         .north_cmd_write_mask_i(4'b0000),
         .north_cmd_write_data_i(32'h0),
         .north_rsp_read_data_o(ctrl_iBus_rsp_payload_inst),
 
-        .south_cmd_ready_i(inst_cache_port_cmd_ready_n[0]),
+        .south_cmd_ready_i(inst_cache_ports[0].req_ack),
         .south_cmd_write_mask_o(),
         .south_cmd_write_data_o(),
-        .south_rsp_valid_i(inst_cache_port_rsp_valid_n[0]),
-        .south_rsp_read_data_i(inst_cache_port_rsp_read_data_n[0])
+        .south_rsp_valid_i(inst_cache_ports[0].rsp_valid),
+        .south_rsp_read_data_i(inst_cache_ports[0].rsp_data)
     );
-assign inst_cache_port_cmd_write_mask_s[0] = 0;
+assign inst_cache_ports[0].req_write_mask = 0;
 
-assign cache_port_cmd_addr_s[CACHE_PORT_IDX_DBUS] = ctrl_dBus_cmd_payload_address;
+assign cache_ports[CACHE_PORT_IDX_DBUS].req_addr = ctrl_dBus_cmd_payload_address;
 bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) dBus_width_adjuster(
         .clock_i(ctrl_cpu_clock),
-        .north_cmd_valid_i(cache_port_cmd_valid_s[CACHE_PORT_IDX_DBUS]),
+        .north_cmd_valid_i(cache_ports[CACHE_PORT_IDX_DBUS].req_valid),
         .north_cmd_addr_i(ctrl_dBus_cmd_payload_address),
         .north_cmd_write_mask_i(ctrl_dBus_cmd_payload_wr ? ctrl_dBus_cmd_payload_mask : 4'b0000),
         .north_cmd_write_data_i(ctrl_dBus_cmd_payload_data),
         .north_rsp_read_data_o(iob_ddr_read_data),
 
         .south_cmd_ready_i(ctrl_dBus_cmd_ready),
-        .south_cmd_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DBUS]),
-        .south_cmd_write_data_o(cache_port_cmd_write_data_s[CACHE_PORT_IDX_DBUS]),
+        .south_cmd_write_mask_o(cache_ports[CACHE_PORT_IDX_DBUS].req_write_mask),
+        .south_cmd_write_data_o(cache_ports[CACHE_PORT_IDX_DBUS].req_data),
         .south_rsp_valid_i(ctrl_dBus_rsp_valid),
-        .south_rsp_read_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DBUS])
+        .south_rsp_read_data_i(cache_ports[CACHE_PORT_IDX_DBUS].rsp_data)
     );
 
 assign ctrl_iBus_rsp_payload_error = 0;
@@ -295,9 +283,9 @@ io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
     .rsp_error(ctrl_dBus_rsp_error),
     .rsp_valid(ctrl_dBus_rsp_valid),
 
-    .passthrough_ddr_enable(cache_port_cmd_valid_s[CACHE_PORT_IDX_DBUS]),
-    .passthrough_ddr_req_ack(cache_port_cmd_ready_n[CACHE_PORT_IDX_DBUS]),
-    .passthrough_ddr_rsp_valid(cache_port_rsp_valid_n[CACHE_PORT_IDX_DBUS]),
+    .passthrough_ddr_enable(cache_ports[CACHE_PORT_IDX_DBUS].req_valid),
+    .passthrough_ddr_req_ack(cache_ports[CACHE_PORT_IDX_DBUS].req_ack),
+    .passthrough_ddr_rsp_valid(cache_ports[CACHE_PORT_IDX_DBUS].rsp_valid),
     .passthrough_ddr_data(iob_ddr_read_data),
 
     .passthrough_ddr_ctrl_enable(ddr_ctrl_cmd_valid),
@@ -342,7 +330,6 @@ io_block#(.CLOCK_HZ(CTRL_CLOCK_HZ)) iob(
 );
 
 cache#(
-    .CACHELINE_BITS(CACHELINE_BITS),
     .NUM_CACHELINES(INST_CACHE_NUM_CACHELINES),
     .BACKEND_SIZE_BYTES(DDR_MEM_SIZE),
     .NUM_PORTS(1)
@@ -357,27 +344,20 @@ cache#(
     .ctrl_rsp_valid_o(),
     .ctrl_rsp_data_o(),
 
-    .port_cmd_valid_i(inst_cache_port_cmd_valid_s),
-    .port_cmd_addr_i(inst_cache_port_cmd_addr_s),
-    .port_cmd_ready_o(inst_cache_port_cmd_ready_n),
-    .port_cmd_write_mask_i(inst_cache_port_cmd_write_mask_s),
-    .port_cmd_write_data_i(inst_cache_port_cmd_write_data_s),
-    .port_rsp_valid_o(inst_cache_port_rsp_valid_n),
-    .port_rsp_read_data_o(inst_cache_port_rsp_read_data_n),
+    .ports(inst_cache_ports),
 
-    .backend_cmd_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_IBUS]),
-    .backend_cmd_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_IBUS]),
-    .backend_cmd_ready_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_IBUS]),
+    .backend_cmd_valid_o(cache_ports[CACHE_PORT_IDX_IBUS].req_valid),
+    .backend_cmd_addr_o(cache_ports[CACHE_PORT_IDX_IBUS].req_addr),
+    .backend_cmd_ready_i(cache_ports[CACHE_PORT_IDX_IBUS].req_ack),
     .backend_cmd_write_o(),
     .backend_cmd_write_data_o(),
-    .backend_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_IBUS]),
-    .backend_rsp_read_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_IBUS])
+    .backend_rsp_valid_i(cache_ports[CACHE_PORT_IDX_IBUS].rsp_valid),
+    .backend_rsp_read_data_i(cache_ports[CACHE_PORT_IDX_IBUS].rsp_data)
 );
 
-assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_IBUS] = DMA_WRITE_ALL_CLEAR;
+assign cache_ports[CACHE_PORT_IDX_IBUS].req_write_mask = DMA_WRITE_ALL_CLEAR;
 
 cache#(
-    .CACHELINE_BITS(CACHELINE_BITS),
     .NUM_CACHELINES(NUM_CACHELINES),
     .BACKEND_SIZE_BYTES(DDR_MEM_SIZE),
     .INIT_FILE("boot_loader.mem"),
@@ -394,13 +374,7 @@ cache#(
     .ctrl_rsp_valid_o(),
     .ctrl_rsp_data_o(),
 
-    .port_cmd_valid_i(cache_port_cmd_valid_s),
-    .port_cmd_addr_i(cache_port_cmd_addr_s),
-    .port_cmd_ready_o(cache_port_cmd_ready_n),
-    .port_cmd_write_mask_i(cache_port_cmd_write_mask_s),
-    .port_cmd_write_data_i(cache_port_cmd_write_data_s),
-    .port_rsp_valid_o(cache_port_rsp_valid_n),
-    .port_rsp_read_data_o(cache_port_rsp_read_data_n),
+    .ports(cache_ports),
 
     .backend_cmd_valid_o(ddr_data_cmd_valid),
     .backend_cmd_addr_o(ddr_data_cmd_address),
@@ -426,19 +400,19 @@ display display_ctrl(
     .ctrl_rsp_valid_o(display_rsp_valid),
     .ctrl_rsp_data_o(display_rsp_data),
 
-    .dma32_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY32]),
-    .dma32_req_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY32]),
-    .dma32_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY32]),
-    .dma32_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY32]),
-    .dma32_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY32]),
-    .dma32_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY32]),
+    .dma32_req_valid_o(cache_ports[CACHE_PORT_IDX_DISPLAY32].req_valid),
+    .dma32_req_write_mask_o(cache_ports[CACHE_PORT_IDX_DISPLAY32].req_write_mask),
+    .dma32_req_addr_o(cache_ports[CACHE_PORT_IDX_DISPLAY32].req_addr),
+    .dma32_req_ack_i(cache_ports[CACHE_PORT_IDX_DISPLAY32].req_ack),
+    .dma32_rsp_valid_i(cache_ports[CACHE_PORT_IDX_DISPLAY32].rsp_valid),
+    .dma32_rsp_data_i(cache_ports[CACHE_PORT_IDX_DISPLAY32].rsp_data),
 
-    .dma8_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_DISPLAY8]),
-    .dma8_req_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_DISPLAY8]),
-    .dma8_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_DISPLAY8]),
-    .dma8_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_DISPLAY8]),
-    .dma8_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_DISPLAY8]),
-    .dma8_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_DISPLAY8]),
+    .dma8_req_valid_o(cache_ports[CACHE_PORT_IDX_DISPLAY8].req_valid),
+    .dma8_req_write_mask_o(cache_ports[CACHE_PORT_IDX_DISPLAY8].req_write_mask),
+    .dma8_req_addr_o(cache_ports[CACHE_PORT_IDX_DISPLAY8].req_addr),
+    .dma8_req_ack_i(cache_ports[CACHE_PORT_IDX_DISPLAY8].req_ack),
+    .dma8_rsp_valid_i(cache_ports[CACHE_PORT_IDX_DISPLAY8].rsp_valid),
+    .dma8_rsp_data_i(cache_ports[CACHE_PORT_IDX_DISPLAY8].rsp_data),
 
     .TMDS_clk_n,
     .TMDS_clk_p,
@@ -583,7 +557,7 @@ gpio(
 
 wire spi_flash_dma_write;
 
-assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_SPI_FLASH] = spi_flash_dma_write ? DMA_WRITE_ALL_SET : DMA_WRITE_ALL_CLEAR;
+assign cache_ports[CACHE_PORT_IDX_SPI_FLASH].req_write_mask = spi_flash_dma_write ? DMA_WRITE_ALL_SET : DMA_WRITE_ALL_CLEAR;
 
 spi_ctrl#(.MEM_DATA_WIDTH(CACHELINE_BITS)) spi_flash(
     .cpu_clock_i(ctrl_cpu_clock),
@@ -604,14 +578,14 @@ spi_ctrl#(.MEM_DATA_WIDTH(CACHELINE_BITS)) spi_flash(
     .spi_dq_io(spi_dq),
     .spi_clk_o(spi_clk),
 
-    .dma_cmd_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_SPI_FLASH]),
-    .dma_cmd_address_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_SPI_FLASH]),
-    .dma_cmd_data_o(cache_port_cmd_write_data_s[CACHE_PORT_IDX_SPI_FLASH]),
+    .dma_cmd_valid_o(cache_ports[CACHE_PORT_IDX_SPI_FLASH].req_valid),
+    .dma_cmd_address_o(cache_ports[CACHE_PORT_IDX_SPI_FLASH].req_addr),
+    .dma_cmd_data_o(cache_ports[CACHE_PORT_IDX_SPI_FLASH].req_data),
     .dma_cmd_write_o(spi_flash_dma_write),
-    .dma_cmd_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_SPI_FLASH]),
+    .dma_cmd_ack_i(cache_ports[CACHE_PORT_IDX_SPI_FLASH].req_ack),
 
-    .dma_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_SPI_FLASH]),
-    .dma_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_SPI_FLASH])
+    .dma_rsp_valid_i(cache_ports[CACHE_PORT_IDX_SPI_FLASH].rsp_valid),
+    .dma_rsp_data_i(cache_ports[CACHE_PORT_IDX_SPI_FLASH].rsp_data)
 );
 
 uart_ctrl#(.ClockDivider(SIM_MODE ? 10 : CTRL_CLOCK_HZ / UART_BAUD), .SimMode(SIM_MODE)) uart_ctrl(
@@ -635,7 +609,7 @@ uart_ctrl#(.ClockDivider(SIM_MODE ? 10 : CTRL_CLOCK_HZ / UART_BAUD), .SimMode(SI
 
 logic sd_dma_write, sd_data_idle;
 
-assign cache_port_cmd_write_mask_s[CACHE_PORT_IDX_SD] = sd_dma_write ? DMA_WRITE_ALL_SET : DMA_WRITE_ALL_CLEAR;
+assign cache_ports[CACHE_PORT_IDX_SD].req_write_mask = sd_dma_write ? DMA_WRITE_ALL_SET : DMA_WRITE_ALL_CLEAR;
 assign irq_lines[SD_DATA_IDLE] = sd_data_idle;
 
 sd sd_ctrl(
@@ -653,14 +627,14 @@ sd sd_ctrl(
     .ctrl_data_idle_irq_o(sd_data_idle),
 
 
-    .dma_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_SD]),
-    .dma_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_SD]),
+    .dma_req_valid_o(cache_ports[CACHE_PORT_IDX_SD].req_valid),
+    .dma_req_addr_o(cache_ports[CACHE_PORT_IDX_SD].req_addr),
     .dma_req_write_o(sd_dma_write),
-    .dma_req_data_o(cache_port_cmd_write_data_s[CACHE_PORT_IDX_SD]),
-    .dma_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_SD]),
+    .dma_req_data_o(cache_ports[CACHE_PORT_IDX_SD].req_data),
+    .dma_req_ack_i(cache_ports[CACHE_PORT_IDX_SD].req_ack),
 
-    .dma_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_SD]),
-    .dma_rsp_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_SD]),
+    .dma_rsp_valid_i(cache_ports[CACHE_PORT_IDX_SD].rsp_valid),
+    .dma_rsp_data_i(cache_ports[CACHE_PORT_IDX_SD].rsp_data),
 
 
     .sd_default_speed_clock_i(bus_clock_25),
@@ -723,7 +697,7 @@ always_ff@(posedge ctrl_cpu_clock) begin
         dbglogger_trigger_pending <= 1'b1;
     end
 
-    if( inst_cache_port_cmd_ready_n[0] && inst_cache_port_cmd_valid_s[0] && inst_cache_port_cmd_addr_s[0]==32'h80014e24 )
+    if( inst_cache_ports[0].req_ack && inst_cache_ports[0].req_valid && inst_cache_ports[0].req_addr==32'h80014e24 )
         dbglogging <= 1'b1;
 end
 
