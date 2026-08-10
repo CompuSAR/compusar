@@ -840,6 +840,11 @@ sar6502_sync apple_cpu(
     .memory_lock_o( apple_cpu_memory_lock )
 );
 
+logic apple_io_periph_req_valid[a2_io::NumPeripherals], apple_io_periph_req_ack[a2_io::NumPeripherals],
+      apple_io_periph_req_write[a2_io::NumPeripherals], apple_io_periph_rsp_valid[a2_io::NumPeripherals];
+logic [7:0] apple_io_periph_req_write_data[a2_io::NumPeripherals], apple_io_periph_rsp_read_data[a2_io::NumPeripherals];
+logic [15:0] apple_io_periph_req_addr[a2_io::NumPeripherals];
+
 apple_io apple_io_block(
     .clock_i( ctrl_cpu_clock ),
 
@@ -852,14 +857,14 @@ apple_io apple_io_block(
     .cpu_rsp_valid_o( bus8_rsp_valid ),
     .cpu_rsp_data_o( bus8_rsp_data ),
 
-    .mem_req_valid_o( cache_port_cmd_valid_s[CACHE_PORT_IDX_6502] ),
-    .mem_req_ack_i( cache_port_cmd_ready_n[CACHE_PORT_IDX_6502] ),
-    .mem_req_write_o( bus8_mem_req_write ),
-    .mem_req_data_o( bus8_mem_req_data ),
-    .mem_req_addr_o( bus8_mem_req_addr ),
+    .perph_req_valid_o( apple_io_periph_req_valid ),
+    .perph_req_ack_i( apple_io_periph_req_ack ),
+    .perph_req_addr_o( apple_io_periph_req_addr ),
+    .perph_req_write_o( apple_io_periph_req_write ),
+    .perph_req_write_data_o( apple_io_periph_req_write_data ),
 
-    .mem_rsp_valid_i( cache_port_rsp_valid_n[CACHE_PORT_IDX_6502] ),
-    .mem_rsp_data_i( bus8_mem_rsp_data ),
+    .perph_rsp_valid_i( apple_io_periph_rsp_valid ),
+    .perph_rsp_read_data_i( apple_io_periph_rsp_read_data ),
 
     .ctrl_req_valid_i( ctl_apple_io_enable ),
     .ctrl_req_write_i( ctrl_dBus_cmd_payload_wr ),
@@ -871,6 +876,15 @@ apple_io apple_io_block(
 
     .ctrl_intr_o( ctrl_software_interrupt )
 );
+
+assign cache_port_cmd_valid_s[CACHE_PORT_IDX_6502] = apple_io_periph_req_valid[a2_io::Mem];
+assign apple_io_periph_req_ack[a2_io::Mem] = cache_port_cmd_ready_n[CACHE_PORT_IDX_6502];
+assign bus8_mem_req_write = apple_io_periph_req_write[a2_io::Mem];
+assign bus8_mem_req_data = apple_io_periph_req_write_data[a2_io::Mem];
+assign bus8_mem_req_addr = apple_io_periph_req_addr[a2_io::Mem];
+
+assign apple_io_periph_rsp_valid[a2_io::Mem] = cache_port_rsp_valid_n[CACHE_PORT_IDX_6502] ;
+assign apple_io_periph_rsp_read_data[a2_io::Mem] = bus8_mem_rsp_data ;
 
 apple_pager pager(
     .clock_i( ctrl_cpu_clock ),
@@ -905,6 +919,14 @@ apple2_diskette_controller a2_disk(
 
     .ctrl_rsp_valid_o(a2_disk_rsp_valid),
     .ctrl_rsp_read_data_o(a2_disk_rsp_data),
+
+    .cpu_req_valid_i( apple_io_periph_req_valid[a2_io::Diskette] ),
+    .cpu_req_ack_o( apple_io_periph_req_ack[a2_io::Diskette] ),
+    .cpu_req_addr_i( apple_io_periph_req_addr[a2_io::Diskette] ),
+    .cpu_req_write_i( apple_io_periph_req_write[a2_io::Diskette] ),
+    .cpu_req_write_data_i( apple_io_periph_req_write_data[a2_io::Diskette] ),
+    .cpu_rsp_valid_o( apple_io_periph_rsp_valid[a2_io::Diskette] ),
+    .cpu_rsp_read_data_o( apple_io_periph_rsp_read_data[a2_io::Diskette] ),
 
     .dma_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_APPLE_DISK]),
     .dma_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_APPLE_DISK]),

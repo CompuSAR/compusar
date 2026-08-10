@@ -5,6 +5,7 @@
    <db_ref_list>
       <db_ref path="sim_top_behav.wdb" id="1">
          <top_modules>
+            <top_module name="a2_io" />
             <top_module name="glbl" />
             <top_module name="sar65s_ctl" />
             <top_module name="sim_top" />
@@ -12,15 +13,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="3,966,592.352333 ns"></ZoomStartTime>
-      <ZoomEndTime time="3,966,780.352334 ns"></ZoomEndTime>
-      <Cursor1Time time="3,967,944.019000 ns"></Cursor1Time>
+      <ZoomStartTime time="852.346822 ns"></ZoomStartTime>
+      <ZoomEndTime time="1,029.530636 ns"></ZoomEndTime>
+      <Cursor1Time time="1,000.000000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="238"></NameColumnWidth>
-      <ValueColumnWidth column_width="378"></ValueColumnWidth>
+      <ValueColumnWidth column_width="374"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="150" />
+   <WVObjectSize size="136" />
    <wave_markers>
       <marker label="" time="3961332886000" />
       <marker label="" time="3966532059000" />
@@ -280,32 +281,32 @@
       <obj_property name="ObjectShortName">clock_i</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sim_top/top_module/cache/port_cmd_valid_i">
-      <obj_property name="ElementShortName">port_cmd_valid_i[0:6]</obj_property>
-      <obj_property name="ObjectShortName">port_cmd_valid_i[0:6]</obj_property>
+      <obj_property name="ElementShortName">port_cmd_valid_i[0:7]</obj_property>
+      <obj_property name="ObjectShortName">port_cmd_valid_i[0:7]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sim_top/top_module/cache/port_cmd_addr_i">
-      <obj_property name="ElementShortName">port_cmd_addr_i[0:6][31:0]</obj_property>
-      <obj_property name="ObjectShortName">port_cmd_addr_i[0:6][31:0]</obj_property>
+      <obj_property name="ElementShortName">port_cmd_addr_i[0:7][31:0]</obj_property>
+      <obj_property name="ObjectShortName">port_cmd_addr_i[0:7][31:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sim_top/top_module/cache/port_cmd_ready_o">
-      <obj_property name="ElementShortName">port_cmd_ready_o[0:6]</obj_property>
-      <obj_property name="ObjectShortName">port_cmd_ready_o[0:6]</obj_property>
+      <obj_property name="ElementShortName">port_cmd_ready_o[0:7]</obj_property>
+      <obj_property name="ObjectShortName">port_cmd_ready_o[0:7]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sim_top/top_module/cache/port_cmd_write_mask_i">
-      <obj_property name="ElementShortName">port_cmd_write_mask_i[0:6][15:0]</obj_property>
-      <obj_property name="ObjectShortName">port_cmd_write_mask_i[0:6][15:0]</obj_property>
+      <obj_property name="ElementShortName">port_cmd_write_mask_i[0:7][15:0]</obj_property>
+      <obj_property name="ObjectShortName">port_cmd_write_mask_i[0:7][15:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sim_top/top_module/cache/port_cmd_write_data_i">
-      <obj_property name="ElementShortName">port_cmd_write_data_i[0:6][127:0]</obj_property>
-      <obj_property name="ObjectShortName">port_cmd_write_data_i[0:6][127:0]</obj_property>
+      <obj_property name="ElementShortName">port_cmd_write_data_i[0:7][127:0]</obj_property>
+      <obj_property name="ObjectShortName">port_cmd_write_data_i[0:7][127:0]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sim_top/top_module/cache/port_rsp_valid_o">
-      <obj_property name="ElementShortName">port_rsp_valid_o[0:6]</obj_property>
-      <obj_property name="ObjectShortName">port_rsp_valid_o[0:6]</obj_property>
+      <obj_property name="ElementShortName">port_rsp_valid_o[0:7]</obj_property>
+      <obj_property name="ObjectShortName">port_rsp_valid_o[0:7]</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/sim_top/top_module/cache/port_rsp_read_data_o">
-      <obj_property name="ElementShortName">port_rsp_read_data_o[0:6][127:0]</obj_property>
-      <obj_property name="ObjectShortName">port_rsp_read_data_o[0:6][127:0]</obj_property>
+      <obj_property name="ElementShortName">port_rsp_read_data_o[0:7][127:0]</obj_property>
+      <obj_property name="ObjectShortName">port_rsp_read_data_o[0:7][127:0]</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sim_top/top_module/cache/backend_cmd_valid_o">
       <obj_property name="ElementShortName">backend_cmd_valid_o</obj_property>
@@ -452,10 +453,8 @@
       <obj_property name="ObjectShortName">doutb[127:0]</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/clock_i">
-      <obj_property name="DisplayName">label</obj_property>
       <obj_property name="ElementShortName">clock_i</obj_property>
       <obj_property name="ObjectShortName">clock_i</obj_property>
-      <obj_property name="label">apple_io_clk_i</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/cpu_req_valid_i">
       <obj_property name="ElementShortName">cpu_req_valid_i</obj_property>
@@ -485,33 +484,33 @@
       <obj_property name="ElementShortName">cpu_rsp_data_o[7:0]</obj_property>
       <obj_property name="ObjectShortName">cpu_rsp_data_o[7:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/mem_req_valid_o">
-      <obj_property name="ElementShortName">mem_req_valid_o</obj_property>
-      <obj_property name="ObjectShortName">mem_req_valid_o</obj_property>
+   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/perph_req_valid_o">
+      <obj_property name="ElementShortName">perph_req_valid_o[0:1]</obj_property>
+      <obj_property name="ObjectShortName">perph_req_valid_o[0:1]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/mem_req_ack_i">
-      <obj_property name="ElementShortName">mem_req_ack_i</obj_property>
-      <obj_property name="ObjectShortName">mem_req_ack_i</obj_property>
+   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/perph_req_ack_i">
+      <obj_property name="ElementShortName">perph_req_ack_i[0:1]</obj_property>
+      <obj_property name="ObjectShortName">perph_req_ack_i[0:1]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/mem_req_write_o">
-      <obj_property name="ElementShortName">mem_req_write_o</obj_property>
-      <obj_property name="ObjectShortName">mem_req_write_o</obj_property>
+   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/perph_req_addr_o">
+      <obj_property name="ElementShortName">perph_req_addr_o[0:1][15:0]</obj_property>
+      <obj_property name="ObjectShortName">perph_req_addr_o[0:1][15:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/mem_req_addr_o">
-      <obj_property name="ElementShortName">mem_req_addr_o[15:0]</obj_property>
-      <obj_property name="ObjectShortName">mem_req_addr_o[15:0]</obj_property>
+   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/perph_req_write_o">
+      <obj_property name="ElementShortName">perph_req_write_o[0:1]</obj_property>
+      <obj_property name="ObjectShortName">perph_req_write_o[0:1]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/mem_req_data_o">
-      <obj_property name="ElementShortName">mem_req_data_o[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mem_req_data_o[7:0]</obj_property>
+   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/perph_req_write_data_o">
+      <obj_property name="ElementShortName">perph_req_write_data_o[0:1][7:0]</obj_property>
+      <obj_property name="ObjectShortName">perph_req_write_data_o[0:1][7:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/mem_rsp_valid_i">
-      <obj_property name="ElementShortName">mem_rsp_valid_i</obj_property>
-      <obj_property name="ObjectShortName">mem_rsp_valid_i</obj_property>
+   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/perph_rsp_valid_i">
+      <obj_property name="ElementShortName">perph_rsp_valid_i[0:1]</obj_property>
+      <obj_property name="ObjectShortName">perph_rsp_valid_i[0:1]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/mem_rsp_data_i">
-      <obj_property name="ElementShortName">mem_rsp_data_i[7:0]</obj_property>
-      <obj_property name="ObjectShortName">mem_rsp_data_i[7:0]</obj_property>
+   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/perph_rsp_read_data_i">
+      <obj_property name="ElementShortName">perph_rsp_read_data_i[0:1][7:0]</obj_property>
+      <obj_property name="ObjectShortName">perph_rsp_read_data_i[0:1][7:0]</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/ctrl_req_valid_i">
       <obj_property name="ElementShortName">ctrl_req_valid_i</obj_property>
@@ -545,98 +544,40 @@
       <obj_property name="ElementShortName">ctrl_intr_o</obj_property>
       <obj_property name="ObjectShortName">ctrl_intr_o</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/io_rsp_valid">
-      <obj_property name="ElementShortName">io_rsp_valid</obj_property>
-      <obj_property name="ObjectShortName">io_rsp_valid</obj_property>
+   <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/io_op_pending">
+      <obj_property name="ElementShortName">io_op_pending</obj_property>
+      <obj_property name="ObjectShortName">io_op_pending</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/ctrl_rsp_data_o">
-      <obj_property name="ElementShortName">ctrl_rsp_data_o[31:0]</obj_property>
-      <obj_property name="ObjectShortName">ctrl_rsp_data_o[31:0]</obj_property>
+   <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/io_op_parsed">
+      <obj_property name="ElementShortName">io_op_parsed</obj_property>
+      <obj_property name="ObjectShortName">io_op_parsed</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/sim_top/top_module/bus8_width_adjuster/clock_i">
-      <obj_property name="DisplayName">label</obj_property>
-      <obj_property name="ElementShortName">clock_i</obj_property>
-      <obj_property name="ObjectShortName">clock_i</obj_property>
-      <obj_property name="label">width_adjust_clock_i</obj_property>
+   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/io_active_periph">
+      <obj_property name="ElementShortName">io_active_periph[31:0]</obj_property>
+      <obj_property name="ObjectShortName">io_active_periph[31:0]</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/sim_top/top_module/bus8_width_adjuster/north_cmd_valid_i">
-      <obj_property name="ElementShortName">north_cmd_valid_i</obj_property>
-      <obj_property name="ObjectShortName">north_cmd_valid_i</obj_property>
+   <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/forwarded">
+      <obj_property name="ElementShortName">forwarded</obj_property>
+      <obj_property name="ObjectShortName">forwarded</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/north_cmd_addr_i">
-      <obj_property name="ElementShortName">north_cmd_addr_i[31:0]</obj_property>
-      <obj_property name="ObjectShortName">north_cmd_addr_i[31:0]</obj_property>
+   <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/forwarded_rsp_valid">
+      <obj_property name="ElementShortName">forwarded_rsp_valid</obj_property>
+      <obj_property name="ObjectShortName">forwarded_rsp_valid</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/north_cmd_write_mask_i">
-      <obj_property name="ElementShortName">north_cmd_write_mask_i[0:0]</obj_property>
-      <obj_property name="ObjectShortName">north_cmd_write_mask_i[0:0]</obj_property>
+   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/forwarded_rsp_read_data">
+      <obj_property name="ElementShortName">forwarded_rsp_read_data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">forwarded_rsp_read_data[7:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/north_cmd_write_data_i">
-      <obj_property name="ElementShortName">north_cmd_write_data_i[7:0]</obj_property>
-      <obj_property name="ObjectShortName">north_cmd_write_data_i[7:0]</obj_property>
+   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/pending_req_addr">
+      <obj_property name="ElementShortName">pending_req_addr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">pending_req_addr[15:0]</obj_property>
    </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/north_rsp_read_data_o">
-      <obj_property name="ElementShortName">north_rsp_read_data_o[7:0]</obj_property>
-      <obj_property name="ObjectShortName">north_rsp_read_data_o[7:0]</obj_property>
+   <wvobject type="logic" fp_name="/sim_top/top_module/apple_io_block/pending_req_write">
+      <obj_property name="ElementShortName">pending_req_write</obj_property>
+      <obj_property name="ObjectShortName">pending_req_write</obj_property>
    </wvobject>
-   <wvobject type="logic" fp_name="/sim_top/top_module/bus8_width_adjuster/south_cmd_ready_i">
-      <obj_property name="ElementShortName">south_cmd_ready_i</obj_property>
-      <obj_property name="ObjectShortName">south_cmd_ready_i</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/south_cmd_write_mask_o">
-      <obj_property name="ElementShortName">south_cmd_write_mask_o[15:0]</obj_property>
-      <obj_property name="ObjectShortName">south_cmd_write_mask_o[15:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/south_cmd_write_data_o">
-      <obj_property name="ElementShortName">south_cmd_write_data_o[127:0]</obj_property>
-      <obj_property name="ObjectShortName">south_cmd_write_data_o[127:0]</obj_property>
-   </wvobject>
-   <wvobject type="logic" fp_name="/sim_top/top_module/bus8_width_adjuster/south_rsp_valid_i">
-      <obj_property name="ElementShortName">south_rsp_valid_i</obj_property>
-      <obj_property name="ObjectShortName">south_rsp_valid_i</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/south_rsp_read_data_i">
-      <obj_property name="ElementShortName">south_rsp_read_data_i[127:0]</obj_property>
-      <obj_property name="ObjectShortName">south_rsp_read_data_i[127:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/cmd_segment">
-      <obj_property name="ElementShortName">cmd_segment[3:0]</obj_property>
-      <obj_property name="ObjectShortName">cmd_segment[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/cmd_segment_next">
-      <obj_property name="ElementShortName">cmd_segment_next[3:0]</obj_property>
-      <obj_property name="ObjectShortName">cmd_segment_next[3:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/\consolidator[0].expanded ">
-      <obj_property name="ElementShortName">\consolidator[0].expanded [15:0]</obj_property>
-      <obj_property name="ObjectShortName">\consolidator[0].expanded [15:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/\consolidator[0].consolidated ">
-      <obj_property name="ElementShortName">\consolidator[0].consolidated [7:0]</obj_property>
-      <obj_property name="ObjectShortName">\consolidator[0].consolidated [7:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/\consolidator[1].expanded ">
-      <obj_property name="ElementShortName">\consolidator[1].expanded [31:0]</obj_property>
-      <obj_property name="ObjectShortName">\consolidator[1].expanded [31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/\consolidator[1].consolidated ">
-      <obj_property name="ElementShortName">\consolidator[1].consolidated [15:0]</obj_property>
-      <obj_property name="ObjectShortName">\consolidator[1].consolidated [15:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/\consolidator[2].expanded ">
-      <obj_property name="ElementShortName">\consolidator[2].expanded [63:0]</obj_property>
-      <obj_property name="ObjectShortName">\consolidator[2].expanded [63:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/\consolidator[2].consolidated ">
-      <obj_property name="ElementShortName">\consolidator[2].consolidated [31:0]</obj_property>
-      <obj_property name="ObjectShortName">\consolidator[2].consolidated [31:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/\consolidator[3].expanded ">
-      <obj_property name="ElementShortName">\consolidator[3].expanded [127:0]</obj_property>
-      <obj_property name="ObjectShortName">\consolidator[3].expanded [127:0]</obj_property>
-   </wvobject>
-   <wvobject type="array" fp_name="/sim_top/top_module/bus8_width_adjuster/\consolidator[3].consolidated ">
-      <obj_property name="ElementShortName">\consolidator[3].consolidated [63:0]</obj_property>
-      <obj_property name="ObjectShortName">\consolidator[3].consolidated [63:0]</obj_property>
+   <wvobject type="array" fp_name="/sim_top/top_module/apple_io_block/pending_req_write_data">
+      <obj_property name="ElementShortName">pending_req_write_data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">pending_req_write_data[7:0]</obj_property>
    </wvobject>
 </wave_config>

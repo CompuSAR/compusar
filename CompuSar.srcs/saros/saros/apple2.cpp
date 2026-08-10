@@ -17,22 +17,22 @@ namespace {
 
 constexpr size_t IO_BASE = 0xc000;
 
-constexpr size_t IO_KBD         = 0x00;
-constexpr size_t IO_KBDSTRB     = 0x10;
-constexpr size_t IO_TAPEOUT     = 0x20;
-constexpr size_t IO_SPKR        = 0x30;
-constexpr size_t IO_TXTCLR      = 0x50;
-constexpr size_t IO_TXTSET      = 0x51;
-constexpr size_t IO_MIXSET      = 0x53;
-constexpr size_t IO_TXTPAGE1    = 0x54;
-constexpr size_t IO_LORES       = 0x56;
-constexpr size_t IO_SETAN0      = 0x58;
-constexpr size_t IO_SETAN1      = 0x5a;
-constexpr size_t IO_CLRAN2      = 0x5d;
-constexpr size_t IO_CLRAN3      = 0x5f;
-constexpr size_t IO_TAPEIN      = 0x60;
-constexpr size_t IO_PADDL0      = 0x64;
-constexpr size_t IO_PTRIG       = 0x70;
+constexpr size_t IO_KBD         = IO_BASE + 0x00;
+constexpr size_t IO_KBDSTRB     = IO_BASE + 0x10;
+constexpr size_t IO_TAPEOUT     = IO_BASE + 0x20;
+constexpr size_t IO_SPKR        = IO_BASE + 0x30;
+constexpr size_t IO_TXTCLR      = IO_BASE + 0x50;
+constexpr size_t IO_TXTSET      = IO_BASE + 0x51;
+constexpr size_t IO_MIXSET      = IO_BASE + 0x53;
+constexpr size_t IO_TXTPAGE1    = IO_BASE + 0x54;
+constexpr size_t IO_LORES       = IO_BASE + 0x56;
+constexpr size_t IO_SETAN0      = IO_BASE + 0x58;
+constexpr size_t IO_SETAN1      = IO_BASE + 0x5a;
+constexpr size_t IO_CLRAN2      = IO_BASE + 0x5d;
+constexpr size_t IO_CLRAN3      = IO_BASE + 0x5f;
+constexpr size_t IO_TAPEIN      = IO_BASE + 0x60;
+constexpr size_t IO_PADDL0      = IO_BASE + 0x64;
+constexpr size_t IO_PTRIG       = IO_BASE + 0x70;
 
 constexpr uint32_t PagerDeviceNum = 0x80;
 
@@ -125,7 +125,7 @@ void start_8bit() {
 
     // Fill main memory with junk so it registers as a cold boot
     uart_send("Seed memory\n");
-    for( auto ptr = reinterpret_cast<uint32_t *>(BANK0_BASE); ptr != reinterpret_cast<uint32_t *>(BANK0_BASE + 64*1024); ++ptr )
+    for( auto ptr = reinterpret_cast<uint32_t *>(BANK0_BASE); ptr != reinterpret_cast<uint32_t *>(BANK0_BASE + 1024); ++ptr )
         *ptr = 0xff00ff00;
 
     saros.createThread( uartHandler, nullptr, "UART keyboard"_fs );
@@ -140,10 +140,9 @@ void start_8bit() {
 union IoOp {
     uint32_t value;
     struct {
-        uint32_t addr:8;
+        uint32_t addr:16;
         uint32_t data:8;
-        uint32_t padding:13;
-        uint32_t memReq:1;
+        uint32_t padding:6;
         uint32_t write:1;
         uint32_t pending:1;
     };
