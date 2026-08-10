@@ -11,7 +11,7 @@ module timer_int_ctrl#(
     input [31:0]        req_data_i,
     input               req_write_i,
     input               req_valid_i,
-    output logic        req_ready_o,
+    output logic        req_ready_o = 1'b1,
 
     // Response
     output logic[31:0]  rsp_data_o,
@@ -163,15 +163,12 @@ end
 always_comb begin
     // Handle request
 
-    req_ready_o = 1'bX;
     wait_cycle_next = wait_cycle;
     interrupt_cycle_next = interrupt_cycle;
     interrupt_cycle_high_latch_next = interrupt_cycle_high_latch;
     irq_masked_next = irq_masked;
 
     if( req_valid_i ) begin
-        req_ready_o = 1'b1;  // Accept request by default
-
         if( req_write_i ) begin
             // Write
             case(req_addr_i)

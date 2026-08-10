@@ -252,74 +252,39 @@ bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) dBus_width_adjuster(
 
 assign ctrl_iBus_rsp_payload_error = 0;
 
-logic ddr_ready, ddr_rsp_valid, ddr_write_data_ready;
-logic ddr_ctrl_cmd_valid, ddr_ctrl_cmd_ready, ddr_ctrl_rsp_valid;
-logic [31:0] ddr_ctrl_rsp_data;
-logic ddr_data_cmd_valid, ddr_data_cmd_ack, ddr_cmd_write, ddr_data_rsp_valid;
-logic [31:0] ddr_data_cmd_address;
-logic [127:0] ddr_cmd_write_data, ddr_data_rsp_read_data;
-logic irq_enable, irq_req_ack, irq_rsp_valid;
-logic [31:0] irq_rsp_data;
-logic spi_enable, spi_req_ack, spi_rsp_valid;
-logic [31:0] spi_rsp_data;
-logic gpio_enable, gpio_req_ack, gpio_rsp_valid;
-logic [31:0] gpio_rsp_data;
-logic uart_enable, uart_req_ack, uart_rsp_valid;
-logic [31:0] uart_rsp_data;
-logic display_enable, display_req_ack, display_rsp_valid;
-logic [31:0] display_rsp_data;
-logic sd_enable, sd_req_ack, sd_rsp_valid;
-logic [31:0] sd_rsp_data;
-logic dbglogger_enable, dbglogger_req_ack, dbglogger_rsp_valid;
-logic [31:0] dbglogger_rsp_data;
+enum {
+    IO_PORT_UART,
+    IO_PORT_DDR_CTRL,
+    IO_PORT_GPIO,
+    IO_PORT_INT,
+    IO_PORT_SPI,
+    IO_PORT_DISPLAY,
+    IO_PORT_SD,
+    IO_PORT_DBG_LOGGER,
 
-io_block iob(
+    IOPORT_NUM_PORTS
+} IO_PORTS_ASSIGNMENTS;
+
+sync_bus#(.ADDR_WIDTH(16)) io_ports_bus[IOPORT_NUM_PORTS]();
+
+assign io_ports_bus[IO_PORT_DDR_CTRL].req_ack = 1'b0;   // DDR controller is currently unused
+assign io_ports_bus[IO_PORT_DDR_CTRL].rsp_valid = 1'b0;
+
+logic ddr_data_cmd_valid, ddr_data_cmd_ack, ddr_cmd_write, ddr_data_rsp_valid;
+logic [127:0] ddr_cmd_write_data, ddr_data_rsp_read_data;
+logic [31:0] ddr_data_cmd_address;
+
+io_block#(
+    .NUM_PORTS(IOPORT_NUM_PORTS),
+    .FIRST_AUX_PORT(IOPORT_NUM_PORTS)
+) iob(
     .clock(ctrl_cpu_clock),
 
     .cpu_port(ctrl_dbus),
     .rsp_error(ctrl_dBus_rsp_error),
 
     .ddr_port(ctrl_ddr_bus),
-
-    .passthrough_ddr_ctrl_enable(ddr_ctrl_cmd_valid),
-    .passthrough_ddr_ctrl_req_ack(ddr_ctrl_cmd_ready),
-    .passthrough_ddr_ctrl_rsp_valid(ddr_ctrl_rsp_valid),
-    .passthrough_ddr_ctrl_data(ddr_ctrl_rsp_data),
-
-    .passthrough_irq_enable(irq_enable),
-    .passthrough_irq_req_ack(irq_req_ack),
-    .passthrough_irq_rsp_data(irq_rsp_data),
-    .passthrough_irq_rsp_valid(irq_rsp_valid),
-
-    .passthrough_spi_enable(spi_enable),
-    .passthrough_spi_req_ack(spi_req_ack),
-    .passthrough_spi_rsp_data(spi_rsp_data),
-    .passthrough_spi_rsp_valid(spi_rsp_valid),
-
-    .passthrough_gpio_enable(gpio_enable),
-    .passthrough_gpio_req_ack(gpio_req_ack),
-    .passthrough_gpio_rsp_data(gpio_rsp_data),
-    .passthrough_gpio_rsp_valid(gpio_rsp_valid),
-
-    .passthrough_uart_enable(uart_enable),
-    .passthrough_uart_req_ack(uart_req_ack),
-    .passthrough_uart_rsp_valid(uart_rsp_valid),
-    .passthrough_uart_rsp_data(uart_rsp_data),
-
-    .passthrough_display_enable(display_enable),
-    .passthrough_display_req_ack(display_req_ack),
-    .passthrough_display_rsp_data(display_rsp_data),
-    .passthrough_display_rsp_valid(display_rsp_valid),
-
-    .passthrough_sd_enable(sd_enable),
-    .passthrough_sd_req_ack(sd_req_ack),
-    .passthrough_sd_rsp_data(sd_rsp_data),
-    .passthrough_sd_rsp_valid(sd_rsp_valid),
-
-    .passthrough_dbglogger_enable(dbglogger_enable),
-    .passthrough_dbglogger_req_ack(dbglogger_req_ack),
-    .passthrough_dbglogger_rsp_data(dbglogger_rsp_data),
-    .passthrough_dbglogger_rsp_valid(dbglogger_rsp_valid)
+    .ports(io_ports_bus)
 );
 
 cache#(
@@ -385,13 +350,13 @@ display display_ctrl(
     .reset8_i(gp_out[0][GPIO_OUT0__DISPLAY8_RESET]),
     .vsync_irq_o(irq_lines[VSYNC_IRQ]),
 
-    .ctrl_req_valid_i(display_enable),
-    .ctrl_req_ack_o(display_req_ack),
-    .ctrl_req_addr_i(ctrl_dbus.req_addr[15:0]),
-    .ctrl_req_data_i(ctrl_dbus.req_data),
-    .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
-    .ctrl_rsp_valid_o(display_rsp_valid),
-    .ctrl_rsp_data_o(display_rsp_data),
+    .ctrl_req_valid_i(io_ports_bus[IO_PORT_DISPLAY].req_valid),
+    .ctrl_req_ack_o(io_ports_bus[IO_PORT_DISPLAY].req_ack),
+    .ctrl_req_addr_i(io_ports_bus[IO_PORT_DISPLAY].req_addr),
+    .ctrl_req_data_i(io_ports_bus[IO_PORT_DISPLAY].req_data),
+    .ctrl_req_write_i(io_ports_bus[IO_PORT_DISPLAY].req_write),
+    .ctrl_rsp_valid_o(io_ports_bus[IO_PORT_DISPLAY].rsp_valid),
+    .ctrl_rsp_data_o(io_ports_bus[IO_PORT_DISPLAY].rsp_data),
 
     .dma32_req_valid_o(cache_ports[CACHE_PORT_IDX_DISPLAY32].req_valid),
     .dma32_req_write_mask_o(cache_ports[CACHE_PORT_IDX_DISPLAY32].req_write_mask),
@@ -496,14 +461,15 @@ mig_ddr_ctrl ddr_ctrl(
 
 timer_int_ctrl#(.CLOCK_HZ(CTRL_CLOCK_HZ)) interrupt_controller(
     .clock(ctrl_cpu_clock),
-    .req_addr_i(ctrl_dbus.req_addr[15:0]),
-    .req_data_i(ctrl_dbus.req_data),
-    .req_write_i(ctrl_dBus_cmd_payload_wr),
-    .req_valid_i(irq_enable),
-    .req_ready_o(irq_req_ack),
 
-    .rsp_data_o(irq_rsp_data),
-    .rsp_valid_o(irq_rsp_valid),
+    .req_addr_i(io_ports_bus[IO_PORT_INT].req_addr),
+    .req_data_i(io_ports_bus[IO_PORT_INT].req_data),
+    .req_write_i(io_ports_bus[IO_PORT_INT].req_write),
+    .req_valid_i(io_ports_bus[IO_PORT_INT].req_valid),
+    .req_ready_o(io_ports_bus[IO_PORT_INT].req_ack),
+
+    .rsp_data_o(io_ports_bus[IO_PORT_INT].rsp_data),
+    .rsp_valid_o(io_ports_bus[IO_PORT_INT].rsp_valid),
 
     .irqs_i(irq_lines),
 
@@ -535,14 +501,15 @@ gpio#(
     .NUM_OUT_PORTS(GPIO_OUT_PORTS))
 gpio(
     .clock_i(ctrl_cpu_clock),
-    .req_addr_i(ctrl_dbus.req_addr[15:0]),
-    .req_data_i(ctrl_dbus.req_data),
-    .req_write_i(ctrl_dBus_cmd_payload_wr),
-    .req_valid_i(gpio_enable),
-    .req_ready_o(gpio_req_ack),
 
-    .rsp_data_o(gpio_rsp_data),
-    .rsp_valid_o(gpio_rsp_valid),
+    .req_addr_i(io_ports_bus[IO_PORT_GPIO].req_addr),
+    .req_data_i(io_ports_bus[IO_PORT_GPIO].req_data),
+    .req_write_i(io_ports_bus[IO_PORT_GPIO].req_write),
+    .req_valid_i(io_ports_bus[IO_PORT_GPIO].req_valid),
+    .req_ready_o(io_ports_bus[IO_PORT_GPIO].req_ack),
+
+    .rsp_data_o(io_ports_bus[IO_PORT_GPIO].rsp_data),
+    .rsp_valid_o(io_ports_bus[IO_PORT_GPIO].rsp_valid),
 
     .gp_in( '{ {26'b0, sd_data_idle, sd_card_detect_debounced_n, buffered_switches} } ),
     .gp_out( gp_out )
@@ -558,14 +525,14 @@ spi_ctrl#(.MEM_DATA_WIDTH(CACHELINE_BITS)) spi_flash(
     .spi_ref_clock_i(board_clock),
     .irq(),
 
-    .ctrl_cmd_valid_i(spi_enable),
-    .ctrl_cmd_address_i(ctrl_dbus.req_addr[15:0]),
-    .ctrl_cmd_data_i(ctrl_dbus.req_data),
-    .ctrl_cmd_write_i(ctrl_dBus_cmd_payload_wr),
-    .ctrl_cmd_ack_o(spi_req_ack),
+    .ctrl_cmd_valid_i(io_ports_bus[IO_PORT_SPI].req_valid),
+    .ctrl_cmd_address_i(io_ports_bus[IO_PORT_SPI].req_addr),
+    .ctrl_cmd_data_i(io_ports_bus[IO_PORT_SPI].req_data),
+    .ctrl_cmd_write_i(io_ports_bus[IO_PORT_SPI].req_write),
+    .ctrl_cmd_ack_o(io_ports_bus[IO_PORT_SPI].req_ack),
 
-    .ctrl_rsp_valid_o(spi_rsp_valid),
-    .ctrl_rsp_data_o(spi_rsp_data),
+    .ctrl_rsp_valid_o(io_ports_bus[IO_PORT_SPI].rsp_valid),
+    .ctrl_rsp_data_o(io_ports_bus[IO_PORT_SPI].rsp_data),
 
     .spi_cs_n_o(spi_cs_n),
     .spi_dq_io(spi_dq),
@@ -584,14 +551,14 @@ spi_ctrl#(.MEM_DATA_WIDTH(CACHELINE_BITS)) spi_flash(
 uart_ctrl#(.ClockDivider(SIM_MODE ? 10 : CTRL_CLOCK_HZ / UART_BAUD), .SimMode(SIM_MODE)) uart_ctrl(
     .clock( ctrl_cpu_clock ),
 
-    .req_valid_i(uart_enable),
-    .req_addr_i(ctrl_dbus.req_addr[15:0]),
-    .req_data_i(ctrl_dbus.req_data),
-    .req_write_i(ctrl_dBus_cmd_payload_wr),
-    .req_ack_o(uart_req_ack),
+    .req_valid_i(io_ports_bus[IO_PORT_UART].req_valid),
+    .req_addr_i(io_ports_bus[IO_PORT_UART].req_addr),
+    .req_data_i(io_ports_bus[IO_PORT_UART].req_data),
+    .req_write_i(io_ports_bus[IO_PORT_UART].req_write),
+    .req_ack_o(io_ports_bus[IO_PORT_UART].req_ack),
 
-    .rsp_valid_o(uart_rsp_valid),
-    .rsp_data_o(uart_rsp_data),
+    .rsp_valid_o(io_ports_bus[IO_PORT_UART].rsp_valid),
+    .rsp_data_o(io_ports_bus[IO_PORT_UART].rsp_data),
 
     .intr_send_ready_o(irq_lines[UART_SEND_IRQ]),
     .intr_recv_ready_o(irq_lines[UART_RECV_IRQ]),
@@ -608,14 +575,14 @@ assign irq_lines[SD_DATA_IDLE] = sd_data_idle;
 sd sd_ctrl(
     .ctrl_clock_i(ctrl_cpu_clock),
 
-    .ctrl_req_valid_i(sd_enable),
-    .ctrl_req_addr_i(ctrl_dbus.req_addr[15:0]),
-    .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
-    .ctrl_req_data_i(ctrl_dbus.req_data),
-    .ctrl_req_ack_o(sd_req_ack),
+    .ctrl_req_valid_i(io_ports_bus[IO_PORT_SD].req_valid),
+    .ctrl_req_addr_i(io_ports_bus[IO_PORT_SD].req_addr),
+    .ctrl_req_write_i(io_ports_bus[IO_PORT_SD].req_write),
+    .ctrl_req_data_i(io_ports_bus[IO_PORT_SD].req_data),
+    .ctrl_req_ack_o(io_ports_bus[IO_PORT_SD].req_ack),
 
-    .ctrl_rsp_valid_o(sd_rsp_valid),
-    .ctrl_rsp_data_o(sd_rsp_data),
+    .ctrl_rsp_valid_o(io_ports_bus[IO_PORT_SD].rsp_valid),
+    .ctrl_rsp_data_o(io_ports_bus[IO_PORT_SD].rsp_data),
 
     .ctrl_data_idle_irq_o(sd_data_idle),
 
@@ -701,14 +668,14 @@ dbglogger dbglogger(
     .log_data_i(dbglogger_data),
     .log_enable_i(dbglogger_trigger),
 
-    .ctrl_req_valid_i(dbglogger_enable),
-    .ctrl_req_addr_i(ctrl_dbus.req_addr[15:0]),
-    .ctrl_req_data_i(ctrl_dbus.req_data),
-    .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
-    .ctrl_req_ack_o(dbglogger_req_ack),
+    .ctrl_req_valid_i(io_ports_bus[IO_PORT_DBG_LOGGER].req_valid),
+    .ctrl_req_addr_i(io_ports_bus[IO_PORT_DBG_LOGGER].req_addr),
+    .ctrl_req_data_i(io_ports_bus[IO_PORT_DBG_LOGGER].req_data),
+    .ctrl_req_write_i(io_ports_bus[IO_PORT_DBG_LOGGER].req_write),
+    .ctrl_req_ack_o(io_ports_bus[IO_PORT_DBG_LOGGER].req_ack),
 
-    .ctrl_rsp_valid_o(dbglogger_rsp_valid),
-    .ctrl_rsp_data_o(dbglogger_rsp_data)
+    .ctrl_rsp_valid_o(io_ports_bus[IO_PORT_DBG_LOGGER].rsp_valid),
+    .ctrl_rsp_data_o(io_ports_bus[IO_PORT_DBG_LOGGER].rsp_data)
 );
 
 endmodule
