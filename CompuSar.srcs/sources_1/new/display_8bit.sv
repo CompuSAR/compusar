@@ -1,7 +1,6 @@
 `timescale 1ns / 1ps
 
 module display_8bit# (
-    SOUTH_BUS_WIDTH = 128,
     COORDINATE_WIDTH = 10
 )(
     // Ctrl clock signals
@@ -27,6 +26,8 @@ module display_8bit# (
     output logic [9:0] pixel_y,
     input pixel_ack
 );
+
+localparam SOUTH_BUS_WIDTH = $bits(dma.req_data);
 
 const enum { SCANLINES, INTERLACE, DOUBLE, SQUISH } dummy_var = DOUBLE;
 localparam DisplayMethod = DOUBLE;
@@ -126,22 +127,15 @@ always_ff@(posedge ctrl_clock_i) begin
     end
 end
 
-logic [REQ_BUS_BITS-1:0] dma_narrow_rsp_data;
+sync_bus_write_mask#(.DATA_WIDTH(REQ_BUS_BITS)) dma_narrow();
 
-bus_width_adjust#(.IN_WIDTH(REQ_BUS_BITS), .OUT_WIDTH(SOUTH_BUS_WIDTH), .ADDR_WIDTH(32)) dma_width_adjust(
+assign dma_narrow.req_write_mask = 0;
+
+bus_width_adjust dma_width_adjust(
     .clock_i(ctrl_clock_i),
 
-    .north_cmd_valid_i(dma.req_valid),
-    .north_cmd_addr_i(dma.req_addr),
-    .north_cmd_write_mask_i(0),
-    .north_cmd_write_data_i(),
-    .north_rsp_read_data_o(dma_narrow_rsp_data),
-
-    .south_cmd_ready_i(dma.req_ack),
-    .south_cmd_write_mask_o(),
-    .south_cmd_write_data_o(),
-    .south_rsp_valid_i(dma.rsp_valid),
-    .south_rsp_read_data_i(dma.rsp_data)
+    .north_port(dma_narrow),
+    .south_port(dma)
 );
 
 localparam PIPELINE_STAGES = 5;
@@ -254,19 +248,19 @@ logic pixel_cdc_valid_cpu = 1'b0, pixel_cdc_ack_cpi, pixel_cdc_valid_hdmi, pixel
 task do_cpu_cycle();
     if( !display_done && !frame_data_valid[PIPELINE_DMA] && !dma_req_sent ) begin
         // Initiate DMA fetch
-        dma.req_valid <= 1'b1;
-        dma.req_addr <= base_fetch_addr1 + dma_addr_offset;
+        dma_narrow.req_valid <= 1'b1;
+        dma_narrow.req_addr <= base_fetch_addr1 + dma_addr_offset;
         dma_req_sent <= 1'b1;
 
         frame_mode[PIPELINE_DMA] <= active_mode;
     end
 
-    if( dma.req_valid && dma.req_ack )
-        dma.req_valid <= 1'b0;
+    if( dma_narrow.req_valid && dma_narrow.req_ack )
+        dma_narrow.req_valid <= 1'b0;
 
-    if( dma.rsp_valid && dma_req_sent ) begin
+    if( dma_narrow.rsp_valid && dma_req_sent ) begin
         // Record DMA response
-        frame_data[PIPELINE_DMA] <= dma_narrow_rsp_data;
+        frame_data[PIPELINE_DMA] <= dma_narrow.rsp_data;
         frame_data_valid[PIPELINE_DMA] <= 1'b1;
         dma_req_sent <= 1'b0;
     end

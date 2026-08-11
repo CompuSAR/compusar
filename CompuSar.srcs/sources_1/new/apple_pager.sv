@@ -29,15 +29,8 @@ module apple_pager(
 
     output [31:0] mem_req_addr_o,
 
-    input ctrl_req_valid_i,
-    input ctrl_req_write_i,
-    input [15:0] ctrl_req_addr_i,
-    input [31:0] ctrl_req_data_i,
-    output ctrl_req_ack_o,
-
-    output logic ctrl_rsp_valid_o,
-    output logic[31:0] ctrl_rsp_data_o
-    );
+    sync_bus.SLAVE ctrl
+);
 
 
 typedef enum { MAIN, BANK_IO, BANK_D, BANKS_E_F } banks;
@@ -73,27 +66,27 @@ endfunction
 
 assign mem_req_addr_o = cpu_req_valid_i ? translate_addr(cpu_req_write_i, cpu_req_addr_i) : 32'hXXXXXXXX;
 
-assign ctrl_req_ack_o = 1'b1;
+assign ctrl.req_ack = 1'b1;
 
 always_ff@(posedge clock_i) begin
-    ctrl_rsp_valid_o <= ctrl_req_valid_i && !ctrl_req_write_i;
-    ctrl_rsp_data_o <= 32'hX;   // Reading the registers is not supported
+    ctrl.rsp_valid <= ctrl.req_valid && !ctrl.req_write;
+    ctrl.rsp_data <= 32'hX;   // Reading the registers is not supported
 
-    if( ctrl_req_valid_i ) begin
-        if( ctrl_req_write_i ) begin
-            case( ctrl_req_addr_i )
-                16'h0000:       mapper[MAIN][0]         <= ctrl_req_data_i;
-                16'h0004:       mapper[BANK_IO][0]      <= ctrl_req_data_i;
-                16'h0008:       mapper[BANK_D][0]       <= ctrl_req_data_i;
-                16'h000c:       mapper[BANKS_E_F][0]    <= ctrl_req_data_i;
-                16'h0800:       mapper[MAIN][1]         <= ctrl_req_data_i;
-                16'h0804:       mapper[BANK_IO][1]      <= ctrl_req_data_i;
-                16'h0808:       mapper[BANK_D][1]       <= ctrl_req_data_i;
-                16'h080c:       mapper[BANKS_E_F][1]    <= ctrl_req_data_i;
+    if( ctrl.req_valid ) begin
+        if( ctrl.req_write ) begin
+            case( ctrl.req_addr )
+                16'h0000:       mapper[MAIN][0]         <= ctrl.req_data;
+                16'h0004:       mapper[BANK_IO][0]      <= ctrl.req_data;
+                16'h0008:       mapper[BANK_D][0]       <= ctrl.req_data;
+                16'h000c:       mapper[BANKS_E_F][0]    <= ctrl.req_data;
+                16'h0800:       mapper[MAIN][1]         <= ctrl.req_data;
+                16'h0804:       mapper[BANK_IO][1]      <= ctrl.req_data;
+                16'h0808:       mapper[BANK_D][1]       <= ctrl.req_data;
+                16'h080c:       mapper[BANKS_E_F][1]    <= ctrl.req_data;
             endcase
         end else begin
             // CTRL CPU read request
-            ctrl_rsp_data_o <= 32'h0;
+            ctrl.rsp_data <= 32'h0;
         end
     end
 end

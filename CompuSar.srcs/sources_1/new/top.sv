@@ -619,42 +619,14 @@ dbglogger dbglogger(
 ////////////////////////////////////////////////////////////////////////////////
 // Start of Apple II only hardware region
 ////////////////////////////////////////////////////////////////////////////////
-wire bus8_req_valid, bus8_mem_req_valid, bus8_req_ack, bus8_rsp_valid, bus8_mem_rsp_valid;
-wire apple_io_req_ack;
-wire bus8_req_write, bus8_mem_req_write;
-wire [7:0] bus8_req_data, bus8_mem_req_data, bus8_rsp_data, bus8_mem_rsp_data;
-wire [15:0] bus8_req_addr, bus8_mem_req_addr;
-wire [31:0] bus8_paged_req_addr;
-
-bus_width_adjust#(.IN_WIDTH(8), .OUT_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(32)) bus8_width_adjuster(
-    .clock_i( ctrl_cpu_clock ),
-    .north_cmd_valid_i( cache_port_cmd_valid_s[CACHE_PORT_IDX_6502] ),
-    .north_cmd_addr_i( bus8_paged_req_addr ),
-    .north_cmd_write_mask_i( bus8_mem_req_write ),
-    .north_cmd_write_data_i( bus8_mem_req_data ),
-    .north_rsp_read_data_o( bus8_mem_rsp_data ),
-
-    .south_cmd_ready_i( cache_port_cmd_valid_s[CACHE_PORT_IDX_6502] ),
-    .south_cmd_write_mask_o( cache_port_cmd_write_mask_s[CACHE_PORT_IDX_6502] ),
-    .south_cmd_write_data_o( cache_port_cmd_write_data_s[CACHE_PORT_IDX_6502] ),
-    .south_rsp_valid_i( cache_port_rsp_valid_n[CACHE_PORT_IDX_6502] ),
-    .south_rsp_read_data_i( cache_port_rsp_read_data_n[CACHE_PORT_IDX_6502] )
-);
-
-freq_div_bus#() freq_div_6502(
-    .clock_i( ctrl_cpu_clock ),
-    .ctl_div_nom_i( BUS8_FREQ_DIV ),
-    .ctl_div_denom_i( 16'd1 ),
-    .reset_i( gp_out[0][GPIO_OUT0__FREQ_DIV_RESET] ),
-
-    .slow_cmd_valid_i( bus8_req_valid ),
-    .slow_cmd_ready_o( bus8_req_ack ),
-
-    .fast_cmd_valid_o( bus8_mem_req_valid ),
-    .fast_cmd_ready_i( apple_io_req_ack )
-    );
+sync_bus#(.DATA_WIDTH(8), .ADDR_WIDTH(16)) bus8_cpu(), bus8_mem();
+sync_bus_write_mask#(.DATA_WIDTH(8), .ADDR_WIDTH(32)) bus8_expanded();
 
 wire apple_cpu_sync, apple_cpu_vector_pull, apple_cpu_memory_lock;
+
+
+wire cpu8_req_valid_divided, cpu8_req_ack_divided;
+
 sar6502_sync apple_cpu(
     .clock_i( ctrl_cpu_clock ),
 
@@ -663,17 +635,31 @@ sar6502_sync apple_cpu(
     .irq_i( 1'b0 ),
     .set_overflow_i( 1'b0 ),
 
-    .bus_req_valid_o( bus8_req_valid ),
-    .bus_req_address_o( bus8_req_addr ),
-    .bus_req_write_o( bus8_req_write ),
-    .bus_req_ack_i( bus8_req_ack ),
-    .bus_req_data_o( bus8_req_data ),
-    .bus_rsp_valid_i( bus8_rsp_valid ),
-    .bus_rsp_data_i( bus8_rsp_data ),
+    .bus_req_valid_o( cpu8_req_valid_divided ),
+    .bus_req_address_o( bus8_cpu.req_addr ),
+    .bus_req_write_o( bus8_cpu.req_write ),
+    .bus_req_ack_i( cpu8_req_ack_divided ),
+    .bus_req_data_o( bus8_cpu.req_data ),
+    .bus_rsp_valid_i( bus8_cpu.rsp_valid ),
+    .bus_rsp_data_i( bus8_cpu.rsp_data ),
 
     .sync_o( apple_cpu_sync ),
     .vector_pull_o( apple_cpu_vector_pull ),
     .memory_lock_o( apple_cpu_memory_lock )
+);
+
+freq_div_bus freq_div_6502(
+    .clock_i( ctrl_cpu_clock ),
+    .clock_enable_i( 1'b1 ),
+    .ctl_div_nom_i( BUS8_FREQ_DIV ),
+    .ctl_div_denom_i( 16'd1 ),
+    .reset_i( gp_out[0][GPIO_OUT0__FREQ_DIV_RESET] ),
+
+    .slow_cmd_valid_i( cpu8_req_valid_divided ),
+    .slow_cmd_ready_o( cpu8_req_ack_divided ),
+
+    .fast_cmd_valid_o( bus8_cpu.req_valid ),
+    .fast_cmd_ready_i( bus8_cpu.req_ack )
 );
 
 logic apple_io_periph_req_valid[a2_io::NumPeripherals], apple_io_periph_req_ack[a2_io::NumPeripherals],
@@ -684,14 +670,7 @@ logic [15:0] apple_io_periph_req_addr[a2_io::NumPeripherals];
 apple_io apple_io_block(
     .clock_i( ctrl_cpu_clock ),
 
-    .cpu_req_valid_i( bus8_mem_req_valid ),
-    .cpu_req_ack_o( apple_io_req_ack ),
-    .cpu_req_write_i( bus8_req_write ),
-    .cpu_req_addr_i( bus8_req_addr ),
-    .cpu_req_data_i( bus8_req_data ),
-
-    .cpu_rsp_valid_o( bus8_rsp_valid ),
-    .cpu_rsp_data_o( bus8_rsp_data ),
+    .cpu_bus( bus8_cpu ),
 
     .perph_req_valid_o( apple_io_periph_req_valid ),
     .perph_req_ack_i( apple_io_periph_req_ack ),
@@ -702,59 +681,42 @@ apple_io apple_io_block(
     .perph_rsp_valid_i( apple_io_periph_rsp_valid ),
     .perph_rsp_read_data_i( apple_io_periph_rsp_read_data ),
 
-    .ctrl_req_valid_i( ctl_apple_io_enable ),
-    .ctrl_req_write_i( ctrl_dBus_cmd_payload_wr ),
-    .ctrl_req_addr_i( ctrl_dBus_cmd_payload_address[15:0] ),
-    .ctrl_req_data_i( ctrl_dBus_cmd_payload_data ),
-    .ctrl_req_ack_o( ctl_apple_io_req_ack ),
-    .ctrl_rsp_valid_o( ctl_apple_io_rsp_valid ),
-    .ctrl_rsp_data_o( ctl_apple_io_rsp_data ),
+    .ctrl(io_ports_bus[IO_PORT_APPLE_IO]),
 
     .ctrl_intr_o( ctrl_software_interrupt )
 );
 
-assign cache_port_cmd_valid_s[CACHE_PORT_IDX_6502] = apple_io_periph_req_valid[a2_io::Mem];
-assign apple_io_periph_req_ack[a2_io::Mem] = cache_port_cmd_ready_n[CACHE_PORT_IDX_6502];
-assign bus8_mem_req_write = apple_io_periph_req_write[a2_io::Mem];
-assign bus8_mem_req_data = apple_io_periph_req_write_data[a2_io::Mem];
-assign bus8_mem_req_addr = apple_io_periph_req_addr[a2_io::Mem];
-
-assign apple_io_periph_rsp_valid[a2_io::Mem] = cache_port_rsp_valid_n[CACHE_PORT_IDX_6502] ;
-assign apple_io_periph_rsp_read_data[a2_io::Mem] = bus8_mem_rsp_data ;
-
 apple_pager pager(
     .clock_i( ctrl_cpu_clock ),
 
-    .cpu_req_valid_i( cache_port_cmd_valid_s[CACHE_PORT_IDX_6502] ),
-    .cpu_req_write_i( bus8_mem_req_write ),
-    .cpu_req_addr_i( bus8_mem_req_addr ),
+    .cpu_req_valid_i( bus8_expanded.req_valid ),
+    .cpu_req_write_i( bus8_expanded.req_write_mask[0] ),
+    .cpu_req_addr_i( apple_io_periph_req_addr[a2_io::Mem] ),
 
-    .mem_req_addr_o( bus8_paged_req_addr ),
+    .mem_req_addr_o( bus8_expanded.req_addr ),
 
-    .ctrl_req_valid_i( apple_pager_enable ),
-    .ctrl_req_write_i( ctrl_dBus_cmd_payload_wr ),
-    .ctrl_req_addr_i( ctrl_dBus_cmd_payload_address[15:0] ),
-    .ctrl_req_data_i( ctrl_dBus_cmd_payload_data ),
-    .ctrl_req_ack_o( apple_pager_req_ack ),
-    .ctrl_rsp_valid_o( apple_pager_rsp_valid ),
-    .ctrl_rsp_data_o( apple_pager_rsp_data )
-
+    .ctrl(io_ports_bus[IO_PORT_APPLE_PAGER])
 );
 
-assign cache_port_cmd_addr_s[CACHE_PORT_IDX_6502] = bus8_paged_req_addr;
+assign bus8_expanded.req_valid = apple_io_periph_req_valid[a2_io::Mem];
+assign apple_io_periph_req_ack[a2_io::Mem] = bus8_expanded.req_ack;
+assign bus8_expanded.req_write_mask = apple_io_periph_req_write[a2_io::Mem];
+assign bus8_expanded.req_data = apple_io_periph_req_write_data[a2_io::Mem];
+assign apple_io_periph_rsp_valid[a2_io::Mem] = bus8_expanded.rsp_valid;
+assign apple_io_periph_rsp_read_data[a2_io::Mem] = bus8_expanded.rsp_data;
+
+bus_width_adjust bus8_width_adjuster(
+    .clock_i( ctrl_cpu_clock ),
+
+    .north_port(bus8_expanded),
+    .south_port( cache_ports[CACHE_PORT_IDX_6502] )
+);
 
 apple2_diskette_controller a2_disk(
     .clk_i(ctrl_cpu_clock),
     .reset_i(gp_out[0][GPIO_OUT0__A2_DISK_CTRL_RESET]),
 
-    .ctrl_req_valid_i(a2_disk_enable),
-    .ctrl_req_ack_o(a2_disk_req_ack),
-    .ctrl_req_addr_i(ctrl_dBus_cmd_payload_address[15:0]),
-    .ctrl_req_write_i(ctrl_dBus_cmd_payload_wr),
-    .ctrl_req_write_data_i(ctrl_dBus_cmd_payload_data),
-
-    .ctrl_rsp_valid_o(a2_disk_rsp_valid),
-    .ctrl_rsp_read_data_o(a2_disk_rsp_data),
+    .ctrl(io_ports_bus[IO_PORT_APPLE_DISKETTE]),
 
     .cpu_req_valid_i( apple_io_periph_req_valid[a2_io::Diskette] ),
     .cpu_req_ack_o( apple_io_periph_req_ack[a2_io::Diskette] ),
@@ -764,14 +726,7 @@ apple2_diskette_controller a2_disk(
     .cpu_rsp_valid_o( apple_io_periph_rsp_valid[a2_io::Diskette] ),
     .cpu_rsp_read_data_o( apple_io_periph_rsp_read_data[a2_io::Diskette] ),
 
-    .dma_req_valid_o(cache_port_cmd_valid_s[CACHE_PORT_IDX_APPLE_DISK]),
-    .dma_req_ack_i(cache_port_cmd_ready_n[CACHE_PORT_IDX_APPLE_DISK]),
-    .dma_req_addr_o(cache_port_cmd_addr_s[CACHE_PORT_IDX_APPLE_DISK]),
-    .dma_req_write_mask_o(cache_port_cmd_write_mask_s[CACHE_PORT_IDX_APPLE_DISK]),
-    .dma_req_write_data_o(cache_port_cmd_write_data_s[CACHE_PORT_IDX_APPLE_DISK]),
-
-    .dma_rsp_valid_i(cache_port_rsp_valid_n[CACHE_PORT_IDX_APPLE_DISK]),
-    .dma_rsp_read_data_i(cache_port_rsp_read_data_n[CACHE_PORT_IDX_APPLE_DISK])
+    .dma( cache_ports[CACHE_PORT_IDX_APPLE_DISK] )
 );
 
 
@@ -789,17 +744,17 @@ seg_display#(.FREQ_DIV(10000), .NUM_DIGITS(6), .SEG_ACTIVE_LOW(1)) debug_display
 
 logic debug_pending_req = 1'b0;
 always_ff@(posedge ctrl_cpu_clock) begin
-    if( bus8_req_valid && !bus8_req_write && apple_cpu_sync ) begin
-        debug_display_data[15:0] <= bus8_req_addr;
+    if( bus8_cpu.req_valid && !bus8_cpu.req_write && apple_cpu_sync ) begin
+        debug_display_data[15:0] <= bus8_cpu.req_addr;
         debug_pending_req <= 1'b1;
     end
 
-    if( debug_pending_req == 1'b1 && bus8_rsp_valid ) begin
-        debug_display_data[23:16] = bus8_rsp_data;
+    if( debug_pending_req == 1'b1 && bus8_cpu.rsp_valid ) begin
+        debug_display_data[23:16] = bus8_cpu.rsp_data;
         debug_pending_req <= 1'b0;
     end
 
-    if( bus8_req_valid && bus8_req_ack ) begin
+    if( bus8_cpu.req_valid && bus8_cpu.req_ack ) begin
         debug_display_point <= debug_display_point + 1;
     end
 end
