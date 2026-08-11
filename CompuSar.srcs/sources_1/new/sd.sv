@@ -1,31 +1,14 @@
 `timescale 1ns / 1ps
 
-module sd#(
-    DMA_WIDTH = 128
-)(
+module sd(
     input ctrl_clock_i,
     input reset_i,
 
-    input ctrl_req_valid_i,
-    input [15:0] ctrl_req_addr_i,
-    input ctrl_req_write_i,
-    input [31:0] ctrl_req_data_i,
-    output ctrl_req_ack_o,
-
-    output logic ctrl_rsp_valid_o = 1'b0,
-    output logic [31:0] ctrl_rsp_data_o,
+    sync_bus.SLAVE ctrl,
 
     output ctrl_data_idle_irq_o,
 
-
-    output logic dma_req_valid_o = 1'b0,
-    output logic [31:0] dma_req_addr_o,
-    output logic dma_req_write_o,
-    output [DMA_WIDTH-1:0] dma_req_data_o,
-    input dma_req_ack_i,
-
-    input dma_rsp_valid_i,
-    input [DMA_WIDTH-1:0] dma_rsp_data_i,
+    sync_bus_write_mask.MASTER dma,
 
 
     input sd_default_speed_clock_i,
@@ -38,6 +21,14 @@ module sd#(
     output logic[3:0] debug = 4'b0,
     output [3:0] debug2
 );
+
+localparam DMA_WIDTH = $bits(dma.req_data);
+
+localparam DMA_MASK_READ = { DMA_WIDTH{1'b0} };
+localparam DMA_MASK_WRITE = { DMA_WIDTH{1'b1} };
+
+initial ctrl.rsp_valid = 1'b0;
+initial dma.req_valid = 1'b0;
 
 logic sd_cmd_i, sd_cmd_o = 1'b1, sd_cmd_dir = 1'b1;
 
@@ -62,7 +53,7 @@ logic [DMA_WIDTH-1:0] data_cdc_data_sd;
 logic data_cdc_valid_ctrl, data_cdc_valid_sd, data_cdc_ack_ctrl = 1'b0, data_cdc_ack_sd;
 
 // Only accept new commands if our CDC is idle
-assign ctrl_req_ack_o = !cmd_cdc_valid_ctrl && !cmd_cdc_ack_ctrl;
+assign ctrl.req_ack = !cmd_cdc_valid_ctrl && !cmd_cdc_ack_ctrl;
 
 localparam REPLY_ERROR_TIMEOUT = 4'b0001;
 localparam REPLY_ERROR_CMD_MISMATCH = 4'b0010;
@@ -88,7 +79,7 @@ logic [31:0]  dma_address;
 
 always_ff@(posedge ctrl_clock_i) begin
     // Handle ctrl commands
-    ctrl_rsp_valid_o <= 1'b0;
+    ctrl.rsp_valid <= 1'b0;
 
     if( cdc_reply_valid_ctrl ) begin
         last_reply_ctrl <= cdc_reply_ctrl;
@@ -103,41 +94,41 @@ always_ff@(posedge ctrl_clock_i) begin
     if( status_data_started && status_data_active )
         status_data_started <= 1'b0;
 
-    if( ctrl_req_valid_i && ctrl_req_ack_o ) begin
-        if( ctrl_req_write_i ) begin
+    if( ctrl.req_valid && ctrl.req_ack ) begin
+        if( ctrl.req_write ) begin
             // Handle the write case
             cmd_cdc_valid_ctrl <= 1'b1;
-            case(ctrl_req_addr_i)
+            case(ctrl.req_addr)
                 16'h0000: begin
-                    cmd_cdc_data_ctrl <= { CMDCDC_ARG, ctrl_req_data_i };
+                    cmd_cdc_data_ctrl <= { CMDCDC_ARG, ctrl.req_data };
                 end
                 16'h0004: begin
-                    cmd_cdc_data_ctrl <= { CMDCDC_CMD, ctrl_req_data_i };
+                    cmd_cdc_data_ctrl <= { CMDCDC_CMD, ctrl.req_data };
                     status_reply_received <= 1'b0;
                     status_cmd_error <= 4'b0000;
-                    status_cmd_busy <= ctrl_req_data_i[8];
+                    status_cmd_busy <= ctrl.req_data[8];
                 end
                 16'h0100: begin
-                    dma_address <= ctrl_req_data_i;
+                    dma_address <= ctrl.req_data;
                     cmd_cdc_valid_ctrl <= 1'b0;
                 end
                 16'h0104: begin
-                    cmd_cdc_data_ctrl <= { CMDCDC_DATA, ctrl_req_data_i };
+                    cmd_cdc_data_ctrl <= { CMDCDC_DATA, ctrl.req_data };
                 end
             endcase
         end else begin
             // Handle the read case
-            ctrl_rsp_valid_o <= 1'b1;
-            case( ctrl_req_addr_i )
-                16'h0000: ctrl_rsp_data_o <= {
+            ctrl.rsp_valid <= 1'b1;
+            case( ctrl.req_addr )
+                16'h0000: ctrl.rsp_data <= {
                     status_cmd_busy, status_data_busy, 6'b0,
                     3'b0, status_data_error,
                     8'b0,
                     status_cmd_error, 3'b0, status_reply_received };
-                16'h0010: ctrl_rsp_data_o <= last_reply_ctrl[31:0];
-                16'h0014: ctrl_rsp_data_o <= last_reply_ctrl[63:32];
-                16'h0018: ctrl_rsp_data_o <= last_reply_ctrl[95:64];
-                16'h001c: ctrl_rsp_data_o <= last_reply_ctrl[127:96];
+                16'h0010: ctrl.rsp_data <= last_reply_ctrl[31:0];
+                16'h0014: ctrl.rsp_data <= last_reply_ctrl[63:32];
+                16'h0018: ctrl.rsp_data <= last_reply_ctrl[95:64];
+                16'h001c: ctrl.rsp_data <= last_reply_ctrl[127:96];
             endcase
         end
     end
@@ -146,14 +137,14 @@ always_ff@(posedge ctrl_clock_i) begin
     if( !data_cdc_valid_ctrl && data_cdc_ack_ctrl )
         data_cdc_ack_ctrl <= 1'b0;
 
-    if( data_cdc_valid_ctrl && !data_cdc_ack_ctrl && !dma_req_valid_o ) begin
-        dma_req_valid_o <= 1'b1;
-        dma_req_addr_o <= dma_address;
-        dma_req_write_o <= 1'b1;
+    if( data_cdc_valid_ctrl && !data_cdc_ack_ctrl && !dma.req_valid ) begin
+        dma.req_valid <= 1'b1;
+        dma.req_addr <= dma_address;
+        dma.req_write_mask <= DMA_MASK_WRITE;
     end
 
-    if( data_cdc_valid_ctrl && !data_cdc_ack_ctrl && dma_req_valid_o && dma_req_ack_i ) begin
-        dma_req_valid_o <= 1'b0;
+    if( data_cdc_valid_ctrl && !data_cdc_ack_ctrl && dma.req_valid && dma.req_ack ) begin
+        dma.req_valid <= 1'b0;
         data_cdc_ack_ctrl <= 1'b1;
         dma_address <= dma_address + DMA_WIDTH_BYTES;
     end
@@ -205,7 +196,7 @@ xpm_cdc_handshake#(
     .src_rcv(data_cdc_ack_sd),
 
     .dest_clk(ctrl_clock_i),
-    .dest_out(dma_req_data_o),
+    .dest_out(dma.req_data),
     .dest_req(data_cdc_valid_ctrl),
     .dest_ack(data_cdc_ack_ctrl)
 );

@@ -527,34 +527,18 @@ uart_ctrl#(.ClockDivider(SIM_MODE ? 10 : CTRL_CLOCK_HZ / UART_BAUD), .SimMode(SI
     .uart_rx(uart_rx)
 );
 
-logic sd_dma_write, sd_data_idle;
+logic sd_data_idle;
 
-assign cache_ports[CACHE_PORT_IDX_SD].req_write_mask = sd_dma_write ? DMA_WRITE_ALL_SET : DMA_WRITE_ALL_CLEAR;
 assign irq_lines[SD_DATA_IDLE] = sd_data_idle;
 
 sd sd_ctrl(
     .ctrl_clock_i(ctrl_cpu_clock),
 
-    .ctrl_req_valid_i(io_ports_bus[IO_PORT_SD].req_valid),
-    .ctrl_req_addr_i(io_ports_bus[IO_PORT_SD].req_addr),
-    .ctrl_req_write_i(io_ports_bus[IO_PORT_SD].req_write),
-    .ctrl_req_data_i(io_ports_bus[IO_PORT_SD].req_data),
-    .ctrl_req_ack_o(io_ports_bus[IO_PORT_SD].req_ack),
-
-    .ctrl_rsp_valid_o(io_ports_bus[IO_PORT_SD].rsp_valid),
-    .ctrl_rsp_data_o(io_ports_bus[IO_PORT_SD].rsp_data),
+    .ctrl(io_ports_bus[IO_PORT_SD]),
 
     .ctrl_data_idle_irq_o(sd_data_idle),
 
-
-    .dma_req_valid_o(cache_ports[CACHE_PORT_IDX_SD].req_valid),
-    .dma_req_addr_o(cache_ports[CACHE_PORT_IDX_SD].req_addr),
-    .dma_req_write_o(sd_dma_write),
-    .dma_req_data_o(cache_ports[CACHE_PORT_IDX_SD].req_data),
-    .dma_req_ack_i(cache_ports[CACHE_PORT_IDX_SD].req_ack),
-
-    .dma_rsp_valid_i(cache_ports[CACHE_PORT_IDX_SD].rsp_valid),
-    .dma_rsp_data_i(cache_ports[CACHE_PORT_IDX_SD].rsp_data),
+    .dma(cache_ports[CACHE_PORT_IDX_SD]),
 
 
     .sd_default_speed_clock_i(bus_clock_25),
