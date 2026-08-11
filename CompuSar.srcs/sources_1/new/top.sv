@@ -158,10 +158,9 @@ localparam CACHE_PORT_IDX_SPI_FLASH = 5;
 
 sync_bus_write_mask#(.DATA_WIDTH(CACHELINE_BITS), .ADDR_WIDTH(32)) inst_cache_ports[1]();
 
-sync_bus_write_mask ctrl_dbus(), ctrl_ddr_bus();
+sync_bus_write_mask ctrl_dbus(), ctrl_ddr_bus(), ctrl_ibus();
 
 logic           ctrl_iBus_rsp_payload_error;
-logic [31:0]    ctrl_iBus_rsp_payload_inst;
 
 logic           ctrl_dBus_cmd_payload_wr;
 logic [3:0]     ctrl_dBus_cmd_payload_mask;
@@ -191,12 +190,12 @@ VexRiscv control_cpu(
     .externalInterrupt(ctrl_ext_interrupt),
     .softwareInterrupt(ctrl_software_interrupt),
 
-    .iBus_cmd_ready(inst_cache_ports[0].req_ack),
-    .iBus_cmd_valid(inst_cache_ports[0].req_valid),
-    .iBus_cmd_payload_pc(inst_cache_ports[0].req_addr),
-    .iBus_rsp_valid(inst_cache_ports[0].rsp_valid),
+    .iBus_cmd_ready(ctrl_ibus.req_ack),
+    .iBus_cmd_valid(ctrl_ibus.req_valid),
+    .iBus_cmd_payload_pc(ctrl_ibus.req_addr),
+    .iBus_rsp_valid(ctrl_ibus.rsp_valid),
     .iBus_rsp_payload_error(ctrl_iBus_rsp_payload_error),
-    .iBus_rsp_payload_inst(ctrl_iBus_rsp_payload_inst),
+    .iBus_rsp_payload_inst(ctrl_ibus.rsp_data),
 
     .dBus_cmd_valid(ctrl_dbus.req_valid),
     .dBus_cmd_payload_address(ctrl_dbus.req_addr),
@@ -212,42 +211,20 @@ VexRiscv control_cpu(
 
 assign ctrl_dbus.req_write_mask = ctrl_dBus_cmd_payload_wr ? ctrl_dBus_cmd_payload_mask : 4'b0000;
 
-bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) iBus_width_adjuster(
-        .clock_i(ctrl_cpu_clock),
-        .north_cmd_valid_i(inst_cache_ports[0].req_valid),
-        .north_cmd_addr_i(inst_cache_ports[0].req_addr),
-        .north_cmd_write_mask_i(4'b0000),
-        .north_cmd_write_data_i(32'h0),
-        .north_rsp_read_data_o(ctrl_iBus_rsp_payload_inst),
+assign ctrl_ibus.req_write_mask = 4'b0000;
 
-        .south_cmd_ready_i(inst_cache_ports[0].req_ack),
-        .south_cmd_write_mask_o(),
-        .south_cmd_write_data_o(),
-        .south_rsp_valid_i(inst_cache_ports[0].rsp_valid),
-        .south_rsp_read_data_i(inst_cache_ports[0].rsp_data)
+bus_width_adjust iBus_width_adjuster(
+        .clock_i(ctrl_cpu_clock),
+
+        .north_port(ctrl_ibus),
+        .south_port(inst_cache_ports[0])
     );
-assign inst_cache_ports[0].req_write_mask = 0;
 
-assign cache_ports[CACHE_PORT_IDX_DBUS].req_addr = ctrl_dbus.req_addr; // XXX Replace with follow on bus
-
-assign cache_ports[CACHE_PORT_IDX_DBUS].req_valid = ctrl_ddr_bus.req_valid;
-assign ctrl_ddr_bus.req_ack = cache_ports[CACHE_PORT_IDX_DBUS].req_ack;
-assign ctrl_ddr_bus.rsp_valid = cache_ports[CACHE_PORT_IDX_DBUS].rsp_valid;
-
-bus_width_adjust#(.OUT_WIDTH(CACHELINE_BITS)) dBus_width_adjuster(
+bus_width_adjust dBus_width_adjuster(
         .clock_i(ctrl_cpu_clock),
 
-        .north_cmd_valid_i(ctrl_ddr_bus.req_valid),
-        .north_cmd_addr_i(ctrl_ddr_bus.req_addr),
-        .north_cmd_write_mask_i(ctrl_ddr_bus.req_write_mask),
-        .north_cmd_write_data_i(ctrl_ddr_bus.req_data),
-        .north_rsp_read_data_o(ctrl_ddr_bus.rsp_data),
-
-        .south_cmd_ready_i(cache_ports[CACHE_PORT_IDX_DBUS].req_ack),
-        .south_cmd_write_mask_o(cache_ports[CACHE_PORT_IDX_DBUS].req_write_mask),
-        .south_cmd_write_data_o(cache_ports[CACHE_PORT_IDX_DBUS].req_data),
-        .south_rsp_valid_i(cache_ports[CACHE_PORT_IDX_DBUS].rsp_valid),
-        .south_rsp_read_data_i(cache_ports[CACHE_PORT_IDX_DBUS].rsp_data)
+        .north_port(ctrl_ddr_bus),
+        .south_port(cache_ports[CACHE_PORT_IDX_DBUS])
     );
 
 assign ctrl_iBus_rsp_payload_error = 0;
