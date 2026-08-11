@@ -475,37 +475,19 @@ gpio(
     .gp_out( gp_out )
 );
 
-wire spi_flash_dma_write;
-
-assign cache_ports[CACHE_PORT_IDX_SPI_FLASH].req_write_mask = spi_flash_dma_write ? DMA_WRITE_ALL_SET : DMA_WRITE_ALL_CLEAR;
-
-spi_ctrl#(.MEM_DATA_WIDTH(CACHELINE_BITS)) spi_flash(
+spi_ctrl spi_flash(
     .cpu_clock_i(ctrl_cpu_clock),
     //.spi_ref_clock_i(bus_clock_50),
     .spi_ref_clock_i(board_clock),
     .irq(),
 
-    .ctrl_cmd_valid_i(io_ports_bus[IO_PORT_SPI].req_valid),
-    .ctrl_cmd_address_i(io_ports_bus[IO_PORT_SPI].req_addr),
-    .ctrl_cmd_data_i(io_ports_bus[IO_PORT_SPI].req_data),
-    .ctrl_cmd_write_i(io_ports_bus[IO_PORT_SPI].req_write),
-    .ctrl_cmd_ack_o(io_ports_bus[IO_PORT_SPI].req_ack),
-
-    .ctrl_rsp_valid_o(io_ports_bus[IO_PORT_SPI].rsp_valid),
-    .ctrl_rsp_data_o(io_ports_bus[IO_PORT_SPI].rsp_data),
+    .ctrl(io_ports_bus[IO_PORT_SPI]),
 
     .spi_cs_n_o(spi_cs_n),
     .spi_dq_io(spi_dq),
     .spi_clk_o(spi_clk),
 
-    .dma_cmd_valid_o(cache_ports[CACHE_PORT_IDX_SPI_FLASH].req_valid),
-    .dma_cmd_address_o(cache_ports[CACHE_PORT_IDX_SPI_FLASH].req_addr),
-    .dma_cmd_data_o(cache_ports[CACHE_PORT_IDX_SPI_FLASH].req_data),
-    .dma_cmd_write_o(spi_flash_dma_write),
-    .dma_cmd_ack_i(cache_ports[CACHE_PORT_IDX_SPI_FLASH].req_ack),
-
-    .dma_rsp_valid_i(cache_ports[CACHE_PORT_IDX_SPI_FLASH].rsp_valid),
-    .dma_rsp_data_i(cache_ports[CACHE_PORT_IDX_SPI_FLASH].rsp_data)
+    .dma(cache_ports[CACHE_PORT_IDX_SPI_FLASH])
 );
 
 uart_ctrl#(.ClockDivider(SIM_MODE ? 10 : CTRL_CLOCK_HZ / UART_BAUD), .SimMode(SIM_MODE)) uart_ctrl(

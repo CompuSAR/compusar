@@ -1,9 +1,6 @@
 `timescale 1ns / 1ps
 
-module spi_ctrl#(
-    parameter MEM_DATA_WIDTH = 32
-)
-(
+module spi_ctrl(
     // Control interface
     input                       cpu_clock_i,
     input                       spi_ref_clock_i,
@@ -11,36 +8,25 @@ module spi_ctrl#(
 
     output logic[3:0]           debug,
 
-    input                       ctrl_cmd_valid_i,
-    input [15:0]                ctrl_cmd_address_i,
-    input [31:0]                ctrl_cmd_data_i,
-    input                       ctrl_cmd_write_i,
-    output                      ctrl_cmd_ack_o,
-
-    output logic                ctrl_rsp_valid_o,
-    output logic[31:0]          ctrl_rsp_data_o,
+    sync_bus.SLAVE              ctrl,
 
     // SPI interface
     output logic                spi_cs_n_o,
     inout [3:0]                 spi_dq_io,
     output                      spi_clk_o,
 
-    // DMA interface
-    output logic                dma_cmd_valid_o,
-    output logic[31:0]          dma_cmd_address_o,
-    output [MEM_DATA_WIDTH-1:0] dma_cmd_data_o,
-    output logic                dma_cmd_write_o,
-    input                       dma_cmd_ack_i,
-
-    input                       dma_rsp_valid_i,
-    input [MEM_DATA_WIDTH-1:0]  dma_rsp_data_i
+    sync_bus_write_mask.MASTER  dma
 );
 
+localparam MEM_DATA_WIDTH = $bits(dma.req_data);
 localparam MEM_DATA_WIDTH_BYTES = MEM_DATA_WIDTH/8;
 
 /*********************************************************************************
 * CPU clock logic
 *********************************************************************************/
+
+logic dma_req_write;
+assign dma.req_write_mask = dma_req_write ? { MEM_DATA_WIDTH{1'b1} } : { MEM_DATA_WIDTH{1'b0} };
 
 // SPI commands scan the bytes LSB but the bits in the byte MSB, so we need to
 // shuffle the bits around a bit.
@@ -104,10 +90,10 @@ task start_transaction();
 endtask
 
 task wait_transaction();
-    ctrl_rsp_data_o <= 32'b0;
+    ctrl.rsp_data <= 32'b0;
 endtask
 
-assign ctrl_cmd_ack_o = !cpu_transaction_active;
+assign ctrl.req_ack = !cpu_transaction_active;
 
 logic cpu_dma_read_in_progress = 1'b0, cpu_dma_read_in_progress_next;
 logic [MEM_DATA_WIDTH-1:0] cpu_data_buffer;
@@ -116,30 +102,30 @@ logic cpu_data_buffer_full = 1'b0;
 assign cpu_dma_read_data = cpu_data_buffer;
 
 always_ff@(posedge cpu_clock_i) begin
-    ctrl_rsp_valid_o <= 1'b0;
+    ctrl.rsp_valid <= 1'b0;
 
-    if( ctrl_cmd_valid_i && ctrl_cmd_ack_o ) begin
-        if( ctrl_cmd_write_i ) begin
+    if( ctrl.req_valid && ctrl.req_ack ) begin
+        if( ctrl.req_write ) begin
             // Write
-            case( ctrl_cmd_address_i )
+            case( ctrl.req_addr )
                 16'h0000: start_transaction();
-                16'h0004: cpu_dma_addr_send <= ctrl_cmd_data_i;
-                16'h0008: cpu_num_send_cycles <= ctrl_cmd_data_i;
-                16'h000c: cpu_dma_addr_recv <= ctrl_cmd_data_i;
-                16'h0010: cpu_num_recv_cycles <= ctrl_cmd_data_i;
-                16'h0014: cpu_transfer_mode <= ctrl_cmd_data_i;
+                16'h0004: cpu_dma_addr_send <= ctrl.req_data;
+                16'h0008: cpu_num_send_cycles <= ctrl.req_data;
+                16'h000c: cpu_dma_addr_recv <= ctrl.req_data;
+                16'h0010: cpu_num_recv_cycles <= ctrl.req_data;
+                16'h0014: cpu_transfer_mode <= ctrl.req_data;
                 default: cpu_set_invalid_state();
             endcase
         end else begin
             // Read
-            ctrl_rsp_valid_o <= 1'b1;
-            case( ctrl_cmd_address_i )
+            ctrl.rsp_valid <= 1'b1;
+            case( ctrl.req_addr )
                 16'h0000: wait_transaction();
-                16'h0004: ctrl_rsp_data_o <= cpu_dma_addr_send;
-                16'h0008: ctrl_rsp_data_o <= cpu_num_send_cycles;
-                16'h000c: ctrl_rsp_data_o <= cpu_dma_addr_recv;
-                16'h0010: ctrl_rsp_data_o <= cpu_num_recv_cycles;
-                16'h0014: ctrl_rsp_data_o <= cpu_transfer_mode;
+                16'h0004: ctrl.rsp_data <= cpu_dma_addr_send;
+                16'h0008: ctrl.rsp_data <= cpu_num_send_cycles;
+                16'h000c: ctrl.rsp_data <= cpu_dma_addr_recv;
+                16'h0010: ctrl.rsp_data <= cpu_num_recv_cycles;
+                16'h0014: ctrl.rsp_data <= cpu_transfer_mode;
             endcase
         end
     end
@@ -152,7 +138,7 @@ always_ff@(posedge cpu_clock_i) begin
 
     cpu_dma_read_in_progress <= cpu_dma_read_in_progress_next;
 
-    if( cpu_dma_read_in_progress && dma_rsp_valid_i ) begin
+    if( cpu_dma_read_in_progress && dma.rsp_valid ) begin
         // DMA read in progress
         cpu_data_buffer <= dma_rsp_data_mixed;
         cpu_data_buffer_full <= 1'b1;
@@ -161,7 +147,7 @@ always_ff@(posedge cpu_clock_i) begin
         cpu_dma_read_in_progress <= 1'b0;
     end
 
-    if( dma_cmd_valid_o && dma_cmd_write_o && dma_cmd_ack_i ) begin
+    if( dma.req_valid && dma_req_write && dma.req_ack ) begin
         // DMA write sent
         cpu_dma_addr_recv <= cpu_dma_addr_recv + MEM_DATA_WIDTH_BYTES;
     end
@@ -172,7 +158,7 @@ always_ff@(posedge cpu_clock_i) begin
     if( cpu_data_buffer_full && cpu_dma_read_valid && cpu_dma_read_ack )
         cpu_data_buffer_full <= 1'b0;
 
-    if( dma_cmd_valid_o && dma_cmd_write_o && dma_cmd_ack_i ) begin
+    if( dma.req_valid && dma_req_write && dma.req_ack ) begin
         cpu_dma_write_ack <= 1'b1;
         cpu_dma_addr_send <= cpu_dma_addr_send + MEM_DATA_WIDTH_BYTES;
         cpu_recv_counter <= cpu_recv_counter - 1;
@@ -184,31 +170,31 @@ end
 
 always_comb begin
     cpu_dma_read_in_progress_next = cpu_dma_read_in_progress;
-    dma_cmd_valid_o = 1'b0;
+    dma.req_valid = 1'b0;
     dma_cmd_data_mixed = { MEM_DATA_WIDTH{1'bX} };
-    dma_cmd_write_o = 1'bX;
-    dma_cmd_address_o = 32'bX;
+    dma_req_write = 1'bX;
+    dma.req_addr = 32'bX;
 
     if( cpu_transaction_active ) begin
         if( cpu_send_counter>0 ) begin
             // DMA read
             if( !cpu_data_buffer_full ) begin
                 if( cpu_send_idle && !cpu_dma_read_in_progress ) begin
-                    dma_cmd_valid_o = 1'b1;
-                    dma_cmd_address_o = cpu_dma_addr_send;
-                    dma_cmd_write_o = 1'b0;
+                    dma.req_valid = 1'b1;
+                    dma.req_addr = cpu_dma_addr_send;
+                    dma_req_write = 1'b0;
 
-                    if( dma_cmd_ack_i )
+                    if( dma.req_ack )
                         cpu_dma_read_in_progress_next = 1'b1;
                 end
             end
         end else begin
             // DMA write
             if( cpu_dma_write_valid && !cpu_dma_write_ack ) begin
-                dma_cmd_valid_o = 1'b1;
-                dma_cmd_write_o = 1'b1;
+                dma.req_valid = 1'b1;
+                dma_req_write = 1'b1;
                 dma_cmd_data_mixed = cpu_dma_write_data;
-                dma_cmd_address_o = cpu_dma_addr_recv;
+                dma.req_addr = cpu_dma_addr_recv;
             end
         end
     end
@@ -221,9 +207,9 @@ generate
 for( i=0; i<MEM_DATA_WIDTH_BYTES; i+=1 ) begin
     for( j=0; j<8; j++ ) begin
         // Send data shifts down and needs the bits in each byte reversed
-        assign dma_rsp_data_mixed[i*8+7-j] = dma_rsp_data_i[i*8+j];
+        assign dma_rsp_data_mixed[i*8+7-j] = dma.rsp_data[i*8+j];
         // Recv data shifts up, and needs the byte order reversed
-        assign dma_cmd_data_o[i*8+j] = dma_cmd_data_mixed[(MEM_DATA_WIDTH_BYTES-i-1)*8+j];
+        assign dma.req_data[i*8+j] = dma_cmd_data_mixed[(MEM_DATA_WIDTH_BYTES-i-1)*8+j];
     end
 end
 
