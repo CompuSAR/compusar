@@ -493,14 +493,7 @@ spi_ctrl spi_flash(
 uart_ctrl#(.ClockDivider(SIM_MODE ? 10 : CTRL_CLOCK_HZ / UART_BAUD), .SimMode(SIM_MODE)) uart_ctrl(
     .clock( ctrl_cpu_clock ),
 
-    .req_valid_i(io_ports_bus[IO_PORT_UART].req_valid),
-    .req_addr_i(io_ports_bus[IO_PORT_UART].req_addr),
-    .req_data_i(io_ports_bus[IO_PORT_UART].req_data),
-    .req_write_i(io_ports_bus[IO_PORT_UART].req_write),
-    .req_ack_o(io_ports_bus[IO_PORT_UART].req_ack),
-
-    .rsp_valid_o(io_ports_bus[IO_PORT_UART].rsp_valid),
-    .rsp_data_o(io_ports_bus[IO_PORT_UART].rsp_data),
+    .ctrl(io_ports_bus[IO_PORT_UART]),
 
     .intr_send_ready_o(irq_lines[UART_SEND_IRQ]),
     .intr_recv_ready_o(irq_lines[UART_RECV_IRQ]),

@@ -8,14 +8,7 @@ module uart_ctrl#(
 (
     input clock,
 
-    input [15:0] req_addr_i,
-    input req_valid_i,
-    input req_write_i,
-    input [31:0] req_data_i,
-    output logic req_ack_o,
-
-    output logic rsp_valid_o,
-    output logic[31:0] rsp_data_o,
+    sync_bus.SLAVE ctrl,
 
     output logic intr_send_ready_o,
     output logic intr_recv_ready_o = 1'b0,
@@ -42,10 +35,10 @@ end
 
 always_comb begin
     if( !SimMode ) begin
-        req_ack_o = intr_send_ready_o || req_addr_i!=16'h0;
+        ctrl.req_ack = intr_send_ready_o || ctrl.req_addr!=16'h0;
         intr_send_ready_o = receive_ready;
     end else begin
-        req_ack_o = 1'b1;
+        ctrl.req_ack = 1'b1;
         intr_send_ready_o = 1'b1;
     end
 end
@@ -74,29 +67,29 @@ uart_recv(
 
 always_ff@(posedge clock) begin
     uart_send_data_ready <= 1'b0;
-    rsp_valid_o <= 1'b0;
-    rsp_data_o <= 32'hXXXXXXXX;
+    ctrl.rsp_valid <= 1'b0;
+    ctrl.rsp_data <= 32'hXXXXXXXX;
 
-    if( req_ack_o && req_valid_i ) begin
+    if( ctrl.req_ack && ctrl.req_valid ) begin
         // We have a control request
-        if( req_write_i ) begin
+        if( ctrl.req_write ) begin
             // Write
-            case( req_addr_i )
+            case( ctrl.req_addr )
                 REG_UART_DATA: begin
                     uart_send_data_ready <= 1'b1;
-                    uart_send_data <= req_data_i;
+                    uart_send_data <= ctrl.req_data;
                 end
             endcase
         end else begin
-            rsp_valid_o <= 1'b1;
+            ctrl.rsp_valid <= 1'b1;
             // Read
-            case( req_addr_i )
+            case( ctrl.req_addr )
                 REG_UART_DATA: begin
-                    rsp_data_o <= {~intr_recv_ready_o, 23'h0, uart_recv_data_latched};
+                    ctrl.rsp_data <= {~intr_recv_ready_o, 23'h0, uart_recv_data_latched};
                     intr_recv_ready_o <= 1'b0;
                 end
-                REG_UART_STATUS: rsp_data_o <= { {30{1'b0}}, intr_recv_ready_o, intr_send_ready_o };
-                default: rsp_data_o <= 32'hXXXXXXXX;
+                REG_UART_STATUS: ctrl.rsp_data <= { {30{1'b0}}, intr_recv_ready_o, intr_send_ready_o };
+                default: ctrl.rsp_data <= 32'hXXXXXXXX;
             endcase
         end
     end
