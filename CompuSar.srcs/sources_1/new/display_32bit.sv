@@ -1,7 +1,6 @@
 `timescale 1ns / 1ps
 
 module display_32bit#(
-    SOUTH_BUS_WIDTH = 128,
     COORDINATE_WIDTH = 10
 )(
     // Ctrl clock signals
@@ -17,11 +16,7 @@ module display_32bit#(
     input [COORDINATE_WIDTH-1:0] frame_start_x,
     input [COORDINATE_WIDTH-1:0] frame_start_y,
 
-    output logic dma_req_valid_o = 1'b0,
-    output logic [31:0] dma_req_addr_o,
-    input dma_req_ack_i,
-    input dma_rsp_valid_i,
-    input [SOUTH_BUS_WIDTH-1:0] dma_rsp_data_i,
+    sync_bus_write_mask.MASTER dma,
 
     // Pixel clock signals
     input pixel_clock_i,
@@ -33,6 +28,8 @@ module display_32bit#(
     input pixel_ack
 );
 
+localparam SOUTH_BUS_WIDTH = $bits(dma.req_data);
+
 localparam PIXELS_BURST = SOUTH_BUS_WIDTH/8;
 localparam TRANSPARENT_PIXEL = { 1'b1, 8'h00, 8'b00100100, 8'h00 };
 
@@ -42,6 +39,9 @@ localparam PIPELINE_DMA = 0;
 localparam PIPELINE_CDC_CPU = 1;
 localparam PIPELINE_HDMI = 2;
 localparam PIPELINE_OUT = 3;
+
+initial dma.req_valid = 1'b0;
+assign dma.req_write_mask = { SOUTH_BUS_WIDTH{1'b0} };
 
 logic [SOUTH_BUS_WIDTH-1:0] frame_data[PIPELINE_STAGES];
 logic [PIPELINE_STAGES-1:0] frame_data_valid = 0;
@@ -64,7 +64,7 @@ task do_reset();
 
     frame_width <= frame_width_i;
     frame_height <= frame_height_i;
-    dma_req_addr_o <= frame_base_addr_i;
+    dma.req_addr <= frame_base_addr_i;
     frame_x[PIPELINE_DMA] <= frame_start_x;
     frame_y[PIPELINE_DMA] <= frame_start_y;
     current_x <= 0;
@@ -91,7 +91,7 @@ task do_cpu_cycle();
         frame_y[PIPELINE_CDC_CPU] <= frame_y[PIPELINE_DMA] + current_y;
 
         frame_data_valid[PIPELINE_DMA] <= 1'b0;
-        dma_req_addr_o <= dma_req_addr_o + PIXELS_BURST;
+        dma.req_addr <= dma.req_addr + PIXELS_BURST;
 
         // Advance coordinates
         if( current_x < (frame_width - PIXELS_BURST) ) begin
@@ -104,20 +104,20 @@ task do_cpu_cycle();
         end
     end
 
-    if( dma_rsp_valid_i && dma_req_sent ) begin
+    if( dma.rsp_valid && dma_req_sent ) begin
         // Response to DMA request
-        frame_data[PIPELINE_DMA] <= dma_rsp_data_i;
+        frame_data[PIPELINE_DMA] <= dma.rsp_data;
         frame_data_valid[PIPELINE_DMA] <= 1'b1;
 
         dma_req_sent <= 1'b0;
     end
 
-    if( dma_req_valid_o && dma_req_ack_i ) begin
-        dma_req_valid_o <= 1'b0;
+    if( dma.req_valid && dma.req_ack ) begin
+        dma.req_valid <= 1'b0;
     end
 
     if( !frame_data_valid[PIPELINE_DMA] && !dma_req_sent && !display_done ) begin
-        dma_req_valid_o <= 1'b1;
+        dma.req_valid <= 1'b1;
         dma_req_sent <= 1'b1;
     end
 endtask

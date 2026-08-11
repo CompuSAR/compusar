@@ -25,6 +25,8 @@ module freq_div_bus#( COUNTER_BITS = 32 )
     input clock_i,
     input reset_i,
 
+    input clock_enable_i,
+
     input [15:0] ctl_div_nom_i,
     input [15:0] ctl_div_denom_i,
 
@@ -44,7 +46,7 @@ always_ff@(posedge clock_i, posedge reset_i)
 begin
     if( reset_i ) begin
         counter <= {COUNTER_BITS+1{1'b1}};
-    end else begin
+    end else if( clock_enable_i ) begin
         if( slow_cmd_valid_i && slow_cmd_ready_o )
             counter += ctl_div_nom_i;
         else

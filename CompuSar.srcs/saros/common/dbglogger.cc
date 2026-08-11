@@ -4,7 +4,7 @@
 #include "uart.h"
 #include "format.h"
 
-static constexpr uint32_t DeviceId = 16;
+static constexpr uint32_t DeviceId = 7;
 
 static constexpr uint32_t SetReadAddr = 0x0000;
 

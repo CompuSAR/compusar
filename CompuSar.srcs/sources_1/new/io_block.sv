@@ -21,115 +21,70 @@
 
 
 module io_block#(
-    parameter CLOCK_HZ = 50000000
-)
-(
+    parameter NUM_PORTS = 2,
+    parameter FIRST_AUX_PORT = 1
+)(
     input clock,
 
-    input [31:0] address,
-    input address_valid,
-    input write,
-    output logic [31:0] data_out,
-    output logic req_ack,
+    sync_bus_write_mask.SLAVE cpu_port,
     output logic rsp_error,
-    output logic rsp_valid,
 
-    output logic passthrough_ddr_enable,
-    input passthrough_ddr_req_ack,
-    input passthrough_ddr_rsp_valid,
-    input [31:0] passthrough_ddr_data,
+    sync_bus_write_mask.MASTER ddr_port,
 
-    output logic passthrough_ddr_ctrl_enable,
-    input passthrough_ddr_ctrl_req_ack,
-    input passthrough_ddr_ctrl_rsp_valid,
-    input [31:0] passthrough_ddr_ctrl_data,
-
-    output logic passthrough_gpio_enable,
-    input passthrough_gpio_req_ack,
-    input passthrough_gpio_rsp_valid,
-    input [31:0] passthrough_gpio_rsp_data,
-
-    output logic passthrough_irq_enable,
-    input passthrough_irq_req_ack,
-    input passthrough_irq_rsp_valid,
-    input [31:0] passthrough_irq_rsp_data,
-
-    output logic passthrough_spi_enable,
-    input passthrough_spi_req_ack,
-    input passthrough_spi_rsp_valid,
-    input [31:0] passthrough_spi_rsp_data,
-
-    output logic passthrough_uart_enable,
-    input passthrough_uart_req_ack,
-    input passthrough_uart_rsp_valid,
-    input [31:0] passthrough_uart_rsp_data,
-
-    output logic passthrough_sd_enable,
-    input passthrough_sd_req_ack,
-    input passthrough_sd_rsp_valid,
-    input [31:0] passthrough_sd_rsp_data,
-
-    output logic passthrough_display_enable,
-    input passthrough_display_req_ack,
-    input passthrough_display_rsp_valid,
-    input [31:0] passthrough_display_rsp_data,
-
-    output logic passthrough_dbglogger_enable,
-    input passthrough_dbglogger_req_ack,
-    input passthrough_dbglogger_rsp_valid,
-    input [31:0] passthrough_dbglogger_rsp_data,
-
-    output logic passthrough_apple_pager_enable,
-    input passthrough_apple_pager_req_ack,
-    input passthrough_apple_pager_rsp_valid,
-    input [31:0] passthrough_apple_pager_rsp_data,
-
-    output logic passthrough_apple_io_enable,
-    input passthrough_apple_io_req_ack,
-    input passthrough_apple_io_rsp_valid,
-    input [31:0] passthrough_apple_io_rsp_data,
-
-    output logic passthrough_apple_diskette_ctrl_enable,
-    input passthrough_apple_diskette_ctrl_req_ack,
-    input passthrough_apple_diskette_ctrl_rsp_valid,
-    input [31:0] passthrough_apple_diskette_ctrl_rsp_data
+    sync_bus.MASTER ports[NUM_PORTS]
 );
 
-logic [31:0] previous_address, previous_address_next;
-logic previous_valid=1'b0;
+localparam DATA_WIDTH = $bits(cpu_port.req_data);
 
-always_ff@(posedge clock) begin
-    previous_address <= previous_address_next;
-
-    if( previous_valid && !rsp_valid )
-        // Previous cycle still waiting for response. Don't advance.
-        previous_valid <= 1'b1;
-    else if( address_valid && req_ack )
-        previous_valid = !write;
-    else
-        previous_valid = 1'b0;
+initial begin
+    if( DATA_WIDTH != $bits(ddr_port.req_data) || DATA_WIDTH != $bits(ports[0].req_data) ) begin
+        $error("Bus width for io_block must be equal on all ports");
+    end
 end
 
-logic uart_send_data_ready;
-logic uart_recv_ready;
+logic write;
+assign write = cpu_port.req_write_mask != 0;
+
+logic request_pending = 1'b0;
+logic [$clog2(NUM_PORTS+2)-1:0] pending_port, pending_port_next;
+
+// We can't directly iterate the interfaces because... Vivado. So we "copy"
+// them to local variables
+logic ports_req_valid[NUM_PORTS];
+logic ports_req_ack[NUM_PORTS];
+logic ports_rsp_valid[NUM_PORTS];
+logic [DATA_WIDTH-1:0] ports_rsp_data[NUM_PORTS];
+
+always_comb begin
+    // The ports that get forwarded with no logic
+    ddr_port.req_addr = cpu_port.req_addr;
+    ddr_port.req_data = cpu_port.req_data;
+    ddr_port.req_write_mask = cpu_port.req_write_mask;
+end
+
+always_ff@(posedge clock) begin
+    if( request_pending && cpu_port.rsp_valid ) begin
+        request_pending <= 1'b0;
+    end
+
+    if( cpu_port.req_valid && cpu_port.req_ack ) begin
+        request_pending <= !write;
+        pending_port <= pending_port_next;
+    end
+end
 
 task default_state_current();
-    uart_send_data_ready = 1'b0;
-    req_ack = 1'b1;
-    previous_address_next = address;
+    int i;
 
-    passthrough_uart_enable = 1'b0;
-    passthrough_ddr_enable = 1'b0;
-    passthrough_ddr_ctrl_enable = 1'b0;
-    passthrough_gpio_enable = 1'b0;
-    passthrough_irq_enable = 1'b0;
-    passthrough_spi_enable = 1'b0;
-    passthrough_display_enable = 1'b0;
-    passthrough_dbglogger_enable = 1'b0;
-    passthrough_sd_enable = 1'b0;
-    passthrough_apple_pager_enable = 1'b0;
-    passthrough_apple_io_enable = 1'b0;
-    passthrough_apple_diskette_ctrl_enable = 1'b0;
+    pending_port_next = pending_port;
+
+    cpu_port.req_ack = 1'b1;
+
+    ddr_port.req_valid = 1'b0;
+
+    for( i=0; i<NUM_PORTS; i++ ) begin
+        ports_req_valid[i] = 1'b0;
+    end
 endtask
 
 function logic is_ddr(logic [31:0]address);
@@ -140,137 +95,83 @@ function logic is_io(logic [31:0]address);
     is_io = address[31:30] == 2'b11;
 endfunction
 
+function logic[7:0] calc_port_addr(int port);
+    if( port<FIRST_AUX_PORT )
+        calc_port_addr = port;
+    else
+        calc_port_addr = port + 8'h80 - FIRST_AUX_PORT;
+endfunction
+
 always_comb begin
     // Previous cycle analysis
-    rsp_valid = 1'bX;
+    cpu_port.rsp_valid = 1'bX;
     rsp_error = 1'b0;
-    data_out = 32'bX;
+    cpu_port.rsp_data = 32'bX;
 
-    if( previous_valid ) begin
-        if( is_ddr(previous_address) ) begin
-            data_out = passthrough_ddr_data;
-            rsp_valid = passthrough_ddr_rsp_valid;
+    if( request_pending ) begin
+        if( pending_port==NUM_PORTS+1 ) begin
+            cpu_port.rsp_valid = 1'b1;
+            rsp_error = 1'b1;
+        end else if( pending_port==NUM_PORTS ) begin
+            cpu_port.rsp_valid = ddr_port.rsp_valid;
+            cpu_port.rsp_data = ddr_port.rsp_data;
         end else begin
-            case( previous_address[23:16] )
-                8'h0: begin                     // UART
-                    rsp_valid = passthrough_uart_rsp_valid;
-                    data_out = passthrough_uart_rsp_data;
-                end
-                8'h1: begin                     // DDR control
-                    rsp_valid = passthrough_ddr_ctrl_rsp_valid;
-                    data_out = passthrough_ddr_ctrl_data;
-                end
-                8'h2: begin                     // GPIO
-                    rsp_valid = passthrough_gpio_rsp_valid;
-                    data_out = passthrough_gpio_rsp_data;
-                end
-                8'h3: begin                     // Interrupt controller
-                    rsp_valid = passthrough_irq_rsp_valid;
-                    data_out = passthrough_irq_rsp_data;
-                end
-                8'h4: begin                     // SPI controller
-                    rsp_valid = passthrough_spi_rsp_valid;
-                    data_out = passthrough_spi_rsp_data;
-                end
-                8'h5: begin                     // Display controller
-                    rsp_valid = passthrough_display_rsp_valid;
-                    data_out = passthrough_display_rsp_data;
-                end
-                8'h6: begin                     // SD
-                    rsp_valid = passthrough_sd_rsp_valid;
-                    data_out = passthrough_sd_rsp_data;
-                end
-                8'h10: begin                     // Debug logger
-                    rsp_valid = passthrough_dbglogger_rsp_valid;
-                    data_out = passthrough_dbglogger_rsp_data;
-                end
-                8'h80: begin                    // Apple II pager
-                    rsp_valid = passthrough_apple_pager_rsp_valid;
-                    data_out = passthrough_apple_pager_rsp_data;
-                end
-                8'h81: begin                    // Apple II IO
-                    rsp_valid = passthrough_apple_io_rsp_valid;
-                    data_out = passthrough_apple_io_rsp_data;
-                end
-                8'h82: begin                    // Apple II diskette controller
-                    rsp_valid = passthrough_apple_diskette_ctrl_rsp_valid;
-                    data_out = passthrough_apple_diskette_ctrl_rsp_data;
-                end
-                default: begin                  // Invalid memory access
-                    rsp_valid = 1'b1;
-                    rsp_error = 1'b1;
-                end
-            endcase
+            cpu_port.rsp_valid = ports_rsp_valid[pending_port];
+            cpu_port.rsp_data = ports_rsp_data[pending_port];
         end
     end
 end
 
 always_comb begin
+    int i;
+    logic handled = 1'b0;
+
     default_state_current();
 
     // Current cycle analysis
-    if( previous_valid && !rsp_valid ) begin
-        // Previous cycle still waiting for response. Don't advance.
-        previous_address_next = previous_address;
-        req_ack = 1'b0;
-    end else begin
-        if( is_ddr(address) ) begin
-            passthrough_ddr_enable = address_valid;
-            req_ack = passthrough_ddr_req_ack;
-        end else if(address_valid) begin
-            case( address[23:16] )
-                8'h0: begin                // UART
-                    passthrough_uart_enable = 1'b1;
-                    req_ack = passthrough_uart_req_ack;
+    if( request_pending && !cpu_port.rsp_valid ) begin
+        // Can't accept this command
+        cpu_port.req_ack = 1'b0;
+    end else if( cpu_port.req_valid ) begin
+        if( is_ddr(cpu_port.req_addr) ) begin
+            ddr_port.req_valid = cpu_port.req_valid;
+            cpu_port.req_ack = ddr_port.req_ack;
+
+            pending_port_next = NUM_PORTS;
+            handled = 1'b1;
+        end else if(cpu_port.req_valid) begin
+            for( i=0; i<NUM_PORTS; ++i ) begin
+                if( cpu_port.req_addr[23:16] == calc_port_addr(i) ) begin
+                    ports_req_valid[i] = 1'b1;
+                    cpu_port.req_ack = ports_req_ack[i];
+
+                    handled = 1'b1;
+                    pending_port_next = i;
                 end
-                8'h1: begin                // DDR control
-                    passthrough_ddr_ctrl_enable = 1'b1;
-                    req_ack = 1'b1;
-                end
-                8'h2: begin                 // GPIO
-                    passthrough_gpio_enable = 1'b1;
-                    req_ack = passthrough_gpio_req_ack;
-                end
-                8'h3: begin                 // Interrupt/timer controller
-                    passthrough_irq_enable = 1'b1;
-                    req_ack = passthrough_irq_req_ack;
-                end
-                8'h4: begin                 // SPI controller
-                    passthrough_spi_enable = 1'b1;
-                    req_ack = passthrough_spi_req_ack;
-                end
-                8'h5: begin                 // Display controller
-                    passthrough_display_enable = 1'b1;
-                    req_ack = passthrough_display_req_ack;
-                end
-                8'h6: begin                // SD
-                    passthrough_sd_enable = 1'b1;
-                    req_ack = passthrough_sd_req_ack;
-                end
-                8'h10: begin                // Debug logger
-                    passthrough_dbglogger_enable = 1'b1;
-                    req_ack = passthrough_dbglogger_req_ack;
-                end
-                8'h80: begin               // Apple II pager
-                    passthrough_apple_pager_enable = 1'b1;
-                    req_ack = passthrough_apple_pager_req_ack;
-                end
-                8'h81: begin               // Apple II io
-                    passthrough_apple_io_enable = 1'b1;
-                    req_ack = passthrough_apple_io_req_ack;
-                end
-                8'h82: begin               // Apple II diskette controller
-                    passthrough_apple_diskette_ctrl_enable = 1'b1;
-                    req_ack = passthrough_apple_diskette_ctrl_req_ack;
-                end
-                default: begin
-                    // Bus error case. If it's a read, it's handled with the
-                    // responses. If it's a write, we have no way to
-                    // communicate this to the CPU, so just do nothing.
-                end
-            endcase
+            end
+        end
+
+        if( !handled ) begin
+            cpu_port.req_ack = 1'b1;
+            pending_port_next = NUM_PORTS+1;    // Indicate error
         end
     end
 end
+
+genvar i;
+
+generate
+
+for( i=0; i<NUM_PORTS; i++ ) begin
+    assign ports[i].req_valid = ports_req_valid[i];
+    assign ports[i].req_write = write;
+    assign ports[i].req_addr = cpu_port.req_addr;
+    assign ports[i].req_data = cpu_port.req_data;
+    assign ports_req_ack[i] = ports[i].req_ack;
+    assign ports_rsp_valid[i] = ports[i].rsp_valid;
+    assign ports_rsp_data[i] = ports[i].rsp_data;
+end
+
+endgenerate
 
 endmodule

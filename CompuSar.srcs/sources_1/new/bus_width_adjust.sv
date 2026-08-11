@@ -1,24 +1,32 @@
 `timescale 1ns / 1ps
 
-module bus_width_adjust#(
-    IN_WIDTH = 32,
-    OUT_WIDTH = 32,
-    ADDR_WIDTH = 32
-)(
+module bus_width_adjust(
     input                                               clock_i,
 
-    input                                               north_cmd_valid_i,
-    input [ADDR_WIDTH-1:0]                              north_cmd_addr_i,
-    input [IN_WIDTH/8-1:0]                              north_cmd_write_mask_i,
-    input [IN_WIDTH-1:0]                                north_cmd_write_data_i,
-    output [IN_WIDTH-1:0]                               north_rsp_read_data_o,
-
-    input                                               south_cmd_ready_i,
-    output [OUT_WIDTH/8-1:0]                            south_cmd_write_mask_o,
-    output [OUT_WIDTH-1:0]                              south_cmd_write_data_o,
-    input                                               south_rsp_valid_i,
-    input [OUT_WIDTH-1:0]                               south_rsp_read_data_i
+    sync_bus_write_mask.SLAVE                           north_port,
+    sync_bus_write_mask.MASTER                          south_port
 );
+
+localparam IN_WIDTH = $bits(north_port.req_data);
+localparam OUT_WIDTH = $bits(south_port.req_data);
+localparam ADDR_WIDTH = $bits(north_port.req_addr);
+
+initial
+    if( $bits(south_port.req_addr) != ADDR_WIDTH ) begin
+        $error("Inputs to bus_width_adjust must have matching address widths");
+    end
+
+initial
+    if( IN_WIDTH >= OUT_WIDTH ) begin
+        $error("South port must be wider than north port inbus_width_adjust");
+    end
+
+// Straight passthrough
+assign south_port.req_valid = north_port.req_valid;
+assign south_port.req_addr = north_port.req_addr;
+
+assign north_port.req_ack = south_port.req_ack;
+assign north_port.rsp_valid = south_port.rsp_valid;
 
 initial begin
     if( IN_WIDTH>OUT_WIDTH )
@@ -36,8 +44,8 @@ localparam SEGMENT_SELECTOR_HIGH = $clog2(OUT_WIDTH/8);
 logic [EXPANSION_FACTOR_LOG-1:0] cmd_segment, cmd_segment_next;
 
 always_comb begin
-    if( north_cmd_valid_i )
-        cmd_segment_next = north_cmd_addr_i[SEGMENT_SELECTOR_HIGH-1:SEGMENT_SELECTOR_LOW];
+    if( north_port.req_valid )
+        cmd_segment_next = north_port.req_addr[SEGMENT_SELECTOR_HIGH-1:SEGMENT_SELECTOR_LOW];
     else
         cmd_segment_next = cmd_segment;
 end
@@ -45,9 +53,9 @@ end
 genvar i;
 generate
     for( i=0; i<EXPANSION_FACTOR; ++i ) begin
-        assign south_cmd_write_data_o[(i+1)*IN_WIDTH-1:i*IN_WIDTH] = north_cmd_write_data_i;
-        assign south_cmd_write_mask_o[(i+1)*(IN_WIDTH/8)-1:i*(IN_WIDTH/8)] =
-            cmd_segment_next%EXPANSION_FACTOR == i ? north_cmd_write_mask_i : { (IN_WIDTH/8){1'b0} };
+        assign south_port.req_data[(i+1)*IN_WIDTH-1:i*IN_WIDTH] = north_port.req_data;
+        assign south_port.req_write_mask[(i+1)*(IN_WIDTH/8)-1:i*(IN_WIDTH/8)] =
+            cmd_segment_next%EXPANSION_FACTOR == i ? north_port.req_write_mask : { (IN_WIDTH/8){1'b0} };
     end
 
     // Select portion of reply that interests us
@@ -64,11 +72,11 @@ generate
 endgenerate
 
 // Set the boundary conditions
-assign consolidator[EXPANSION_FACTOR_LOG-1].expanded = south_rsp_read_data_i;
-assign north_rsp_read_data_o = consolidator[0].consolidated;
+assign consolidator[EXPANSION_FACTOR_LOG-1].expanded = south_port.rsp_data;
+assign north_port.rsp_data = consolidator[0].consolidated;
 
 always_ff@(posedge clock_i) begin
-    if( north_cmd_valid_i && south_cmd_ready_i )
+    if( north_port.req_valid && south_port.req_ack )
         cmd_segment <= cmd_segment_next;
 end
 
