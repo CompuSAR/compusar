@@ -1,35 +1,16 @@
 `timescale 1ns / 1ps
 
-module display# (
-    SOUTH_BUS_WIDTH = 128
-)(
+module display(
     input raw_clock_i,
     input ctrl_clock_i,
     input reset32_i,
     input reset8_i,
     output vsync_irq_o,
 
-    input ctrl_req_valid_i,
-    output ctrl_req_ack_o,
-    input [15:0] ctrl_req_addr_i,
-    input ctrl_req_write_i,
-    input [31:0] ctrl_req_data_i,
-    output logic ctrl_rsp_valid_o,
-    output [31:0] ctrl_rsp_data_o,
+    sync_bus.SLAVE ctrl,
 
-    output logic dma32_req_valid_o,
-    output [SOUTH_BUS_WIDTH/8-1:0] dma32_req_write_mask_o,
-    output logic [31:0] dma32_req_addr_o,
-    input dma32_req_ack_i,
-    input dma32_rsp_valid_i,
-    input [SOUTH_BUS_WIDTH-1:0] dma32_rsp_data_i,
-
-    output logic dma8_req_valid_o,
-    output [SOUTH_BUS_WIDTH/8-1:0] dma8_req_write_mask_o,
-    output logic [31:0] dma8_req_addr_o,
-    input dma8_req_ack_i,
-    input dma8_rsp_valid_i,
-    input [SOUTH_BUS_WIDTH-1:0] dma8_rsp_data_i,
+    sync_bus_write_mask.MASTER dma32,
+    sync_bus_write_mask.MASTER dma8,
 
     output wire TMDS_clk_n,
     output wire TMDS_clk_p,
@@ -38,10 +19,9 @@ module display# (
     output wire[0:0] HDMI_OEN
 );
 
-assign HDMI_OEN = 1'b1;
+localparam SOUTH_BUS_WIDTH = $bits(dma32.req_data);
 
-assign dma32_req_write_mask_o = { SOUTH_BUS_WIDTH/8{1'b0} };
-assign dma8_req_write_mask_o = { SOUTH_BUS_WIDTH/8{1'b0} };
+assign HDMI_OEN = 1'b1;
 
 /********************* CDC logic *******************/
 wire vertical_blank_hdmi, vertical_blank_cpu;
@@ -71,29 +51,29 @@ localparam CDC_PIXELS32_WIDTH =
     + 10;                       // Y coordinate
 
 /******************** CPU clock *********************/
-assign ctrl_rsp_data_o = 32'h0;
+assign ctrl.rsp_data = 32'h0;
 
 logic prev_vblank = 1'b0;
 logic [31:0] base_addr_reg, frame_height_width_reg, frame_start_reg, irqs = 32'h0;
 assign vsync_irq_o = irqs[0];
 
 always_ff@(posedge ctrl_clock_i) begin
-    ctrl_rsp_valid_o <= 1'b0;
+    ctrl.rsp_valid <= 1'b0;
 
     if( !prev_vblank && vertical_blank_cpu )
         irqs[0] <= 1'b1;
     prev_vblank <= vertical_blank_cpu;
 
-    if( ctrl_req_valid_i && ctrl_req_ack_o ) begin
-        if( ctrl_req_write_i ) begin
-            case( ctrl_req_addr_i )
-                16'h0000: base_addr_reg <= ctrl_req_data_i;
-                16'h0004: frame_height_width_reg <= ctrl_req_data_i;
-                16'h0008: frame_start_reg <= ctrl_req_data_i;
+    if( ctrl.req_valid && ctrl.req_ack ) begin
+        if( ctrl.req_write ) begin
+            case( ctrl.req_addr )
+                16'h0000: base_addr_reg <= ctrl.req_data;
+                16'h0004: frame_height_width_reg <= ctrl.req_data;
+                16'h0008: frame_start_reg <= ctrl.req_data;
                 16'h000c: irqs <= 32'h0;
             endcase
         end else begin
-            ctrl_rsp_valid_o <= 1'b1;
+            ctrl.rsp_valid <= 1'b1;
         end
     end
 end
@@ -114,11 +94,7 @@ display_32bit display_32bit(
     .frame_start_x(frame_start_reg[9:0]),
     .frame_start_y(frame_start_reg[25:16]),
 
-    .dma_req_valid_o(dma32_req_valid_o),
-    .dma_req_addr_o(dma32_req_addr_o),
-    .dma_req_ack_i(dma32_req_ack_i),
-    .dma_rsp_valid_i(dma32_rsp_valid_i),
-    .dma_rsp_data_i(dma32_rsp_data_i),
+    .dma(dma32),
 
     .pixel_clock_i(pixel_clk),
 
@@ -139,17 +115,13 @@ display_8bit display_8bit(
     .vblank_i(vertical_blank_cpu),
     .vsync_i(vertical_sync_cpu),
 
-    .ctrl_req_valid_i( ctrl_req_valid_i && ctrl_req_addr_i[15] ),
-    .ctrl_req_addr_i,
-    .ctrl_req_write_i,
-    .ctrl_req_data_i,
-    .ctrl_req_ack_o(ctrl_req_ack_o),    // Only the 8 bit controller may signal not ready
+    .ctrl_req_valid_i( ctrl.req_valid && ctrl.req_addr[15] ),
+    .ctrl_req_addr_i( ctrl.req_addr ),
+    .ctrl_req_write_i( ctrl.req_write ),
+    .ctrl_req_data_i( ctrl.req_data ),
+    .ctrl_req_ack_o( ctrl.req_ack ),    // Only the 8 bit controller may signal not ready
 
-    .dma_req_valid_o(dma8_req_valid_o),
-    .dma_req_addr_o(dma8_req_addr_o),
-    .dma_req_ack_i(dma8_req_ack_i),
-    .dma_rsp_valid_i(dma8_rsp_valid_i),
-    .dma_rsp_data_i(dma8_rsp_data_i),
+    .dma(dma8),
 
     .pixel_clock_i(pixel_clk),
 
