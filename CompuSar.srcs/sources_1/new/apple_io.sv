@@ -1,14 +1,5 @@
 `timescale 1ns / 1ps
 
-package a2_io;
-    typedef enum {
-        Mem,
-        Diskette
-    } Peripheral;
-
-    localparam NumPeripherals = 2; // Needs to be the same as Peripheral.num()
-endpackage
-
 module apple_io
 
 import a2_io::*;

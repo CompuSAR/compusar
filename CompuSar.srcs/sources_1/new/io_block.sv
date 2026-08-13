@@ -124,7 +124,7 @@ end
 
 always_comb begin
     int i;
-    logic handled = 1'b0;
+    automatic logic handled = 1'b0;
 
     default_state_current();
 

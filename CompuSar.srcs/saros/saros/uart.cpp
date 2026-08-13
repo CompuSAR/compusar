@@ -68,6 +68,7 @@ void uart_sync_message( const char *message ) {
 }
 
 void uart_send(char c) {
+#ifndef SYNC_UART
     if( saros.isRunning() ) {
         while( uartTxBuffer.isFull() )
             wfi();
@@ -80,6 +81,9 @@ void uart_send(char c) {
     } else {
         uart_send_raw(c);
     }
+#else
+    uart_send_raw(c);
+#endif
 }
 
 void uart_send(const char *str) {

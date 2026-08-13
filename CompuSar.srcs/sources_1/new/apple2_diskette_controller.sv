@@ -47,6 +47,8 @@ module apple2_diskette_controller#(
     sync_bus_write_mask.MASTER dma
     );
 
+initial assign dma.req_valid = 1'b0;
+
 logic [31:0] spin_counter, spin_increment;
 logic [31:0] track_base_addr, track_current_addr;
 

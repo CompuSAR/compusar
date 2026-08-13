@@ -29,6 +29,9 @@ module display_8bit# (
 
 localparam SOUTH_BUS_WIDTH = $bits(dma.req_data);
 
+localparam REQ_BUS_BYTES = 8;
+localparam REQ_BUS_BITS = REQ_BUS_BYTES*8;
+
 const enum { SCANLINES, INTERLACE, DOUBLE, SQUISH } dummy_var = DOUBLE;
 localparam DisplayMethod = DOUBLE;
 
@@ -58,6 +61,8 @@ logic interlace_counter = 1'b0;
 
 localparam FLASH_COUNTER_LOW = -14;
 localparam FLASH_COUNTER_HIGH = 14;
+
+logic [$clog2(REQ_BUS_BYTES+1)-1:0] frame_char_lookup_fill = 0;
 
 assign charrom_read_data_inversed = charrom_read_data ^ (inverse_char ? 7'b1111111 : 7'b0000000);
 
@@ -129,6 +134,7 @@ end
 
 sync_bus_write_mask#(.DATA_WIDTH(REQ_BUS_BITS)) dma_narrow();
 
+initial dma_narrow.req_valid = 1'b0;
 assign dma_narrow.req_write_mask = 0;
 
 bus_width_adjust dma_width_adjust(
@@ -146,8 +152,6 @@ localparam PIPELINE_HDMI = 2;
 localparam PIPELINE_CDC_CPU = 3;
 localparam PIPELINE_CDC_HDMI = 4;
 
-localparam REQ_BUS_BYTES = 8;
-localparam REQ_BUS_BITS = REQ_BUS_BYTES*8;
 // Each byte in regular mode corresponds to 7 hi-res pixels, or 14 actual
 // pixels. In doubel mode it corresponds to 7 actual pixels, but each fetch is
 // actually two fetches.
@@ -161,7 +165,6 @@ logic [REQ_BUS_BITS-1:0] frame_data[PIPELINE_STAGES], pixel_cdc_data;
 logic [PIPELINE_STAGES-1:0] frame_data_valid = 0;
 logic [COORDINATE_WIDTH-1:0] frame_x[PIPELINE_STAGES], frame_y[PIPELINE_STAGES], pixel_cdc_x, pixel_cdc_y;
 logic [7:0] frame_mode[PIPELINE_STAGES], pixel_cdc_mode;
-logic [$clog2(REQ_BUS_BYTES+1)-1:0] frame_char_lookup_fill = 0;
 logic [2:0] frame_char_lookup_line;
 logic dma_req_sent = 1'b0;
 logic [COORDINATE_WIDTH-1:0] current_x, current_y;

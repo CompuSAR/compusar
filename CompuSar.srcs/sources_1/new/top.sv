@@ -457,6 +457,10 @@ input_delay#(.NUM_BITS(4)) switches_delay(
     .out(buffered_switches)
 );
 
+logic sd_data_idle;
+
+assign irq_lines[SD_DATA_IDLE] = sd_data_idle;
+
 logic sd_card_detect_debounced_n;
 
 debouncer#(.DEBOUNCE_CYCLES(75000), .DEFAULT_OUT(1'b1)) sd_card_detect_debouncer(
@@ -512,10 +516,6 @@ uart_ctrl#(.ClockDivider(SIM_MODE ? 10 : CTRL_CLOCK_HZ / UART_BAUD), .SimMode(SI
     .uart_tx(uart_tx),
     .uart_rx(uart_rx)
 );
-
-logic sd_data_idle;
-
-assign irq_lines[SD_DATA_IDLE] = sd_data_idle;
 
 sd sd_ctrl(
     .ctrl_clock_i(ctrl_cpu_clock),
