@@ -52,6 +52,8 @@ task perph_req(input Peripheral perph);
     perph_req_valid_o[perph] <= 1'b1;
 endtask
 
+assign ctrl.req_ack = 1'b1;
+
 always_ff@(posedge clock_i) begin
     // Handle control requests
     ctrl.rsp_valid <= 1'b0;
