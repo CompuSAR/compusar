@@ -45,7 +45,7 @@ assign ctrl_intr_o = forwarded;
 
 logic [15:0] pending_req_addr;
 logic pending_req_write;
-logic [7:0] pending_req_write_data;
+logic [7:0] pending_req_write_data = 8'h00;
 
 task perph_req(input Peripheral perph);
     io_active_periph <= perph;
@@ -58,8 +58,11 @@ always_ff@(posedge clock_i) begin
     // Handle control requests
     ctrl.rsp_valid <= 1'b0;
 
-    if( forwarded && forwarded_rsp_valid )
+    if( forwarded && forwarded_rsp_valid ) begin
         forwarded <= 1'b0;
+        io_op_pending <= 1'b0;
+        forwarded_rsp_valid <= 1'b0;
+    end
 
     if( ctrl.req_valid && ctrl.req_ack ) begin
         if( ctrl.req_write ) begin
@@ -68,6 +71,7 @@ always_ff@(posedge clock_i) begin
                 16'h0000: begin
                     if( pending_req_write ) begin
                         forwarded <= 1'b0;
+                        io_op_pending <= 1'b0;
                     end else begin
                         forwarded_rsp_valid <= 1'b1;
                     end
@@ -107,6 +111,7 @@ always_ff@(posedge clock_i) begin
                 end
             endcase
         end else begin
+            // Read
             casex( pending_req_addr )
                 16'hc010: forwarded <= 1'b1;
                 16'hc0xx: perph_req(Mem);
