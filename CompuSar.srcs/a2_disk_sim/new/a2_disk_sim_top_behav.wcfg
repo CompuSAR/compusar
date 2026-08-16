@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="a2_disk_sim_top_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="a2_disk_sim_top" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="209.370 ns"></ZoomStartTime>
+      <ZoomEndTime time="472.771 ns"></ZoomEndTime>
+      <Cursor1Time time="428.870 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="220"></NameColumnWidth>
+      <ValueColumnWidth column_width="137"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="48" />
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/ctrl/DATA_WIDTH">
+      <obj_property name="ElementShortName">DATA_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">DATA_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/ctrl/req_valid">
+      <obj_property name="ElementShortName">req_valid</obj_property>
+      <obj_property name="ObjectShortName">req_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/ctrl/req_addr">
+      <obj_property name="ElementShortName">req_addr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">req_addr[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/ctrl/req_data">
+      <obj_property name="ElementShortName">req_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">req_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/ctrl/req_ack">
+      <obj_property name="ElementShortName">req_ack</obj_property>
+      <obj_property name="ObjectShortName">req_ack</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/ctrl/req_write">
+      <obj_property name="ElementShortName">req_write</obj_property>
+      <obj_property name="ObjectShortName">req_write</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/ctrl/rsp_valid">
+      <obj_property name="ElementShortName">rsp_valid</obj_property>
+      <obj_property name="ObjectShortName">rsp_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/ctrl/rsp_data">
+      <obj_property name="ElementShortName">rsp_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rsp_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/ctrl/ADDR_WIDTH">
+      <obj_property name="ElementShortName">ADDR_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ADDR_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/clk_i">
+      <obj_property name="ElementShortName">clk_i</obj_property>
+      <obj_property name="ObjectShortName">clk_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/reset_i">
+      <obj_property name="ElementShortName">reset_i</obj_property>
+      <obj_property name="ObjectShortName">reset_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/cpu_req_valid_i">
+      <obj_property name="ElementShortName">cpu_req_valid_i</obj_property>
+      <obj_property name="ObjectShortName">cpu_req_valid_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/cpu_req_ack_o">
+      <obj_property name="ElementShortName">cpu_req_ack_o</obj_property>
+      <obj_property name="ObjectShortName">cpu_req_ack_o</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/cpu_req_addr_i">
+      <obj_property name="ElementShortName">cpu_req_addr_i[15:0]</obj_property>
+      <obj_property name="ObjectShortName">cpu_req_addr_i[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/cpu_req_write_i">
+      <obj_property name="ElementShortName">cpu_req_write_i</obj_property>
+      <obj_property name="ObjectShortName">cpu_req_write_i</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/cpu_req_write_data_i">
+      <obj_property name="ElementShortName">cpu_req_write_data_i[7:0]</obj_property>
+      <obj_property name="ObjectShortName">cpu_req_write_data_i[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/cpu_rsp_valid_o">
+      <obj_property name="ElementShortName">cpu_rsp_valid_o</obj_property>
+      <obj_property name="ObjectShortName">cpu_rsp_valid_o</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/cpu_rsp_read_data_o">
+      <obj_property name="ElementShortName">cpu_rsp_read_data_o[7:0]</obj_property>
+      <obj_property name="ObjectShortName">cpu_rsp_read_data_o[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/cpu_bus_valid_i">
+      <obj_property name="ElementShortName">cpu_bus_valid_i</obj_property>
+      <obj_property name="ObjectShortName">cpu_bus_valid_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/cpu_bus_ack_i">
+      <obj_property name="ElementShortName">cpu_bus_ack_i</obj_property>
+      <obj_property name="ObjectShortName">cpu_bus_ack_i</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/apple_cycle">
+      <obj_property name="ElementShortName">apple_cycle</obj_property>
+      <obj_property name="ObjectShortName">apple_cycle</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/spin_counter">
+      <obj_property name="ElementShortName">spin_counter[31:0]</obj_property>
+      <obj_property name="ObjectShortName">spin_counter[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/spin_increment">
+      <obj_property name="ElementShortName">spin_increment[31:0]</obj_property>
+      <obj_property name="ObjectShortName">spin_increment[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/track_data_start">
+      <obj_property name="ElementShortName">track_data_start[31:0]</obj_property>
+      <obj_property name="ObjectShortName">track_data_start[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/track_data_length">
+      <obj_property name="ElementShortName">track_data_length[31:0]</obj_property>
+      <obj_property name="ObjectShortName">track_data_length[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/track_pos">
+      <obj_property name="ElementShortName">track_pos[31:0]</obj_property>
+      <obj_property name="ObjectShortName">track_pos[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/track_pos_next">
+      <obj_property name="ElementShortName">track_pos_next[31:0]</obj_property>
+      <obj_property name="ObjectShortName">track_pos_next[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/fetch_offset">
+      <obj_property name="ElementShortName">fetch_offset[31:0]</obj_property>
+      <obj_property name="ObjectShortName">fetch_offset[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/bit_ratio_num">
+      <obj_property name="ElementShortName">bit_ratio_num[15:0]</obj_property>
+      <obj_property name="ObjectShortName">bit_ratio_num[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/bit_ratio_denom">
+      <obj_property name="ElementShortName">bit_ratio_denom[15:0]</obj_property>
+      <obj_property name="ObjectShortName">bit_ratio_denom[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/motor_running">
+      <obj_property name="ElementShortName">motor_running</obj_property>
+      <obj_property name="ObjectShortName">motor_running</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/freq_div_reset">
+      <obj_property name="ElementShortName">freq_div_reset</obj_property>
+      <obj_property name="ObjectShortName">freq_div_reset</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/dma_data">
+      <obj_property name="ElementShortName">dma_data[0:1][127:0]</obj_property>
+      <obj_property name="ObjectShortName">dma_data[0:1][127:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/dma_data_valid">
+      <obj_property name="ElementShortName">dma_data_valid[0:1]</obj_property>
+      <obj_property name="ObjectShortName">dma_data_valid[0:1]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/dma_req_pending">
+      <obj_property name="ElementShortName">dma_req_pending</obj_property>
+      <obj_property name="ObjectShortName">dma_req_pending</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/shift_register">
+      <obj_property name="ElementShortName">shift_register[7:0]</obj_property>
+      <obj_property name="ObjectShortName">shift_register[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/grace_counter">
+      <obj_property name="ElementShortName">grace_counter[3:0]</obj_property>
+      <obj_property name="ObjectShortName">grace_counter[3:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/should_bit_shift">
+      <obj_property name="ElementShortName">should_bit_shift</obj_property>
+      <obj_property name="ObjectShortName">should_bit_shift</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/next_bit_in">
+      <obj_property name="ElementShortName">next_bit_in</obj_property>
+      <obj_property name="ObjectShortName">next_bit_in</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/dma/DATA_WIDTH">
+      <obj_property name="ElementShortName">DATA_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">DATA_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/dma/req_valid">
+      <obj_property name="ElementShortName">req_valid</obj_property>
+      <obj_property name="ObjectShortName">req_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/dma/req_addr">
+      <obj_property name="ElementShortName">req_addr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">req_addr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/dma/req_data">
+      <obj_property name="ElementShortName">req_data[127:0]</obj_property>
+      <obj_property name="ObjectShortName">req_data[127:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/dma/req_ack">
+      <obj_property name="ElementShortName">req_ack</obj_property>
+      <obj_property name="ObjectShortName">req_ack</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/dma/req_write_mask">
+      <obj_property name="ElementShortName">req_write_mask[15:0]</obj_property>
+      <obj_property name="ObjectShortName">req_write_mask[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/dma/rsp_valid">
+      <obj_property name="ElementShortName">rsp_valid</obj_property>
+      <obj_property name="ObjectShortName">rsp_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/dma/rsp_data">
+      <obj_property name="ElementShortName">rsp_data[127:0]</obj_property>
+      <obj_property name="ObjectShortName">rsp_data[127:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/a2_disk_sim_top/dut/dma/ADDR_WIDTH">
+      <obj_property name="ElementShortName">ADDR_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ADDR_WIDTH[31:0]</obj_property>
+   </wvobject>
+</wave_config>
