@@ -43,18 +43,18 @@ localparam NUM_BANKS = 5;
 logic [31:0] mapper[NUM_BANKS][2];
 logic [31:0] slot_roms[7:0];
 
-function logic[31:0] translate_io(logic write, logic [15:0] addr);
+function logic[31:0] translate_io(input logic write, input logic [15:0] addr);
     automatic logic[7:0] slot = addr[11:8];
 
     if( slot==4'h0 )
         translate_io=mapper[BANK_IO][write];
     else if( write )
-        translate_io=mapper[BANK_IO][write];
+        translate_io=0;
     else
         translate_io=slot_roms[slot[2:0]];
 endfunction
 
-function logic[31:0] translate_addr(logic write, logic [15:0] addr);
+function logic[31:0] translate_addr(input logic write, input logic [15:0] addr);
     automatic logic [31:0] addr_mask;
     case( addr[15:12] )
         8'h0: addr_mask = mapper[MAIN][write];
@@ -69,7 +69,7 @@ function logic[31:0] translate_addr(logic write, logic [15:0] addr);
         8'h9: addr_mask = mapper[MAIN][write];
         8'ha: addr_mask = mapper[MAIN][write];
         8'hb: addr_mask = mapper[MAIN][write];
-        8'hc: addr_mask = translate_io(addr, write);
+        8'hc: addr_mask = translate_io(write, addr);
         8'hd: addr_mask = mapper[BANK_D][write];
         8'he: addr_mask = mapper[BANKS_E_F][write];
         8'hf: addr_mask = mapper[BANKS_E_F][write];
