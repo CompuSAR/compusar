@@ -39,10 +39,10 @@ module freq_div_bus#( COUNTER_BITS = 32 )
 
 logic [COUNTER_BITS:0] counter;
 
-assign slow_cmd_ready_o = fast_cmd_ready_i && counter[COUNTER_BITS];
-assign fast_cmd_valid_o = slow_cmd_valid_i && slow_cmd_ready_o;
+assign slow_cmd_ready_o = fast_cmd_ready_i && counter[COUNTER_BITS] && clock_enable_i;
+assign fast_cmd_valid_o = slow_cmd_valid_i && slow_cmd_ready_o && clock_enable_i;
 
-always_ff@(posedge clock_i, posedge reset_i)
+always_ff@(posedge clock_i)
 begin
     if( reset_i ) begin
         counter <= {COUNTER_BITS+1{1'b1}};
