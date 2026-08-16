@@ -40,6 +40,8 @@ constexpr uint32_t Pager_MainBank = 0x0000;
 constexpr uint32_t Pager_IoBank = 0x0004;
 constexpr uint32_t Pager_BankD = 0x0008;
 constexpr uint32_t Pager_BanksEF = 0x000c;
+constexpr uint32_t Pager_DevNull = 0x0010;
+constexpr uint32_t Pager_SlotRomsOffset = 0x0100;
 constexpr uint32_t Pager_WriteOffset = 0x0800;
 constexpr uint32_t Pager_IoOp = 0x1000;
 
@@ -101,7 +103,11 @@ static constexpr uint32_t IO_VALID_MASK = 0x80000000, IO_VALID_SHIFT = 31;
 
 } // empty namespace
 
+extern const uint8_t DISK2_fw[];
+
 void start_8bit() {
+    static uint8_t devNullDataWrite;                    // All writes that get ignored are routed here
+    static const uint8_t devNullDataRead = 0xa5;        // All reads that get ignored are routed here
     uart_send("Initialize Apple II memory banks\n");
 
     // Main memory bank points to BANK0
@@ -115,6 +121,14 @@ void start_8bit() {
 
     reg_write_32( PagerDeviceNum, Pager_IoBank, ROMS_BASE );
     reg_write_32( PagerDeviceNum, Pager_IoBank | Pager_WriteOffset, 0 );
+
+    reg_write_32( PagerDeviceNum, Pager_DevNull, reinterpret_cast<uint32_t>(&devNullDataRead) );
+    reg_write_32( PagerDeviceNum, Pager_DevNull | Pager_WriteOffset, reinterpret_cast<uint32_t>(&devNullDataWrite) );
+
+    for( unsigned i=1; i<=8; ++i ) {
+        // Devnull all slot ROMs
+        reg_write_32( PagerDeviceNum, Pager_SlotRomsOffset + i*16, 0 );
+    }
 
     constexpr size_t IO_SLOTS_ROM_BASE = 0xc100;
     constexpr size_t IO_SHARED_ROM_BASE = 0xc800;

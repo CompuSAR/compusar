@@ -10,7 +10,8 @@ MEMORY { error : ORIGIN = 0xf0000000, LENGTH = 0 }
 MEMORY { exe(rx) : ORIGIN = MEM_BASE + PRELOAD_RESERVED, LENGTH = 1M - PRELOAD_RESERVED }
 MEMORY { readonly(r) : ORIGIN = MEM_BASE + 1M, LENGTH = 1M }
 MEMORY { mem_rw(rw) : ORIGIN = MEM_BASE + 2M, LENGTH = 1M }
-MEMORY { mem_16_rom(r) : ORIGIN = MEM8BIT_START, LENGTH = 64K }
+MEMORY { mem_8_fw(r) : ORIGIN = MEM8BIT_START, LENGTH = 64K - 8K }
+MEMORY { mem_8_rom(r) : ORIGIN = MEM8BIT_START+0xd000, LENGTH = 12K }
 ENTRY(_start)
 
 PROVIDE( __thread_stacks_start = MEM_BASE + 8M );
@@ -22,7 +23,8 @@ PHDRS
     text        PT_LOAD;
     rom         PT_LOAD;
     rw          PT_LOAD;
-    apple2      PT_LOAD;
+    apple2_fw   PT_LOAD;
+    apple2_rom  PT_LOAD;
 }
 
 SECTIONS
@@ -81,14 +83,13 @@ SECTIONS
         *(.uninitialized)
     } >mem_rw :NONE
 
-    .uninit_apple2_rom (NOLOAD) : {
-        . = 0xd000;
-    } >mem_16_rom :NONE
+    .apple2_fw : {
+        *_fw.o (.apple2_fw);
+    } > mem_8_fw :apple2_fw
 
     .apple2_rom : {
-        __apple2_rom = .;
         Apple2*_rom.o (.apple2_rom);
-    } >mem_16_rom :apple2
+    } >mem_8_rom :apple2_rom
 
     /DISCARD/ : { *(.eh_frame) *(.note.GNU-stack) }
 
