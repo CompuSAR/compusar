@@ -114,6 +114,11 @@ always_ff@(posedge clock_i) begin
             // Read
             casex( pending_req_addr )
                 16'hc010: forwarded <= 1'b1;
+
+                // Slot 6 I/O go to CPU except read, which goes to controller.
+                16'hc0ec: perph_req(Diskette);
+                16'hc0ex: forwarded <= 1'b1;
+
                 16'hc0xx: perph_req(Mem);
                 default: perph_req(Mem);
             endcase

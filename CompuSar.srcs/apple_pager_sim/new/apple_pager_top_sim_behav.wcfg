@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="apple_pager_top_sim_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="apple_pager_top_sim" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0.000000 us"></ZoomStartTime>
+      <ZoomEndTime time="23.400001 us"></ZoomEndTime>
+      <Cursor1Time time="0.000000 us"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="220"></NameColumnWidth>
+      <ValueColumnWidth column_width="137"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="15" />
+   <wvobject type="logic" fp_name="/apple_pager_top_sim/clock">
+      <obj_property name="ElementShortName">clock</obj_property>
+      <obj_property name="ObjectShortName">clock</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_pager_top_sim/req_valid">
+      <obj_property name="ElementShortName">req_valid</obj_property>
+      <obj_property name="ObjectShortName">req_valid</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_pager_top_sim/req_write">
+      <obj_property name="ElementShortName">req_write</obj_property>
+      <obj_property name="ObjectShortName">req_write</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_pager_top_sim/mem_addr">
+      <obj_property name="ElementShortName">mem_addr</obj_property>
+      <obj_property name="ObjectShortName">mem_addr</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_pager_top_sim/req_addr">
+      <obj_property name="ElementShortName">req_addr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">req_addr[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_pager_top_sim/ctrl/req_valid">
+      <obj_property name="ElementShortName">req_valid</obj_property>
+      <obj_property name="ObjectShortName">req_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_pager_top_sim/ctrl/req_addr">
+      <obj_property name="ElementShortName">req_addr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">req_addr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_pager_top_sim/ctrl/req_data">
+      <obj_property name="ElementShortName">req_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">req_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_pager_top_sim/ctrl/req_ack">
+      <obj_property name="ElementShortName">req_ack</obj_property>
+      <obj_property name="ObjectShortName">req_ack</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_pager_top_sim/ctrl/req_write">
+      <obj_property name="ElementShortName">req_write</obj_property>
+      <obj_property name="ObjectShortName">req_write</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_pager_top_sim/ctrl/rsp_valid">
+      <obj_property name="ElementShortName">rsp_valid</obj_property>
+      <obj_property name="ObjectShortName">rsp_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_pager_top_sim/ctrl/rsp_data">
+      <obj_property name="ElementShortName">rsp_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rsp_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_pager_top_sim/ctrl/DATA_WIDTH">
+      <obj_property name="ElementShortName">DATA_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">DATA_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_pager_top_sim/ctrl/ADDR_WIDTH">
+      <obj_property name="ElementShortName">ADDR_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ADDR_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_pager_top_sim/pager/mapper">
+      <obj_property name="ElementShortName">mapper[0:4][0:1][31:0]</obj_property>
+      <obj_property name="ObjectShortName">mapper[0:4][0:1][31:0]</obj_property>
+      <obj_property name="isExpanded"></obj_property>
+   </wvobject>
+</wave_config>

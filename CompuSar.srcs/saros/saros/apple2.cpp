@@ -107,7 +107,7 @@ extern const uint8_t DISK2_fw[];
 
 void start_8bit() {
     static uint8_t devNullDataWrite;                    // All writes that get ignored are routed here
-    static const uint8_t devNullDataRead = 0xa5;        // All reads that get ignored are routed here
+    static const uint16_t devNullDataRead = 0xff;       // All reads that get ignored are routed here
     uart_send("Initialize Apple II memory banks\n");
 
     // Main memory bank points to BANK0
@@ -128,6 +128,13 @@ void start_8bit() {
     for( unsigned i=1; i<=8; ++i ) {
         // Devnull all slot ROMs
         reg_write_32( PagerDeviceNum, Pager_SlotRomsOffset + i*16, 0 );
+    }
+
+    {
+        // Set slot 6 to point to the Disk ][ controller ROM
+        const uint32_t romAddr = reinterpret_cast<uint32_t>( &DISK2_fw );
+        const uint32_t slot6Addr = 0xc600;
+        reg_write_32( PagerDeviceNum, Pager_SlotRomsOffset + 6*16, romAddr ^ slot6Addr );
     }
 
     constexpr size_t IO_SLOTS_ROM_BASE = 0xc100;

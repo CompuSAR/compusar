@@ -24,7 +24,8 @@ libcommon_a_CXXFLAGS=-ffreestanding
 
 saros_elf_SOURCES=main.cpp uart.cpp saros.cpp mutex.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \
                   start.s ../abort.cpp display.cpp crt.cpp sd.cpp \
-                  apple2.cpp apple2_display.cpp roms/Apple2_Plus_rom.s roms/charset_us_bin.s
+                  apple2.cpp apple2_display.cpp \
+                  roms/Apple2_Plus_rom.s roms/charset_us_bin.s roms/DISK2_fw.s
 EXTRA_saros_elf_DEPENDENCIES=$(srcdir)/saros.ld kernel/libkernel.a fs/libfs.a libcommon.a
 saros_elf_LDFLAGS=-T $(srcdir)/saros.ld --orphan-handling=error
 saros_elf_LDADD=$(TOOLCHAIN_LIB_PATH)/libgcc.a $(TOOLCHAIN_PATH)/$(HOST_TRIPLET)/lib/libc.a kernel/libkernel.a fs/libfs.a libcommon.a
@@ -53,6 +54,10 @@ $(srcdir)/roms/%.rom:
 	wget 'https://github.com/AppleWin/AppleWin/raw/refs/heads/master/resource/$*.rom' -O '$@'.tmp
 	mv '$@.tmp' '$@'
 .PRECIOUS: $(srcdir)/roms/%.rom
+
+roms/%_fw.s: $(srcdir)/roms/%.rom $(ASSEMBLIFY)
+	mkdir -p roms
+	$(ASSEMBLIFY) --section '.apple2_fw' --section-flags 'a' --symbol '$*_fw' '$<' '$@'
 
 roms/%_rom.s: $(srcdir)/roms/%.rom $(ASSEMBLIFY)
 	mkdir -p roms
