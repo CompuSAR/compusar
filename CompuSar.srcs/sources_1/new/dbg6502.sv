@@ -43,20 +43,20 @@ localparam NUM_BREAKPOINT = 4;
 
 assign ctrl.req_ack = 1'b1;
 assign n_halt_o = breakpoint_hit == 0;
-assign ctrl_intr_o = n_halt_o;
+assign ctrl_intr_o = ! n_halt_o;
 
 typedef struct packed {
-    bit write;
-    bit sync;
-    bit memlock;
     bit vector_pull;
+    bit memlock;
+    bit sync;
+    bit write;
 } tracked_signals;
 
 typedef struct packed {
-    bit[15:0]           address;
-    bit[7:0]            value;
-    tracked_signals     sig_state;
     tracked_signals     sig_mask;
+    tracked_signals     sig_state;
+    bit[7:0]            value;
+    bit[15:0]           address;
 } breakpoint;
 
 tracked_signals current_state;
