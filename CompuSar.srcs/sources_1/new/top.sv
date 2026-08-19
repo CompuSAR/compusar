@@ -185,7 +185,9 @@ localparam UART_RECV_IRQ = 1;
 localparam VSYNC_IRQ = 2;
 localparam SD_INSERT_IRQ = 3;
 localparam SD_DATA_IDLE = 4;
-localparam FIRST_EMPTY_IRQ = 5;
+localparam FIRST_EMPTY_BASE_IRQ = 5;
+localparam DBG_6502_IRQ = 16;
+localparam FIRST_EMPTY_AUX_IRQ = 17;
 
 wire [31:0] gp_out[GPIO_OUT_PORTS];
 
@@ -249,6 +251,7 @@ enum {
     IO_PORT_APPLE_PAGER,
     IO_PORT_APPLE_IO,
     IO_PORT_APPLE_DISKETTE,
+    IO_PORT_6502_DEBUGGER,
 
     IOPORT_NUM_PORTS
 } IO_PORTS_ASSIGNMENTS;
@@ -549,7 +552,9 @@ STARTUPE2 startup_cfg(
 
 genvar i;
 generate
-    for(i=FIRST_EMPTY_IRQ; i<32; ++i)
+    for(i=FIRST_EMPTY_BASE_IRQ; i<16; ++i)
+        assign irq_lines[i] = 1'b0;
+    for(i=FIRST_EMPTY_AUX_IRQ; i<32; ++i)
         assign irq_lines[i] = 1'b0;
 endgenerate
 
@@ -623,6 +628,7 @@ sync_bus#(.DATA_WIDTH(8), .ADDR_WIDTH(16)) bus8_cpu(), bus8_mem();
 sync_bus_write_mask#(.DATA_WIDTH(8), .ADDR_WIDTH(32)) bus8_expanded();
 
 wire apple_cpu_sync, apple_cpu_vector_pull, apple_cpu_memory_lock;
+wire apple_dbg_halt;
 
 
 wire cpu8_req_valid_divided, cpu8_req_ack_divided;
@@ -650,7 +656,7 @@ sar6502_sync apple_cpu(
 
 freq_div_bus freq_div_6502(
     .clock_i( ctrl_cpu_clock ),
-    .clock_enable_i( 1'b1 ),
+    .clock_enable_i( apple_dbg_halt ),
     .ctl_div_nom_i( BUS8_FREQ_DIV ),
     .ctl_div_denom_i( 16'd1 ),
     .reset_i( gp_out[0][GPIO_OUT0__FREQ_DIV_RESET] ),
@@ -660,6 +666,25 @@ freq_div_bus freq_div_6502(
 
     .fast_cmd_valid_o( bus8_cpu.req_valid ),
     .fast_cmd_ready_i( bus8_cpu.req_ack )
+);
+
+dbg6502 debugger(
+    .clk_i( ctrl_cpu_clock ),
+
+    .cpu_req_valid_i( cpu8_req_valid_divided ),
+    .cpu_req_ack_i( bus8_cpu.req_ack ),
+    .cpu_req_write_i( bus8_cpu.req_write ),
+    .cpu_req_addr_i( bus8_cpu.req_addr ),
+    .cpu_req_write_data_i( bus8_cpu.req_data ),
+
+    .cpu_sync_i( apple_cpu_sync ),
+    .cpu_memlock_i( apple_cpu_memory_lock ),
+    .cpu_vector_pull_i( apple_cpu_vector_pull ),
+
+    .ctrl( io_ports_bus[IO_PORT_6502_DEBUGGER] ),
+    .ctrl_intr_o( irq_lines[DBG_6502_IRQ] ),
+
+    .n_halt_o( apple_dbg_halt )
 );
 
 logic apple_io_periph_req_valid[a2_io::NumPeripherals], apple_io_periph_req_ack[a2_io::NumPeripherals],

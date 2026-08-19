@@ -2,6 +2,7 @@
 #include <saros/kernel/thread_stack.h>
 #include <saros/csr.h>
 
+#include "6502_dbg.hh"
 #include "display.h"
 #include "format.h"
 #include "irq.h"
@@ -98,6 +99,8 @@ static void handleExternalInterrupt() {
         SD::irq_handler_insert();
     if( (active_irqs & IrqExt__SdCardDataIdle) != 0 )
         SD::irq_handler_data();
+    if( (active_irqs & IrqExt__6502Debug) != 0 )
+        irq_debug_6502();
 }
 
 [[noreturn]] static void handle_trap(uint32_t cause) {

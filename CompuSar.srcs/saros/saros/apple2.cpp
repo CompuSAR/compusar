@@ -1,5 +1,6 @@
 #include <apple2.h>
 
+#include <6502_dbg.hh>
 #include <apple2_display.h>
 
 #include "8bit_hook.h"
@@ -134,7 +135,7 @@ void start_8bit() {
         // Set slot 6 to point to the Disk ][ controller ROM
         const uint32_t romAddr = reinterpret_cast<uint32_t>( &DISK2_fw );
         const uint32_t slot6Addr = 0xc600;
-        reg_write_32( PagerDeviceNum, Pager_SlotRomsOffset + 6*16, romAddr ^ slot6Addr );
+        //reg_write_32( PagerDeviceNum, Pager_SlotRomsOffset + 6*16, romAddr ^ slot6Addr );
     }
 
     constexpr size_t IO_SLOTS_ROM_BASE = 0xc100;
@@ -150,6 +151,8 @@ void start_8bit() {
         *ptr = 0xff00ff00;
 
     saros.createThread( uartHandler, nullptr, "UART keyboard"_fs );
+
+    init_debugger();
 
     saros.enableSoftwareInterrupt();
 

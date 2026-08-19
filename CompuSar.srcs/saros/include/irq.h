@@ -22,6 +22,8 @@ static constexpr uint32_t IrqExt__Vsync                 = 0x00000004;
 static constexpr uint32_t IrqExt__SdCardIn              = 0x00000008;
 static constexpr uint32_t IrqExt__SdCardDataIdle        = 0x00000010;
 
+static constexpr uint32_t IrqExt__6502Debug             = 0x00010000;
+
 void irq_external_mask( uint32_t mask );
 void irq_external_unmask( uint32_t mask );
 
