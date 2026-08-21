@@ -629,6 +629,7 @@ sync_bus_write_mask#(.DATA_WIDTH(8), .ADDR_WIDTH(32)) bus8_expanded();
 
 wire apple_cpu_sync, apple_cpu_vector_pull, apple_cpu_memory_lock;
 wire apple_dbg_halt;
+wire [7:0] apple_cpu_dbg_reg_a, apple_cpu_dbg_reg_x, apple_cpu_dbg_reg_y, apple_cpu_dbg_reg_s, apple_cpu_dbg_reg_p;
 
 
 wire cpu8_req_valid_divided, cpu8_req_ack_divided;
@@ -651,7 +652,13 @@ sar6502_sync apple_cpu(
 
     .sync_o( apple_cpu_sync ),
     .vector_pull_o( apple_cpu_vector_pull ),
-    .memory_lock_o( apple_cpu_memory_lock )
+    .memory_lock_o( apple_cpu_memory_lock ),
+
+    .dbg_reg_a( apple_cpu_dbg_reg_a ),
+    .dbg_reg_x( apple_cpu_dbg_reg_x ),
+    .dbg_reg_y( apple_cpu_dbg_reg_y ),
+    .dbg_reg_s( apple_cpu_dbg_reg_s ),
+    .dbg_reg_p( apple_cpu_dbg_reg_p )
 );
 
 freq_div_bus freq_div_6502(
@@ -672,7 +679,7 @@ dbg6502 debugger(
     .clk_i( ctrl_cpu_clock ),
 
     .cpu_req_valid_i( cpu8_req_valid_divided ),
-    .cpu_req_ack_i( bus8_cpu.req_ack ),
+    .cpu_req_ack_i( cpu8_req_ack_divided ),
     .cpu_req_write_i( bus8_cpu.req_write ),
     .cpu_req_addr_i( bus8_cpu.req_addr ),
     .cpu_req_write_data_i( bus8_cpu.req_data ),
@@ -680,6 +687,12 @@ dbg6502 debugger(
     .cpu_sync_i( apple_cpu_sync ),
     .cpu_memlock_i( apple_cpu_memory_lock ),
     .cpu_vector_pull_i( apple_cpu_vector_pull ),
+
+    .cpu_reg_a( apple_cpu_dbg_reg_a ),
+    .cpu_reg_x( apple_cpu_dbg_reg_x ),
+    .cpu_reg_y( apple_cpu_dbg_reg_y ),
+    .cpu_reg_s( apple_cpu_dbg_reg_s ),
+    .cpu_reg_p( apple_cpu_dbg_reg_p ),
 
     .ctrl( io_ports_bus[IO_PORT_6502_DEBUGGER] ),
     .ctrl_intr_o( irq_lines[DBG_6502_IRQ] ),

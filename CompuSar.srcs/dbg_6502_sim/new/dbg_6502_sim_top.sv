@@ -97,21 +97,27 @@ task read_reg(input [15:0] addr, output [31:0] result);
 endtask
 
 initial begin
-    logic[31:0] status;
+    logic[31:0] state;
 
     write_reg(16'h8000, { 4'b0001, 4'b0001, 8'h00, 16'hfe5e });
 
-    @(posedge clock)
-    while( !intr )
-        @(posedge clock);
+    forever begin
+        @(posedge clock)
+        while( !intr )
+            @(posedge clock);
 
-    read_reg(16'h0004, status);
+        read_reg(16'h0004, state);
+        $display("DBG: %08x", state);
+
+        write_reg(16'h0000, 32'b101);
+    end
 end
 
-task c6502_read(input [15:0] address);
+task c6502_read(input [15:0] address, input setsync);
     cpu_req_valid = 1'b1;
     cpu_req_write = 1'b0;
     cpu_req_addr = address;
+    sync = setsync;
 
     @(posedge clock);
     while( !cpu_req_ack )
@@ -139,12 +145,16 @@ initial begin
     #10000;
 
     @(negedge clock);
-    c6502_read(16'hfffc);
-    c6502_read(16'hfffd);
-    c6502_read(16'hfe5e);
-    c6502_read(16'hfe5f);
+    c6502_read(16'hfffc, 1'b0);
+    c6502_read(16'hfffd, 1'b0);
+    c6502_read(16'hfe5e, 1'b1);
+    c6502_read(16'hfe5f, 1'b0);
     c6502_write(16'hfe5e, 8'h42);
-    c6502_read(16'hfe5f);
+    c6502_read(16'hfe60, 1'b1);
+    c6502_read(16'hfe61, 1'b0);
+    c6502_read(16'hfe62, 1'b0);
+    c6502_read(16'hfe63, 1'b1);
+    c6502_read(16'hfe64, 1'b0);
 end
 
 endmodule

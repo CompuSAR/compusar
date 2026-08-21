@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
-      <ZoomEndTime time="1,336.001 ns"></ZoomEndTime>
-      <Cursor1Time time="322.000 ns"></Cursor1Time>
+      <ZoomStartTime time="9,727.447 ns"></ZoomStartTime>
+      <ZoomEndTime time="11,362.771 ns"></ZoomEndTime>
+      <Cursor1Time time="10,900.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="220"></NameColumnWidth>
-      <ValueColumnWidth column_width="137"></ValueColumnWidth>
+      <ValueColumnWidth column_width="133"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="25" />
+   <WVObjectSize size="28" />
    <wvobject type="logic" fp_name="/dbg_6502_sim_top/clock">
       <obj_property name="ElementShortName">clock</obj_property>
       <obj_property name="ObjectShortName">clock</obj_property>
@@ -115,6 +115,18 @@
    <wvobject type="array" fp_name="/dbg_6502_sim_top/mut/breakpoints">
       <obj_property name="ElementShortName">breakpoints[0:3]</obj_property>
       <obj_property name="ObjectShortName">breakpoints[0:3]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/dbg_6502_sim_top/mut/singlestep">
+      <obj_property name="ElementShortName">singlestep</obj_property>
+      <obj_property name="ObjectShortName">singlestep</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/dbg_6502_sim_top/mut/cont">
+      <obj_property name="ElementShortName">cont</obj_property>
+      <obj_property name="ObjectShortName">cont</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/dbg_6502_sim_top/mut/halt">
+      <obj_property name="ElementShortName">halt</obj_property>
+      <obj_property name="ObjectShortName">halt</obj_property>
    </wvobject>
    <wvobject type="array" fp_name="/dbg_6502_sim_top/mut/NUM_BREAKPOINT">
       <obj_property name="ElementShortName">NUM_BREAKPOINT[31:0]</obj_property>
