@@ -97,7 +97,7 @@ static void debugger_loop(void *) noexcept {
 }
 
 void init_debugger() {
-    set_breakpoint( 0, 0xfe5e, 0, 0 );
+    //set_breakpoint( 0, 0xfe5e, 0, 0 );
 
     saros.createThread( debugger_loop, nullptr, "Debugger thread"_fs );
 }
