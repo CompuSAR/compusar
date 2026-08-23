@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="apple_io_sim_top_behav.wdb" id="1">
+         <top_modules>
+            <top_module name="a2_io" />
+            <top_module name="apple_io_sim_top" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <zoom_setting>
+      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="4,384.001 ns"></ZoomEndTime>
+      <Cursor1Time time="350.000 ns"></Cursor1Time>
+   </zoom_setting>
+   <column_width_setting>
+      <NameColumnWidth column_width="220"></NameColumnWidth>
+      <ValueColumnWidth column_width="133"></ValueColumnWidth>
+   </column_width_setting>
+   <WVObjectSize size="29" />
+   <wvobject type="logic" fp_name="/apple_io_sim_top/clock">
+      <obj_property name="ElementShortName">clock</obj_property>
+      <obj_property name="ObjectShortName">clock</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_io_sim_top/interrupt">
+      <obj_property name="ElementShortName">interrupt</obj_property>
+      <obj_property name="ObjectShortName">interrupt</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/perph_req_valid">
+      <obj_property name="ElementShortName">perph_req_valid[0:1]</obj_property>
+      <obj_property name="ObjectShortName">perph_req_valid[0:1]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/perph_req_ack">
+      <obj_property name="ElementShortName">perph_req_ack[0:1]</obj_property>
+      <obj_property name="ObjectShortName">perph_req_ack[0:1]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/perph_req_addr">
+      <obj_property name="ElementShortName">perph_req_addr[0:1][15:0]</obj_property>
+      <obj_property name="ObjectShortName">perph_req_addr[0:1][15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/perph_req_write">
+      <obj_property name="ElementShortName">perph_req_write[0:1]</obj_property>
+      <obj_property name="ObjectShortName">perph_req_write[0:1]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/perph_req_data">
+      <obj_property name="ElementShortName">perph_req_data[0:1][7:0]</obj_property>
+      <obj_property name="ObjectShortName">perph_req_data[0:1][7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/perph_rsp_valid">
+      <obj_property name="ElementShortName">perph_rsp_valid[0:1]</obj_property>
+      <obj_property name="ObjectShortName">perph_rsp_valid[0:1]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/perph_rsp_data">
+      <obj_property name="ElementShortName">perph_rsp_data[0:1][7:0]</obj_property>
+      <obj_property name="ObjectShortName">perph_rsp_data[0:1][7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/ctrl_bus/DATA_WIDTH">
+      <obj_property name="ElementShortName">DATA_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">DATA_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_io_sim_top/ctrl_bus/req_valid">
+      <obj_property name="ElementShortName">req_valid</obj_property>
+      <obj_property name="ObjectShortName">req_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/ctrl_bus/req_addr">
+      <obj_property name="ElementShortName">req_addr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">req_addr[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/ctrl_bus/req_data">
+      <obj_property name="ElementShortName">req_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">req_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_io_sim_top/ctrl_bus/req_ack">
+      <obj_property name="ElementShortName">req_ack</obj_property>
+      <obj_property name="ObjectShortName">req_ack</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_io_sim_top/ctrl_bus/req_write">
+      <obj_property name="ElementShortName">req_write</obj_property>
+      <obj_property name="ObjectShortName">req_write</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_io_sim_top/ctrl_bus/rsp_valid">
+      <obj_property name="ElementShortName">rsp_valid</obj_property>
+      <obj_property name="ObjectShortName">rsp_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/ctrl_bus/rsp_data">
+      <obj_property name="ElementShortName">rsp_data[31:0]</obj_property>
+      <obj_property name="ObjectShortName">rsp_data[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/ctrl_bus/ADDR_WIDTH">
+      <obj_property name="ElementShortName">ADDR_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ADDR_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/state">
+      <obj_property name="ElementShortName">state[31:0]</obj_property>
+      <obj_property name="ObjectShortName">state[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/busptr">
+      <obj_property name="ElementShortName">busptr[31:0]</obj_property>
+      <obj_property name="ObjectShortName">busptr[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/cpu_bus/DATA_WIDTH">
+      <obj_property name="ElementShortName">DATA_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">DATA_WIDTH[31:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_io_sim_top/cpu_bus/req_valid">
+      <obj_property name="ElementShortName">req_valid</obj_property>
+      <obj_property name="ObjectShortName">req_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/cpu_bus/req_addr">
+      <obj_property name="ElementShortName">req_addr[15:0]</obj_property>
+      <obj_property name="ObjectShortName">req_addr[15:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/cpu_bus/req_data">
+      <obj_property name="ElementShortName">req_data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">req_data[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_io_sim_top/cpu_bus/req_ack">
+      <obj_property name="ElementShortName">req_ack</obj_property>
+      <obj_property name="ObjectShortName">req_ack</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_io_sim_top/cpu_bus/req_write">
+      <obj_property name="ElementShortName">req_write</obj_property>
+      <obj_property name="ObjectShortName">req_write</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/apple_io_sim_top/cpu_bus/rsp_valid">
+      <obj_property name="ElementShortName">rsp_valid</obj_property>
+      <obj_property name="ObjectShortName">rsp_valid</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/cpu_bus/rsp_data">
+      <obj_property name="ElementShortName">rsp_data[7:0]</obj_property>
+      <obj_property name="ObjectShortName">rsp_data[7:0]</obj_property>
+   </wvobject>
+   <wvobject type="array" fp_name="/apple_io_sim_top/cpu_bus/ADDR_WIDTH">
+      <obj_property name="ElementShortName">ADDR_WIDTH[31:0]</obj_property>
+      <obj_property name="ObjectShortName">ADDR_WIDTH[31:0]</obj_property>
+   </wvobject>
+</wave_config>
