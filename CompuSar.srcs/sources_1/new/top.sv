@@ -112,15 +112,7 @@ wire clk_ddr_dqs_w;
 wire clk_ref_w;
 wire clock_feedback;
 
-wire ctrl_cpu_reset;
-
 logic bus_clock_25, bus_clock_50, bus_clock_200, bus_clock_feedback;
-
-xpm_cdc_sync_rst reset_synchronizer(
-    .dest_rst(ctrl_cpu_reset),
-    .dest_clk(ctrl_cpu_clock),
-    .src_rst(nReset)
-);
 
 clk_converter clocks(
     .clk_in1(board_clock), .reset(1'b0),
@@ -193,7 +185,7 @@ wire [31:0] gp_out[GPIO_OUT_PORTS];
 
 VexRiscv control_cpu(
     .clk(ctrl_cpu_clock),
-    .reset(!ctrl_cpu_reset || !clocks_locked),
+    .reset(!clocks_locked),
 
     .timerInterrupt(ctrl_timer_interrupt),
     .externalInterrupt(ctrl_ext_interrupt),
@@ -599,7 +591,7 @@ end
 
 dbglogger dbglogger(
     .clk_i(ctrl_cpu_clock),
-    .rst_i(!ctrl_cpu_reset || !clocks_locked),
+    .rst_i(!clocks_locked),
 
     .log_data_i(dbglogger_data),
     .log_enable_i(dbglogger_trigger),
@@ -632,12 +624,20 @@ wire apple_dbg_halt;
 wire [7:0] apple_cpu_dbg_reg_a, apple_cpu_dbg_reg_x, apple_cpu_dbg_reg_y, apple_cpu_dbg_reg_s, apple_cpu_dbg_reg_p;
 
 
+wire apple_cpu_reset;
+
+xpm_cdc_sync_rst reset_synchronizer(
+    .dest_rst(apple_cpu_reset),
+    .dest_clk(ctrl_cpu_clock),
+    .src_rst(nReset)
+);
+
 wire cpu8_req_valid_divided, cpu8_req_ack_divided;
 
 sar6502_sync apple_cpu(
     .clock_i( ctrl_cpu_clock ),
 
-    .reset_i( gp_out[0][GPIO_OUT0__6502_RESET] ),
+    .reset_i( gp_out[0][GPIO_OUT0__6502_RESET] || !apple_cpu_reset ),
     .nmi_i( 1'b0 ),
     .irq_i( 1'b0 ),
     .set_overflow_i( 1'b0 ),
