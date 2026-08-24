@@ -1,7 +1,9 @@
 #include <apple2.h>
 
+#include <saros/fs/filesystem.h>
 #include <6502_dbg.hh>
 #include <apple2_display.h>
+#include <apple2_disk.hh>
 
 #include "8bit_hook.h"
 #include "gpio.h"
@@ -35,6 +37,15 @@ constexpr size_t IO_TAPEIN      = IO_BASE + 0x60;
 constexpr size_t IO_PADDL0      = IO_BASE + 0x64;
 constexpr size_t IO_PTRIG       = IO_BASE + 0x70;
 
+// Slots IO
+constexpr size_t IO_SLOT1       = IO_BASE + 0x90;
+constexpr size_t IO_SLOT2       = IO_BASE + 0xa0;
+constexpr size_t IO_SLOT3       = IO_BASE + 0xb0;
+constexpr size_t IO_SLOT4       = IO_BASE + 0xc0;
+constexpr size_t IO_SLOT5       = IO_BASE + 0xd0;
+constexpr size_t IO_SLOT6       = IO_BASE + 0xe0;
+constexpr size_t IO_SLOT7       = IO_BASE + 0xf0;
+
 constexpr uint32_t PagerDeviceNum = 0x80;
 
 constexpr uint32_t Pager_MainBank = 0x0000;
@@ -45,10 +56,6 @@ constexpr uint32_t Pager_DevNull = 0x0010;
 constexpr uint32_t Pager_SlotRomsOffset = 0x0100;
 constexpr uint32_t Pager_WriteOffset = 0x0800;
 constexpr uint32_t Pager_IoOp = 0x1000;
-
-constexpr uint32_t IoDeviceNum = 0x81;
-
-constexpr uint32_t Io_Event = 0x0000;
 
 static void io8_write(uint8_t port, uint8_t val) {
     reinterpret_cast<volatile uint8_t *>(ROMS_BASE)[IO_BASE + port] = val;
@@ -97,6 +104,27 @@ void uartHandler(void *) noexcept {
     }
 }
 
+static std::optional<Diskette> disk;
+void diskMonitor(void *) noexcept {
+    while( true ) {
+        while( !fs ) {
+            fsChanged.wait();
+        }
+
+        auto rootDir = fs->getRootDir();
+        for( auto dirEntry : rootDir ) {
+            if( dirEntry.isFile() && dirEntry.isExt("DSK") ) {
+                auto imgFile = Filesystem::File( dirEntry, *fs );
+                disk->load( imgFile );
+                break;
+            }
+        }
+
+        fsChanged.wait();
+        disk->eject();
+    }
+}
+
 static constexpr uint32_t IO_ADDR_MASK  = 0x0000ffff, IO_ADDR_SHIFT = 0;
 static constexpr uint32_t IO_DATA_MASK  = 0x00ff0000, IO_DATA_SHIFT = 16;
 static constexpr uint32_t IO_WRITE_MASK = 0x40000000, IO_WRITE_SHIFT = 30;
@@ -135,7 +163,7 @@ void start_8bit() {
         // Set slot 6 to point to the Disk ][ controller ROM
         const uint32_t romAddr = reinterpret_cast<uint32_t>( &DISK2_fw );
         const uint32_t slot6Addr = 0xc600;
-        //reg_write_32( PagerDeviceNum, Pager_SlotRomsOffset + 6*16, romAddr ^ slot6Addr );
+        reg_write_32( PagerDeviceNum, Pager_SlotRomsOffset + 6*16, romAddr ^ slot6Addr );
     }
 
     constexpr size_t IO_SLOTS_ROM_BASE = 0xc100;
@@ -151,6 +179,9 @@ void start_8bit() {
         *ptr = 0xff00ff00;
 
     saros.createThread( uartHandler, nullptr, "UART keyboard"_fs );
+
+    disk.emplace();
+    saros.createThread( diskMonitor, nullptr, "SD card disk image loader"_fs );
 
     init_debugger();
 
@@ -176,13 +207,24 @@ void handleSoftwareInterrupt() {
     const IoOp ioOp{ .value = reg_read_32( IoDeviceNum, Io_Event ) };
 
     uint8_t result = 0;
+    bool handled = true;
     if( ioOp.write ) {
         switch( ioOp.addr ) {
         default:
             break;
         }
     } else {
-        switch( ioOp.addr ) {
+        if( ioOp.addr >= IO_BASE+0x90 && ioOp.addr < IO_BASE+0x100 ) {
+            const uint32_t slotNo = ( (ioOp.addr & 0x00f0)>>4 ) - 8;
+            switch( slotNo ) {
+            case 6:
+                assertWithMessage( disk.has_value(), "I/O for disk called by disk object not yet initialized" );
+                handled = disk->handleIo(ioOp.addr, ioOp.write, ioOp.data, ioOp.pending);
+                break;
+            default:
+                break;
+            }
+        } else switch( ioOp.addr ) {
         case IO_KBDSTRB:
             result = lastKey.keyProbed();
             break;
@@ -191,5 +233,6 @@ void handleSoftwareInterrupt() {
         }
     }
 
-    reg_write_32( IoDeviceNum, Io_Event, result );
+    if( handled )
+        reg_write_32( IoDeviceNum, Io_Event, result );
 }

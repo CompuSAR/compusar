@@ -24,7 +24,7 @@ libcommon_a_CXXFLAGS=-ffreestanding
 
 saros_elf_SOURCES=main.cpp uart.cpp saros.cpp mutex.cpp $(commondir)/format.cpp irq.cpp $(commondir)/reg.cpp $(commondir)/gpio.cpp \
                   start.s ../abort.cpp display.cpp crt.cpp sd.cpp \
-                  apple2.cpp apple2_display.cpp 6502_dbg.cpp \
+                  apple2.cpp apple2_display.cpp 6502_dbg.cpp apple2_disk.cpp \
                   roms/Apple2_Plus_rom.s roms/charset_us_bin.s roms/DISK2_fw.s
 EXTRA_saros_elf_DEPENDENCIES=$(srcdir)/saros.ld kernel/libkernel.a fs/libfs.a libcommon.a
 saros_elf_LDFLAGS=-T $(srcdir)/saros.ld --orphan-handling=error
