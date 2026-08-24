@@ -4,16 +4,21 @@
 
 #include <irq.h>
 #include <uart.h>
+#include <format.h>
 
 using namespace Saros;
 
-void abortWithMessage( const char *message ) {
+void _abortWithMessage( const char *message, const char *file, int line ) {
     // Disable interrupts
     csr_read_clr_bits<CSR::mstatus>(MSTATUS__MIE);
 
     uart_sync_flush_buffer();
 
     uart_sync_message("ABORT: ");
+    uart_sync_message(file);
+    uart_sync_message(":");
+    print_dec(line, true);
+    uart_sync_message(" ");
     uart_sync_message(message);
     uart_sync_message("\n");
 
@@ -21,12 +26,12 @@ void abortWithMessage( const char *message ) {
     halt();
 }
 
-void assertWithMessage( bool condition, const char *message ) {
+void _assertWithMessage( bool condition, const char *message, const char *file, int line ) {
     if( !condition )
-        abortWithMessage(message);
+        _abortWithMessage(message, file, line);
 }
 
-void checkWithMessage( bool condition, const char *message ) {
+void _checkWithMessage( bool condition, const char *message, const char *file, int line  ) {
     if( !condition )
-        abortWithMessage(message);
+        _abortWithMessage(message, file, line);
 }
