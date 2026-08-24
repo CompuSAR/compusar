@@ -35,7 +35,7 @@ void print_hex(void *ptr, bool sync) {
     print_hex(reinterpret_cast<uint32_t>(ptr), sync);
 }
 
-void print_dec(uint64_t number) {
+void print_dec(uint64_t number, bool sync) {
     char buffer[25];
     int i=0;
 
@@ -45,7 +45,12 @@ void print_dec(uint64_t number) {
     } while(number!=0);
 
     for( int j=i-1; j>=0; --j ) {
-        uart_send(buffer[j]);
+#ifdef SAROS
+        if( sync )
+            uart_send_raw(buffer[j]);
+        else
+#endif
+            uart_send(buffer[j]);
     }
 }
 
