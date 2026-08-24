@@ -58,6 +58,40 @@ public:
             uint16_t dirWrtDate;
             uint16_t dirFstClusLo;
             uint32_t dirFileSize;
+
+            bool isDeleted() const {
+                return dirName[0] == FreeMarker || dirName[0] == EndMarker;
+            }
+
+            bool isDir() const {
+                if( dirAttr == AttributeLongName )
+                    return false;
+
+                if( isDeleted() )
+                    return false;
+
+                return (dirAttr & AttrDirectory) != 0;
+            }
+
+            bool isFile() const {
+                if( dirAttr == AttributeLongName )
+                    return false;
+
+                if( isDeleted() )
+                    return false;
+
+                return (dirAttr & AttrDirectory) == 0;
+            }
+
+            bool isExt(const char *ext) const {
+                if( dirAttr == AttributeLongName )
+                    return false;
+
+                if( isDeleted() )
+                    return false;
+
+                return dirName[8] == ext[0] && dirName[9] == ext[1] && dirName[10] == ext[2];
+            }
         };
         static_assert(sizeof(DirEntry)==32);
         static_assert(offsetof(DirEntry, dirFileSize)==28);
