@@ -35,7 +35,7 @@ module apple2_diskette_controller(
     input [7:0] cpu_req_write_data_i,
 
     output logic cpu_rsp_valid_o = 1'b0,
-    output [7:0] cpu_rsp_read_data_o,
+    output logic[7:0] cpu_rsp_read_data_o,
 
     // Sniff the apple's bus to know when a valid bus cycle has taken place.
     input cpu_bus_valid_i,
@@ -60,11 +60,11 @@ logic [31:0] spin_counter, spin_increment;
 
 logic [31:0] track_data_start, track_data_length, track_pos, track_pos_next, fetch_offset;
 logic [15:0] bit_ratio_num, bit_ratio_denom;
-logic motor_running = 1'b0, freq_div_reset = 1'b1;
+logic motor_running = 1'b0, freq_div_reset = 1'b1, no_disk_in_drive = 1'b1;
 
 assign track_pos_next = track_pos + 1;
 
-logic [DMA_WIDTH-1:0] dma_data[2];
+logic [DMA_WIDTH-1:0] dma_data[2] = '{ default: {DMA_WIDTH{1'b0}} };
 logic dma_data_valid[2] = '{ default: 1'b0 };
 logic dma_req_pending = 1'b0;
 
@@ -73,9 +73,7 @@ logic [$clog2(REG_FULL_READ_GRACE)-1:0] grace_counter;
 logic should_bit_shift;
 wire next_bit_in;
 
-assign cpu_rsp_read_data_o = shift_register;
-
-assign next_bit_in = dma_data[0][track_pos[DMA_WIDTH_ADDR-1:0]];
+assign next_bit_in = no_disk_in_drive ? 1'b0 : dma_data[0][track_pos[DMA_WIDTH_ADDR-1:0]];
 
 assign ctrl.req_ack = 1'b1;
 assign cpu_req_ack_o = 1'b1;
@@ -86,16 +84,14 @@ always_ff@(posedge clk_i) begin
     // CTRL CPU requests
     if( ctrl.req_valid && ctrl.req_ack ) begin
         if( ctrl.req_write ) begin
-            dma_data_valid <= '{ 1'b0, 1'b0 };
-            freq_div_reset <= 1'b1;
-            motor_running <= 1'b0;
-
             case( ctrl.req_addr )
                 16'h0000: begin
                     track_data_start <= ctrl.req_data;
+                    dma_data_valid <= '{ default: 1'b0 };
                 end
                 16'h0004: begin
                     track_data_length <= ctrl.req_data;
+                    dma_data_valid <= '{ default: 1'b0 };
                 end
                 16'h0008: begin
                     track_pos <= ctrl.req_data;
@@ -103,12 +99,17 @@ always_ff@(posedge clk_i) begin
 
                     shift_register <= 8'h00;
                     grace_counter <= 0;
+
+                    dma_data_valid <= '{ default: 1'b0 };
                 end
                 16'h000c: begin
                     { bit_ratio_num, bit_ratio_denom } <= ctrl.req_data;
                 end
                 16'h0010: begin
                     { freq_div_reset, motor_running } <= ctrl.req_data[1:0];
+                end
+                16'h0014: begin
+                    { no_disk_in_drive } <= ctrl.req_data[0:0];
                 end
             endcase
         end else begin
@@ -129,8 +130,9 @@ always_ff@(posedge clk_i) begin
     if( {fetch_offset, 3'b000} >= track_data_length )
         fetch_offset <= 0;
 
-    if( !motor_running ) begin
+    if( !motor_running || no_disk_in_drive ) begin
         dma.req_valid <= 1'b0;
+        dma_data_valid <= '{ default: 1'b0 };
     end else begin
         if( dma.req_valid && dma.req_ack ) begin
             dma.req_valid <= 1'b0;
@@ -188,7 +190,11 @@ always_ff@(posedge clk_i) begin
         if( cpu_req_write_i ) begin
         end else begin
             // Read request
-            // cpu_rsp_read_data_o <= shift_register;
+            if( motor_running )
+                cpu_rsp_read_data_o <= shift_register;
+            else
+                cpu_rsp_read_data_o <= 8'h00;
+
             cpu_rsp_valid_o <= 1'b1;
         end
     end

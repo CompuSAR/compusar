@@ -104,8 +104,9 @@ void uartHandler(void *) noexcept {
     }
 }
 
-static std::optional<Diskette> disk;
+static __attribute__((section(".uninitialized"))) std::optional<Diskette> disk;
 void diskMonitor(void *) noexcept {
+    uart_send("SD monitor thread started\n");
     while( true ) {
         while( !fs ) {
             fsChanged.wait();
@@ -114,9 +115,17 @@ void diskMonitor(void *) noexcept {
         auto rootDir = fs->getRootDir();
         for( auto dirEntry : rootDir ) {
             if( dirEntry.isFile() && dirEntry.isExt("DSK") ) {
+                uart_send("Loading ");
+                dirEntry.printFileName();
+                uart_send("...\n");
+
                 auto imgFile = Filesystem::File( dirEntry, *fs );
-                disk->load( imgFile );
-                break;
+                if( disk->load( imgFile ) ) {
+                    uart_send("DSK file loaded\n");
+                    break;
+                } else {
+                    uart_send("DSK file failed to load\n");
+                }
             }
         }
 
@@ -180,6 +189,7 @@ void start_8bit() {
 
     saros.createThread( uartHandler, nullptr, "UART keyboard"_fs );
 
+    new (&disk) decltype(disk)();
     disk.emplace();
     saros.createThread( diskMonitor, nullptr, "SD card disk image loader"_fs );
 

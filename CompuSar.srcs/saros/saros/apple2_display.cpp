@@ -49,7 +49,7 @@ void initDisplay(const CharSet &charset) {
 
     reset_gpio_bits(0, GPO0__DISPLAY8_RESET);
 
-    uart_send("Display started\n");
+    uart_send("Apple II display started\n");
 }
 
 void loadCharset(const CharSet &charset) {
