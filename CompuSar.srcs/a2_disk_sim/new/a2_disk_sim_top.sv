@@ -72,6 +72,7 @@ localparam REG_TRACK_LENGTH_BITS = 16'h0004;
 localparam REG_TRACK_POS_BITS    = 16'h0008;
 localparam REG_MOTOR_SPIN_RATIO  = 16'h000c;
 localparam REG_MOTOR_CONTROL     = 16'h0010;
+localparam REG_DATA_MEM_VALID    = 16'h0014;
 localparam   MOTOR_CONTROL__MOTOR_ON       = 32'h0000_0001;
 localparam   MOTOR_CONTROL__RESET_FREQ_DIV = 32'h0000_0002;
 
@@ -523,6 +524,7 @@ task start_motor();
     @(negedge ctrl_clk);
     ctrl_write(REG_TRACK_DATA_ADDR, TRACK_BASE);
     ctrl_write(REG_TRACK_LENGTH_BITS, track_num_bits);
+    ctrl_write(REG_DATA_MEM_VALID, 32'h1);
     ctrl_write(REG_MOTOR_SPIN_RATIO, { BIT_RATIO_NUM, BIT_RATIO_DENOM });
     ctrl_write(REG_TRACK_POS_BITS, 32'h0000_0000);
     ctrl_write(REG_MOTOR_CONTROL, MOTOR_CONTROL__MOTOR_ON);

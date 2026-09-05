@@ -62,11 +62,9 @@ bool Diskette::handleIo(uint16_t addr, bool write, uint8_t data, bool pending) {
 }
 
 void Diskette::eject() {
-    std::unique_lock dataLock(lock);
+    std::unique_lock loadLocker(loadLock);
 
-    diskDataValid = false;
-
-    updateDiskHw(true);
+    ejectImpl();
 }
 
 void Diskette::reset() {
@@ -88,9 +86,9 @@ bool Diskette::load(Filesystem::File &image) {
     size_t blockSize = 0;
     size_t blockSizeConsumed = 0;
 
-    eject();
+    std::unique_lock locker(loadLock);
+    ejectImpl();
 
-    std::unique_lock dataLock(lock);
     for( uint8_t track = 0; track <= MaxTrack; ++track ) {
         uint32_t position = 0;
 
@@ -173,6 +171,7 @@ bool Diskette::load(Filesystem::File &image) {
 
     diskDataValid = true;
 
+    std::unique_lock stateLocker(lock);
     updateTrackData(0);
     updateDiskHw(false);
 
@@ -185,7 +184,7 @@ void Diskette::ioHandleThread() noexcept {
     while( true ) {
         reqPending.wait();
 
-        std::unique_lock dataLock(lock);
+        std::unique_lock stateLocker(lock);
 
 #if DEBUG
         uart_send("DSK ");
@@ -405,6 +404,15 @@ void Diskette::calcNewTrack( uint8_t phase, bool on ) {
             break;
         }
     }
+}
+
+void Diskette::ejectImpl() {
+    // Must be called with loadLock already acquired
+    std::unique_lock stateLocker(lock);
+
+    diskDataValid = false;
+
+    updateDiskHw(true);
 }
 
 void Diskette::trackWriteBit(uint8_t track, uint32_t &position, bool bit) {

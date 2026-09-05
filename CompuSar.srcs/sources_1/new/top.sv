@@ -633,6 +633,7 @@ xpm_cdc_sync_rst reset_synchronizer(
 );
 
 wire cpu8_req_valid_divided, cpu8_req_ack_divided;
+wire apple_cycle;
 
 sar6502_sync apple_cpu(
     .clock_i( ctrl_cpu_clock ),
@@ -660,6 +661,8 @@ sar6502_sync apple_cpu(
     .dbg_reg_s( apple_cpu_dbg_reg_s ),
     .dbg_reg_p( apple_cpu_dbg_reg_p )
 );
+
+assign apple_cycle = cpu8_req_valid_divided && cpu8_req_ack_divided;
 
 freq_div_bus freq_div_6502(
     .clock_i( ctrl_cpu_clock ),
@@ -763,6 +766,8 @@ apple2_diskette_controller a2_disk(
     .cpu_req_write_data_i( apple_io_periph_req_write_data[a2_io::Diskette] ),
     .cpu_rsp_valid_o( apple_io_periph_rsp_valid[a2_io::Diskette] ),
     .cpu_rsp_read_data_o( apple_io_periph_rsp_read_data[a2_io::Diskette] ),
+
+    .apple_cycle(apple_cycle),
 
     .dma( cache_ports[CACHE_PORT_IDX_APPLE_DISK] )
 );

@@ -19,7 +19,7 @@ class Diskette {
     static constexpr size_t SectorSize = 256;
 
     Saros::Sync::Event reqPending;
-    Saros::Sync::Mutex lock;
+    Saros::Sync::Mutex lock, loadLock;
 
     // Raw disk buffer
     std::array< std::array< uint8_t, TrackStorageSize >, MaxTrack + 1 > __attribute__((aligned(16))) rawDiskImage;
@@ -57,6 +57,8 @@ public:
 private:
     void ioHandleThread() noexcept;
     void calcNewTrack( uint8_t phase, bool on );
+
+    void ejectImpl();
 
     void trackWriteBit(uint8_t track, uint32_t &position, bool bit);
     void trackWriteByte(uint8_t track, uint32_t &position, uint8_t data);

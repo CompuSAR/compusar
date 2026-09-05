@@ -38,11 +38,14 @@ module apple2_diskette_controller(
     output logic[7:0] cpu_rsp_read_data_o,
 
     // Sniff the apple's bus to know when a valid bus cycle has taken place.
-    input cpu_bus_valid_i,
-    input cpu_bus_ack_i,
+    input apple_cycle,
 
     // DMA interface
-    sync_bus_write_mask.MASTER dma
+    sync_bus_write_mask.MASTER dma,
+
+    // LEDs
+    output led_drive_on,
+    output led_write
     );
 
 localparam DMA_WIDTH = $bits(dma.req_data);
@@ -53,14 +56,11 @@ localparam REG_FULL_READ_GRACE = 10;
 
 initial dma.req_valid = 1'b0;
 
-wire apple_cycle;
-assign apple_cycle = cpu_bus_valid_i && cpu_bus_ack_i;
-
 logic [31:0] spin_counter, spin_increment;
 
 logic [31:0] track_data_start, track_data_length, track_pos, track_pos_next, fetch_offset;
 logic [15:0] bit_ratio_num, bit_ratio_denom;
-logic motor_running = 1'b0, freq_div_reset = 1'b1, no_disk_in_drive = 1'b1;
+logic motor_running = 1'b0, freq_div_reset = 1'b1, disk_in_drive = 1'b0;
 
 assign track_pos_next = track_pos + 1;
 
@@ -109,7 +109,7 @@ always_ff@(posedge clk_i) begin
                     { freq_div_reset, motor_running } <= ctrl.req_data[1:0];
                 end
                 16'h0014: begin
-                    { no_disk_in_drive } <= ctrl.req_data[0:0];
+                    { disk_in_drive } <= ctrl.req_data[0:0];
                 end
             endcase
         end else begin
@@ -130,7 +130,7 @@ always_ff@(posedge clk_i) begin
     if( {fetch_offset, 3'b000} >= track_data_length )
         fetch_offset <= 0;
 
-    if( !motor_running || no_disk_in_drive ) begin
+    if( !motor_running || !disk_in_drive ) begin
         dma.req_valid <= 1'b0;
         dma_data_valid <= '{ default: 1'b0 };
     end else begin

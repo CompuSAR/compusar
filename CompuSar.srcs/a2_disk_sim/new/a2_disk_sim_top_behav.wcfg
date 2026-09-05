@@ -11,15 +11,15 @@
       </db_ref>
    </db_ref_list>
    <zoom_setting>
-      <ZoomStartTime time="209.370 ns"></ZoomStartTime>
-      <ZoomEndTime time="472.771 ns"></ZoomEndTime>
-      <Cursor1Time time="428.870 ns"></Cursor1Time>
+      <ZoomStartTime time="0.000 ns"></ZoomStartTime>
+      <ZoomEndTime time="60.090 ns"></ZoomEndTime>
+      <Cursor1Time time="0.000 ns"></Cursor1Time>
    </zoom_setting>
    <column_width_setting>
       <NameColumnWidth column_width="220"></NameColumnWidth>
-      <ValueColumnWidth column_width="137"></ValueColumnWidth>
+      <ValueColumnWidth column_width="133"></ValueColumnWidth>
    </column_width_setting>
-   <WVObjectSize size="48" />
+   <WVObjectSize size="49" />
    <wvobject type="array" fp_name="/a2_disk_sim_top/dut/ctrl/DATA_WIDTH">
       <obj_property name="ElementShortName">DATA_WIDTH[31:0]</obj_property>
       <obj_property name="ObjectShortName">DATA_WIDTH[31:0]</obj_property>
@@ -143,6 +143,10 @@
    <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/motor_running">
       <obj_property name="ElementShortName">motor_running</obj_property>
       <obj_property name="ObjectShortName">motor_running</obj_property>
+   </wvobject>
+   <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/no_disk_in_drive">
+      <obj_property name="ElementShortName">no_disk_in_drive</obj_property>
+      <obj_property name="ObjectShortName">no_disk_in_drive</obj_property>
    </wvobject>
    <wvobject type="logic" fp_name="/a2_disk_sim_top/dut/freq_div_reset">
       <obj_property name="ElementShortName">freq_div_reset</obj_property>
