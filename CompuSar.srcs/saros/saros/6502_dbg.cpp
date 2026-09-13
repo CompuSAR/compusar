@@ -2,8 +2,8 @@
 
 #include <apple2_pager.hh>
 
+#include <saros/csr.h>
 #include <saros/saros.h>
-#include <saros/sync/event.h>
 
 #include "uart.h"
 #include "format.h"
@@ -25,11 +25,10 @@ constexpr uint32_t Dbg_ReadRegY = 0x0018;
 constexpr uint32_t Dbg_ReadRegS = 0x001c;
 constexpr uint32_t Dbg_ReadRegP = 0x0020;
 
-constexpr uint32_t NumBreakpoints = 4;
-
 constexpr uint32_t Dbg_BreakPointBase = 0x8000;
 
-static Saros::Sync::Event debug6502Halted;
+Saros::Sync::Event dbg6502Bp[NumBreakpoints];
+Saros::Sync::Signal dbg6502Halted;
 
 namespace {
     struct OpcodeNames {
@@ -821,10 +820,8 @@ namespace {
 static void debugger_loop(void *) noexcept {
     uart_send("Debugger thread started\n");
 
+    dbg6502Bp[0].wait();
     while(true) {
-        irq_external_unmask(IrqExt__6502Debug);
-        debug6502Halted.wait();
-
         // Handle the debugger
         uint32_t state = reg_read_32(DeviceNum, Dbg_State);
         uint16_t pc = state & 0xffff;
@@ -892,9 +889,11 @@ static void debugger_loop(void *) noexcept {
 
         uart_send("\n");
 
+        Saros::csr_read_clr_bits<Saros::CSR::mstatus>( Saros::MSTATUS__MIE );
         reg_write_32(DeviceNum, Dbg_Status, Dbg_Status__Cont | Dbg_Status__SingleStep);
 
-        debug6502Halted.clear();
+        irq_external_unmask(IrqExt__6502Debug);
+        dbg6502Halted.wait();
     }
 }
 
@@ -904,11 +903,20 @@ void init_debugger() {
 
 void irq_debug_6502() {
     irq_external_mask(IrqExt__6502Debug);
-    debug6502Halted.set();
+
+    uint32_t dbgStatus = reg_read_32(DeviceNum, Dbg_Status);
+    for( uint32_t i=0; i<NumBreakpoints; ++i ) {
+        if( (dbgStatus & (1u<<i)) != 0 ) {
+            dbg6502Bp[i].set();
+        }
+    }
+
+    dbg6502Halted.signal();
 }
 
 void set_breakpoint( uint8_t bp, uint16_t address, uint8_t state, uint8_t mask ) {
     reg_write_32(
             DeviceNum, Dbg_BreakPointBase + bp * 4,
             mask<<28 | state<<24 | address );
+    irq_external_unmask(IrqExt__6502Debug);
 }
