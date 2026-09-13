@@ -50,11 +50,14 @@ function logic[31:0] translate_io(input logic write, input logic [15:0] addr);
         translate_io=mapper[BANK_IO][write];
     else if( write )
         translate_io=0;
+    else if( slot[3] )
+        translate_io=slot_roms[0];
     else
         translate_io=slot_roms[slot[2:0]];
 endfunction
 
 function logic[31:0] translate_addr(input logic write, input logic [15:0] addr);
+    // The logic here must be synchronized with the logic at apple2_pager.cpp
     automatic logic [31:0] addr_mask;
     case( addr[15:12] )
         8'h0: addr_mask = mapper[MAIN][write];

@@ -154,7 +154,7 @@ void start_8bit() {
     setPageMapping( Apple2::PagerBanks::DevNull, false, const_cast<uint8_t *>(&devNullDataRead) );
     setPageMapping( Apple2::PagerBanks::DevNull, true, &devNullDataWrite );
 
-    for( unsigned i=1; i<=8; ++i ) {
+    for( unsigned i=0; i<8; ++i ) {
         // Devnull all slot ROMs
         setSlotMapping(i, nullptr);
     }

@@ -635,7 +635,7 @@ xpm_cdc_sync_rst reset_synchronizer(
 wire cpu8_req_valid_divided, cpu8_req_ack_divided;
 wire apple_cycle;
 
-sar6502_sync apple_cpu(
+sar6502_sync#(.CPU_VARIANT(0)) apple_cpu(
     .clock_i( ctrl_cpu_clock ),
 
     .reset_i( gp_out[0][GPIO_OUT0__6502_RESET] || !apple_cpu_reset ),

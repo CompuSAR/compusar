@@ -4,7 +4,7 @@
 
 namespace Apple2 {
 
-enum class PagerBanks {
+enum PagerBanks {
     Main,       // Main bulk of memory
     Io,         // IO registers region (read only)
     D,          // Dxxx bank
@@ -14,6 +14,6 @@ enum class PagerBanks {
 
 void setPageMapping(PagerBanks bank, bool write, uint8_t *address);
 void setSlotMapping(uint8_t slot, const uint8_t *address);
-uint8_t *translateAddr(uint16_t address);
+uint8_t *translateAddr(uint16_t address, bool write);
 
 } // namespace Apple2
