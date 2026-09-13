@@ -66,16 +66,16 @@ void loadCharset(const CharSet &charset) {
 void textMode(DisplayPage page, bool mode_80col) {
     switch( page ) {
     case DisplayPage::Page1:
-        reg_write_32( DeviceId, Reg__BaseAddr1, BANK0_BASE + BaseAddr_Text1);
-        reg_write_32( DeviceId, Reg__BaseAddrSplit1, BANK0_BASE + BaseAddr_Text1);
-        reg_write_32( DeviceId, Reg__BaseAddr2, BANK1_BASE + BaseAddr_Text1);
-        reg_write_32( DeviceId, Reg__BaseAddrSplit2, BANK1_BASE + BaseAddr_Text1);
+        reg_write_32( DeviceId, Reg__BaseAddr1, reinterpret_cast<uint32_t>(BANK0_BASE + BaseAddr_Text1));
+        reg_write_32( DeviceId, Reg__BaseAddrSplit1, reinterpret_cast<uint32_t>(BANK0_BASE + BaseAddr_Text1));
+        reg_write_32( DeviceId, Reg__BaseAddr2, reinterpret_cast<uint32_t>(BANK1_BASE + BaseAddr_Text1));
+        reg_write_32( DeviceId, Reg__BaseAddrSplit2, reinterpret_cast<uint32_t>(BANK1_BASE + BaseAddr_Text1));
         break;
     case DisplayPage::Page2:
-        reg_write_32( DeviceId, Reg__BaseAddr1, BaseAddr_Text2);
-        reg_write_32( DeviceId, Reg__BaseAddrSplit1, BaseAddr_Text2);
-        reg_write_32( DeviceId, Reg__BaseAddr2, BANK1_BASE + BaseAddr_Text2);
-        reg_write_32( DeviceId, Reg__BaseAddrSplit2, BANK1_BASE + BaseAddr_Text2);
+        reg_write_32( DeviceId, Reg__BaseAddr1, BaseAddr_Text2 );
+        reg_write_32( DeviceId, Reg__BaseAddrSplit1, BaseAddr_Text2 );
+        reg_write_32( DeviceId, Reg__BaseAddr2, reinterpret_cast<uint32_t>(BANK1_BASE + BaseAddr_Text2) );
+        reg_write_32( DeviceId, Reg__BaseAddrSplit2, reinterpret_cast<uint32_t>(BANK1_BASE + BaseAddr_Text2) );
         break;
     }
 

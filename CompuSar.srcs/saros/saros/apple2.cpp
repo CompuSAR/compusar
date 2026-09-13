@@ -2,8 +2,9 @@
 
 #include <saros/fs/filesystem.h>
 #include <6502_dbg.hh>
-#include <apple2_display.h>
 #include <apple2_disk.hh>
+#include <apple2_display.h>
+#include <apple2_pager.hh>
 
 #include "8bit_hook.h"
 #include "gpio.h"
@@ -46,19 +47,8 @@ constexpr size_t IO_SLOT5       = IO_BASE + 0xd0;
 constexpr size_t IO_SLOT6       = IO_BASE + 0xe0;
 constexpr size_t IO_SLOT7       = IO_BASE + 0xf0;
 
-constexpr uint32_t PagerDeviceNum = 0x80;
-
-constexpr uint32_t Pager_MainBank = 0x0000;
-constexpr uint32_t Pager_IoBank = 0x0004;
-constexpr uint32_t Pager_BankD = 0x0008;
-constexpr uint32_t Pager_BanksEF = 0x000c;
-constexpr uint32_t Pager_DevNull = 0x0010;
-constexpr uint32_t Pager_SlotRomsOffset = 0x0100;
-constexpr uint32_t Pager_WriteOffset = 0x0800;
-constexpr uint32_t Pager_IoOp = 0x1000;
-
 static void io8_write(uint8_t port, uint8_t val) {
-    reinterpret_cast<volatile uint8_t *>(ROMS_BASE)[IO_BASE + port] = val;
+    ROMS_BASE[IO_BASE + port] = val;
 }
 
 class KeyPress {
@@ -145,46 +135,41 @@ extern const uint8_t DISK2_fw[];
 
 void start_8bit() {
     static uint8_t devNullDataWrite;                    // All writes that get ignored are routed here
-    static const uint16_t devNullDataRead = 0xff;       // All reads that get ignored are routed here
+    static const uint8_t devNullDataRead = 0xff;       // All reads that get ignored are routed here
     uart_send("Initialize Apple II memory banks\n");
 
     // Main memory bank points to BANK0
-    reg_write_32( PagerDeviceNum, Pager_MainBank, BANK0_BASE );
-    reg_write_32( PagerDeviceNum, Pager_MainBank | Pager_WriteOffset, BANK0_BASE );
+    setPageMapping( Apple2::PagerBanks::Main, false, BANK0_BASE );
+    setPageMapping( Apple2::PagerBanks::Main, true, BANK0_BASE );
 
-    reg_write_32( PagerDeviceNum, Pager_BankD, ROMS_BASE );       // Page D000 read
-    reg_write_32( PagerDeviceNum, Pager_BankD | Pager_WriteOffset, BANK0_BASE );     // Page D000 write
-    reg_write_32( PagerDeviceNum, Pager_BanksEF, ROMS_BASE );       // Page E000 and F000 read
-    reg_write_32( PagerDeviceNum, Pager_BanksEF | Pager_WriteOffset, BANK0_BASE );     // Page E000 and F000 write
+    setPageMapping( Apple2::PagerBanks::D, false, ROMS_BASE );
+    setPageMapping( Apple2::PagerBanks::D, true, BANK0_BASE );
 
-    reg_write_32( PagerDeviceNum, Pager_IoBank, ROMS_BASE );
-    reg_write_32( PagerDeviceNum, Pager_IoBank | Pager_WriteOffset, 0 );
+    setPageMapping( Apple2::PagerBanks::EF, false, ROMS_BASE );
+    setPageMapping( Apple2::PagerBanks::EF, true, BANK0_BASE );
 
-    reg_write_32( PagerDeviceNum, Pager_DevNull, reinterpret_cast<uint32_t>(&devNullDataRead) );
-    reg_write_32( PagerDeviceNum, Pager_DevNull | Pager_WriteOffset, reinterpret_cast<uint32_t>(&devNullDataWrite) );
+    setPageMapping( Apple2::PagerBanks::Io, false, ROMS_BASE );
+    setPageMapping( Apple2::PagerBanks::Io, true, nullptr );
+
+    setPageMapping( Apple2::PagerBanks::DevNull, false, const_cast<uint8_t *>(&devNullDataRead) );
+    setPageMapping( Apple2::PagerBanks::DevNull, true, &devNullDataWrite );
 
     for( unsigned i=1; i<=8; ++i ) {
         // Devnull all slot ROMs
-        reg_write_32( PagerDeviceNum, Pager_SlotRomsOffset + i*16, 0 );
+        setSlotMapping(i, nullptr);
     }
-
-    {
-        // Set slot 6 to point to the Disk ][ controller ROM
-        const uint32_t romAddr = reinterpret_cast<uint32_t>( &DISK2_fw );
-        const uint32_t slot6Addr = 0xc600;
-        reg_write_32( PagerDeviceNum, Pager_SlotRomsOffset + 6*16, romAddr ^ slot6Addr );
-    }
+    setSlotMapping(6, DISK2_fw);
 
     constexpr size_t IO_SLOTS_ROM_BASE = 0xc100;
     constexpr size_t IO_SHARED_ROM_BASE = 0xc800;
-    memset(reinterpret_cast<void *>(ROMS_BASE + IO_SLOTS_ROM_BASE), 0xff, 256*7 + 256*8);
-    memset(reinterpret_cast<void *>(ROMS_BASE + IO_BASE), 0x00, 256);
+    memset(ROMS_BASE + IO_SLOTS_ROM_BASE, 0xff, 256*7 + 256*8);
+    memset(ROMS_BASE + IO_BASE, 0x00, 256);
 
     Display::initDisplay(Display::charset_us);
 
     // Fill main memory with junk so it registers as a cold boot
     uart_send("Seed memory\n");
-    for( auto ptr = reinterpret_cast<uint32_t *>(BANK0_BASE); ptr != reinterpret_cast<uint32_t *>(BANK0_BASE + 2048); ++ptr )
+    for( auto ptr = reinterpret_cast<uint32_t *>(BANK0_BASE); ptr != reinterpret_cast<uint32_t*>(BANK0_BASE + 2048); ++ptr )
         *ptr = 0xff00ff00;
 
     saros.createThread( uartHandler, nullptr, "UART keyboard"_fs );

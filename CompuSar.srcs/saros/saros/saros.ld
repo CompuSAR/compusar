@@ -18,6 +18,10 @@ PROVIDE( __thread_stacks_start = MEM_BASE + 8M );
 PROVIDE( __thread_stacks_end = MEM8BIT_START );
 PROVIDE( __trap_stack_end = MEM_BASE + 64K );
 
+PROVIDE( ROMS_BASE = MEM8BIT_START );
+PROVIDE( BANK0_BASE = ROMS_BASE + 64K );
+PROVIDE( BANK1_BASE = BANK0_BASE + 64K );
+
 PHDRS
 {
     text        PT_LOAD;
