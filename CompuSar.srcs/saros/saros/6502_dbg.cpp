@@ -890,9 +890,9 @@ static void debugger_loop(void *) noexcept {
         uart_send("\n");
 
         Saros::csr_read_clr_bits<Saros::CSR::mstatus>( Saros::MSTATUS__MIE );
-        reg_write_32(DeviceNum, Dbg_Status, Dbg_Status__Cont | Dbg_Status__SingleStep);
 
-        irq_external_unmask(IrqExt__6502Debug);
+        dbg_cont( true );
+
         dbg6502Halted.wait();
     }
 }
@@ -919,4 +919,39 @@ void set_breakpoint( uint8_t bp, uint16_t address, uint8_t state, uint8_t mask )
             DeviceNum, Dbg_BreakPointBase + bp * 4,
             mask<<28 | state<<24 | address );
     irq_external_unmask(IrqExt__6502Debug);
+}
+
+void dbg_cont( bool singlestep ) {
+    uint32_t contArgs = Dbg_Status__Cont;
+    if( singlestep )
+        contArgs |= Dbg_Status__SingleStep;
+    reg_write_32(DeviceNum, Dbg_Status, contArgs);
+
+    irq_external_unmask(IrqExt__6502Debug);
+}
+
+uint8_t dbg_readReg( DbgReg reg ) {
+    uint16_t regAddr = 0;
+
+    switch(reg) {
+    case DbgReg::A:
+        regAddr = Dbg_ReadRegA;
+        break;
+    case DbgReg::X:
+        regAddr = Dbg_ReadRegX;
+        break;
+    case DbgReg::Y:
+        regAddr = Dbg_ReadRegY;
+        break;
+    case DbgReg::S:
+        regAddr = Dbg_ReadRegS;
+        break;
+    case DbgReg::P:
+        regAddr = Dbg_ReadRegP;
+        break;
+    default:
+        abortWithMessage("Illegal register asked");
+    }
+
+    return reg_read_32(DeviceNum, regAddr);
 }

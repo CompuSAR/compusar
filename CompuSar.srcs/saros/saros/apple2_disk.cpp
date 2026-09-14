@@ -4,11 +4,16 @@
 #include <reg.h>
 
 #include <apple2.h>
+#include <apple2_pager.hh>
 
 #include <uart.h>
 #include <format.h>
 
 #include <mutex>
+
+#include <6502_dbg.hh>
+
+using namespace Apple2;
 
 static constexpr uint32_t DeviceNum = 0x82;
 
@@ -73,7 +78,117 @@ void Diskette::reset() {
     updateDiskHw(true);
 }
 
+static void debugThread0(void *) noexcept {
+    while(true) {
+        dbg6502Bp[1].wait();
+
+        uart_send("DBG: B0 ReadSector T:");
+        print_dec( *translateAddr(0x41, false) );
+        uart_send(" S:");
+        print_hex( *translateAddr(0x3d, false) );
+        uart_send(" -> $");
+        uint16_t dstAddr = *translateAddr(0x27, false);
+        dstAddr <<= 8;
+        dstAddr |= *translateAddr(0x26, false);
+        print_hex( dstAddr );
+        uart_send("\n");
+
+        // Set the breakpoint to the sector successfully read point
+        set_breakpoint(1, 0xc6eb, BP_SYNC, BP_SYNC);
+        dbg6502Bp[1].clear();
+        dbg_cont();
+
+        dbg6502Bp[1].wait();
+        uart_send("DBG: B0 ReadSector success:\n");
+        for(unsigned j=0; j<16; ++j) {
+            for(unsigned i=0; i<16; ++i) {
+                uart_send(" ");
+                if( i==8 )
+                    uart_send(" ");
+                print_hex( *translateAddr(dstAddr, false) );
+                dstAddr++;
+            }
+            uart_send("\n");
+        }
+
+        uart_send("\n");
+        set_breakpoint(1, 0xc65c, BP_SYNC, BP_SYNC);
+        dbg6502Bp[1].clear();
+        dbg_cont();
+    }
+}
+
+static void debugThreadRwts(void *) noexcept {
+    while(true) {
+        dbg6502Bp[2].wait();
+
+        uint16_t iocb = dbg_readReg(DbgReg::A);
+        iocb <<= 8;
+        iocb |= dbg_readReg(DbgReg::Y);
+
+        uart_send("DBG: RWTS Op ");
+        print_hex( *translateAddr(iocb+0xc, false) );
+        uart_send(" T:");
+        print_hex( *translateAddr(iocb+0x4, false) );
+        uart_send(" S:");
+        print_hex( *translateAddr(iocb+0x5, false) );
+        uart_send(" -> $");
+        uint16_t dstAddr = *translateAddr(iocb+0x9, false);
+        dstAddr <<= 8;
+        dstAddr |= *translateAddr(iocb+0x8, false);
+        print_hex( dstAddr );
+
+        uint8_t sp = dbg_readReg(DbgReg::S);
+        sp++;
+        uint16_t retAddr = *translateAddr(0x100+sp, false);
+        sp++;
+        retAddr |= (*translateAddr(0x100+sp, false)) << 8;
+        retAddr++;
+
+        uart_send(" return to $");
+        print_hex(retAddr);
+        uart_send("\n");
+
+        // Set the breakpoint to the sector successfully read point
+        set_breakpoint(2, retAddr, BP_SYNC, BP_SYNC);
+        dbg6502Bp[2].clear();
+        dbg_cont();
+
+        dbg6502Bp[2].wait();
+        uart_send("DBG: RWTS ReadSector returned ");
+        if( dbg_readReg(DbgReg::P) & 0x01 ) {
+            uart_send("failure ");
+            print_hex( *translateAddr(iocb + 0xd, false) );
+            uart_send("\n");
+        } else {
+            uart_send("success\n");
+        }
+        for(unsigned j=0; j<16; ++j) {
+            for(unsigned i=0; i<16; ++i) {
+                uart_send(" ");
+                if( i==8 )
+                    uart_send(" ");
+                print_hex( *translateAddr(dstAddr, false) );
+                dstAddr++;
+            }
+            uart_send("\n");
+        }
+
+        uart_send("\n");
+        set_breakpoint(2, 0xb7b5, BP_SYNC, BP_SYNC);
+        dbg6502Bp[2].clear();
+        dbg_cont();
+    }
+}
+
 bool Diskette::load(Filesystem::File &image) {
+#ifdef DEBUG
+    set_breakpoint(1, 0xc65c, BP_SYNC, BP_SYNC);
+    saros.createThread(debugThread0, nullptr, "DISK debug thread B0"_fs);
+    set_breakpoint(2, 0xb7b5, BP_SYNC, BP_SYNC);
+    saros.createThread(debugThreadRwts, nullptr, "DISK debug thread RWTS"_fs);
+#endif
+
     // We are, essentially, formatting the floppy here.
     static constexpr size_t Gap1Size = 128;     // Beginning of track gap to be overwritten by last sector
     static constexpr size_t Gap2Size = 5;       // Between sector header and data
@@ -120,9 +235,23 @@ bool Diskette::load(Filesystem::File &image) {
             uart_send("D: Writing bit pattern for track ");
             print_dec(track);
             uart_send(" sector ");
-            print_dec(sector);
+            print_hex(sector);
             uart_send("\n");
+
+            const uint8_t *dbg_trk_data = trackData[ DosInterleaving[sector] ].data();
+            for(unsigned j=0; j<16; ++j) {
+                for(unsigned i=0; i<16; ++i) {
+                    uart_send(" ");
+                    if( i==8 )
+                        uart_send(" ");
+
+                    print_hex(dbg_trk_data[j*16+i]);
+                }
+
+                uart_send("\n");
+            }
 #endif
+
             // Write the sector header
             for( unsigned i=0; i<(sector==0 ? Gap1Size : Gap3Size); ++i )
                 trackWriteSelfSync(track, position);
@@ -135,7 +264,8 @@ bool Diskette::load(Filesystem::File &image) {
             trackWriteByte(track, position, 0x96);
 
             uint8_t checksum = 0;
-            trackWriteData44(track, position, 255, &checksum);
+            constexpr uint8_t VolumeId = 254;
+            trackWriteData44(track, position, VolumeId, &checksum);
             trackWriteData44(track, position, track, &checksum);
             trackWriteData44(track, position, sector, &checksum);
             trackWriteData44(track, position, checksum);
@@ -223,7 +353,7 @@ void Diskette::ioHandleThread() noexcept {
 
         std::unique_lock stateLocker(lock);
 
-#if DEBUG
+#ifdef DEBUG
         uart_send("DSK ");
         print_hex(pendingAddr);
         if( pendingWrite ) {
@@ -293,7 +423,7 @@ void Diskette::calcNewTrack( uint8_t phase, bool on ) {
     uint8_t phaseDiff = (phase + 4 - currentPhase) % 4;
     bool currentPhaseOn = stepMotorPhase[currentPhase];
 
-#if DEBUG
+#ifdef DEBUG
     uart_send("DBG: currentPhase ");
     print_dec(currentPhase);
     if( halfPhase )
