@@ -441,7 +441,15 @@ void Diskette::calcNewTrack( uint8_t phase, bool on ) {
 
     bool trackChanged = false;
 
-    if( on && currentPhaseOn ) {
+    if( currentTrackX4==0 && phase==1 && on && !stepMotorPhase[0] && stepMotorPhase[2] ) {
+        // Due to the head bang, we now move 3/4 of a track at once
+        trackChanged = true;
+
+        if( stepMotorPhase[3] )
+            currentTrackX4 = 4;
+        else
+            currentTrackX4 = 3;
+    } else if( on && currentPhaseOn ) {
         if( !halfPhase ) {
             switch( phaseDiff ) {
             case 0:
