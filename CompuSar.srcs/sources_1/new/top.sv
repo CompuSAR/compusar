@@ -550,11 +550,6 @@ generate
         assign irq_lines[i] = 1'b0;
 endgenerate
 
-always_ff@(posedge ctrl_cpu_clock) begin
-    leds[0] <= gp_out[0][GPIO_OUT0__DISPLAY8_RESET];
-    leds[1] <= gp_out[0][GPIO_OUT0__6502_RESET];
-end
-
 int blink_counter = 0;
 always_ff@(posedge board_clock) begin
     blink_counter <= blink_counter-1;
@@ -666,7 +661,7 @@ assign apple_cycle = cpu8_req_valid_divided && cpu8_req_ack_divided;
 
 freq_div_bus freq_div_6502(
     .clock_i( ctrl_cpu_clock ),
-    .clock_enable_i( apple_dbg_halt ),
+    .clock_enable_i( !apple_dbg_halt ),
     .ctl_div_nom_i( BUS8_FREQ_DIV ),
     .ctl_div_denom_i( 16'd1 ),
     .reset_i( gp_out[0][GPIO_OUT0__FREQ_DIV_RESET] ),
@@ -698,10 +693,11 @@ dbg6502 debugger(
     .cpu_reg_p( apple_cpu_dbg_reg_p ),
 
     .ctrl( io_ports_bus[IO_PORT_6502_DEBUGGER] ),
-    .ctrl_intr_o( irq_lines[DBG_6502_IRQ] ),
 
-    .n_halt_o( apple_dbg_halt )
+    .halt_o( apple_dbg_halt )
 );
+
+assign irq_lines[DBG_6502_IRQ] = apple_dbg_halt;
 
 logic apple_io_periph_req_valid[a2_io::NumPeripherals], apple_io_periph_req_ack[a2_io::NumPeripherals],
       apple_io_periph_req_write[a2_io::NumPeripherals], apple_io_periph_rsp_valid[a2_io::NumPeripherals];
@@ -769,7 +765,10 @@ apple2_diskette_controller a2_disk(
 
     .apple_cycle(apple_cycle),
 
-    .dma( cache_ports[CACHE_PORT_IDX_APPLE_DISK] )
+    .dma( cache_ports[CACHE_PORT_IDX_APPLE_DISK] ),
+
+    .led_drive_on(leds[0]),
+    .led_write(leds[1])
 );
 
 

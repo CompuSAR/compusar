@@ -41,6 +41,7 @@ module a2_disk_sim_top(
 
 localparam DMA_WIDTH = 128;                 // CACHELINE_BITS in top.sv
 localparam DMA_BYTES = DMA_WIDTH/8;
+localparam DMA_ADDR_WIDTH = $clog2(DMA_WIDTH);
 
 localparam MEM_WORDS = 2048;                // 32KiB of DMA-able memory
 localparam TRACK_BASE = 32'h0000_1000;      // must be DMA_BYTES aligned
@@ -101,7 +102,7 @@ wire apple_cycle;
 assign apple_cycle = cpu_bus_valid && cpu_bus_ack;
 
 always_ff@(posedge ctrl_clk) begin
-    if( apple_div_counter == APPLE_CYCLE_DIV-1 ) begin
+    if( apple_div_counter >= APPLE_CYCLE_DIV-1 ) begin
         apple_div_counter <= 0;
         cpu_bus_valid <= 1'b1;
         cpu_bus_ack <= 1'b1;
@@ -520,6 +521,16 @@ task wait_for_captured(input int target, input int timeout_cycles);
     end
 endtask
 
+// Wait until n more Apple cycles have elapsed, regardless of captured_count.
+// Used where the expected assembled-byte count per revolution isn't known up
+// front (e.g. a track length that isn't a multiple of 8 bits), so waiting on
+// a byte-count target the way wait_for_captured does would just be a guess.
+task wait_apple_cycles(input longint n);
+    automatic longint deadline = apple_cycle_count + n;
+    while( apple_cycle_count < deadline )
+        @(posedge ctrl_clk);
+endtask
+
 task start_motor();
     // Every ctrl write clears dma_data_valid and drops motor_running, so the
     // motor control register has to be written last.
@@ -736,6 +747,130 @@ task phase_b();
 endtask
 
 // ===========================================================================
+// Phase C: Read bytes past end of track
+// ===========================================================================
+
+int phase_c_write_pos;
+
+task phase_c_write_bit(input val);
+   memory[TRACK_BASE / DMA_BYTES + phase_c_write_pos / DMA_WIDTH][phase_c_write_pos % DMA_WIDTH] = val;
+
+   phase_c_write_pos = phase_c_write_pos + 1;
+   if( phase_c_write_pos >= track_num_bits ) begin
+       phase_c_write_pos = 0;
+   end
+endtask
+
+task phase_c_write_byte(input [7:0] val);
+    phase_c_write_bit(val[7]);
+    phase_c_write_bit(val[6]);
+    phase_c_write_bit(val[5]);
+    phase_c_write_bit(val[4]);
+    phase_c_write_bit(val[3]);
+    phase_c_write_bit(val[2]);
+    phase_c_write_bit(val[1]);
+    phase_c_write_bit(val[0]);
+endtask
+
+// Expected leading bytes and conversion table that a correctly wrapping read
+// should recover on every revolution: $D5 $AA followed by the 64 legal
+// 6-and-2 disk bytes, in the order they were written onto the track
+// (gcr62[63] down to gcr62[0]).
+localparam PHASE_C_PATTERN_LEN = 66;
+logic [7:0] phase_c_pattern[PHASE_C_PATTERN_LEN];
+
+// Search the captured stream for phase_c_pattern, starting at 'from'. Returns
+// the index of the first pattern byte, or -1.
+function automatic int find_phase_c_pattern(input int from);
+    find_phase_c_pattern = -1;
+    for( int i=from; i+PHASE_C_PATTERN_LEN<=captured_count; ++i ) begin
+        automatic logic match = 1'b1;
+        for( int j=0; j<PHASE_C_PATTERN_LEN; ++j ) begin
+            if( captured[i+j] !== phase_c_pattern[j] ) begin
+                match = 1'b0;
+                break;
+            end
+        end
+        if( match ) begin
+            find_phase_c_pattern = i;
+            break;
+        end
+    end
+endfunction
+
+task phase_c();
+    // Fill the memory
+    automatic int i;
+    automatic int pass;
+    automatic int search_from;
+
+    $display("");
+    $display("=== Phase C: read across track wraparound ===");
+
+    phase_c_write_pos = 0;
+    track_num_bits = 581;
+
+    // Fill memory with X
+    memory = '{ default: { DMA_WIDTH{1'bX} } };
+
+    // Gap at start: self syncing FFs
+    for(i=0; i<30; ++i) begin
+        phase_c_write_byte( 8'hff );
+        phase_c_write_bit( 1'b0 );
+        phase_c_write_bit( 1'b0 );
+    end
+
+    phase_c_write_byte( 8'hd5 );
+    phase_c_write_byte( 8'haa );
+
+    phase_c_pattern[0] = 8'hd5;
+    phase_c_pattern[1] = 8'haa;
+    for(i=64; i>0; --i) begin
+        phase_c_write_byte( gcr62[i-1] );
+        phase_c_pattern[2 + (64-i)] = gcr62[i-1];
+    end
+
+    // Note: track_num_bits (581) is shorter than the data just laid down
+    // (30*10 + 2*8 + 64*8 = 828 bits), so phase_c_write_bit already wrapped
+    // partway through writing the conversion table and looped back over the
+    // start of the sync gap. That is deliberate - it is what makes the track
+    // short enough that the read wraps around it several times below.
+    $display("[%0t] track: %0d bits, write wrapped while laying down %0d bits of data",
+             $time, track_num_bits, 30*10 + 2*8 + 64*8);
+
+    captured_count = 0;
+    dma_read_count = 0;
+    start_motor();
+
+    reader_enable = 1'b1;
+    // Run for three and a half revolutions, so the track is guaranteed to
+    // wrap at least twice and there's margin on either side for a full,
+    // uninterrupted copy of the pattern to land in the capture buffer. This
+    // waits on elapsed Apple cycles rather than a captured-byte target,
+    // because track_num_bits isn't a multiple of 8 so the assembled byte
+    // count per revolution can drift from one revolution to the next.
+    wait_apple_cycles( (longint'(track_num_bits) * APPLE_CYCLES_PER_BIT * 7) / 2 );
+    reader_enable = 1'b0;
+
+    // Walk the recovered stream looking for $D5 $AA followed by the
+    // conversion table, three times over - once per revolution. Search for
+    // it rather than indexing straight in, since the byte framing isn't
+    // guaranteed to land the same way relative to captured[] each time round.
+    search_from = 0;
+    for( pass=0; pass<3; ++pass ) begin
+        automatic int idx = find_phase_c_pattern(search_from);
+        check( idx >= 0,
+               $sformatf("pass %0d: recovered $D5 $AA followed by the conversion table",
+                         pass) );
+        search_from = (idx >= 0) ? idx + 1 : captured_count;
+    end
+
+    check( !dma_saw_x_addr, "no X/Z ever appeared on the DMA address" );
+
+    stop_motor();
+endtask
+
+// ===========================================================================
 // Main
 // ===========================================================================
 
@@ -748,6 +883,7 @@ initial begin
 
     phase_a();
     phase_b();
+    phase_c();
 
     $display("");
     if( errors == 0 )

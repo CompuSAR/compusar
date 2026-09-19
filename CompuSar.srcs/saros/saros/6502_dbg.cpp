@@ -815,87 +815,33 @@ namespace {
         [0xff] = { 0, oprNone    },  // ??? (W65C02S-only, unused without WDC6502)
 #endif
     };
-}
 
-static void debugger_loop(void *) noexcept {
-    uart_send("Debugger thread started\n");
+    static Saros::Sync::Event dbgTrace, dbgTraceDone;
 
-    dbg6502Bp[0].wait();
-    while(true) {
-        // Handle the debugger
-        uint32_t state = reg_read_32(DeviceNum, Dbg_State);
-        uint16_t pc = state & 0xffff;
-        uart_send("DBG: A:");
-        print_hex( reg_read_32(DeviceNum, Dbg_ReadRegA ) );
-        uart_send(" X:");
-        print_hex( reg_read_32(DeviceNum, Dbg_ReadRegX ) );
-        uart_send(" Y:");
-        print_hex( reg_read_32(DeviceNum, Dbg_ReadRegY ) );
-        uart_send(" S:");
-        print_hex( reg_read_32(DeviceNum, Dbg_ReadRegS ) );
-        uart_send(" P:");
-        uint32_t regP = reg_read_32(DeviceNum, Dbg_ReadRegP );
-        print_hex( regP );
+    static void debugger_loop(void *) noexcept {
+        uart_send("Debugger thread started\n");
 
-        if( regP & 0x80 )
-            uart_send(" N");
-        else
-            uart_send(" -");
+        while(true) {
+            dbgTraceDone.clear();
+            uart_send("debugger_loop loop\n");
 
-        if( regP & 0x40 )
-            uart_send("V");
-        else
-            uart_send("-");
+            while( dbgTrace.isSet() ) {
+                dbg_halt();
 
-        if( regP & 0x20 )
-            uart_send("1");
-        else
-            uart_send("-");
+                // Handle the debugger
+                dbg_dumpCpuState();
 
-        if( regP & 0x10 )
-            uart_send("B");
-        else
-            uart_send("-");
+                dbg_singleStep();
+            }
 
-        if( regP & 0x08 )
-            uart_send("D");
-        else
-            uart_send("-");
-
-        if( regP & 0x04 )
-            uart_send("I");
-        else
-            uart_send("-");
-
-        if( regP & 0x02 )
-            uart_send("Z");
-        else
-            uart_send("-");
-
-        if( regP & 0x01 )
-            uart_send("C  ");
-        else
-            uart_send("-  ");
-
-        print_hex(pc);
-        uart_send(": ");
-
-        uint8_t opcode = *translateAddr(pc, false);
-        const Opcode &decodedOp = opcodes[opcode];
-        const OpcodeNames &opcodeName = opcodeNames[ decodedOp.index ];
-        uart_send( opcodeName.name );
-
-        decodedOp.argsParse(pc, opcodeName.write);
-
-        uart_send("\n");
-
-        Saros::csr_read_clr_bits<Saros::CSR::mstatus>( Saros::MSTATUS__MIE );
-
-        dbg_cont( true );
-
-        dbg6502Halted.wait();
+            dbgTraceDone.set();
+            uart_send("dbgloop 1\n");
+            dbgTrace.wait();
+            uart_send("dbgloop 2\n");
+        }
     }
-}
+} // Anonymous namespace
+
 
 void init_debugger() {
     saros.createThread( debugger_loop, nullptr, "Debugger thread"_fs );
@@ -921,6 +867,16 @@ void set_breakpoint( uint8_t bp, uint16_t address, uint8_t state, uint8_t mask )
     irq_external_unmask(IrqExt__6502Debug);
 }
 
+void clear_breakpoint( uint8_t bp ) {
+    // Set the breakpoint to an impossible state
+    uint8_t state = 0xf;
+    uint8_t mask = 0xf;
+
+    reg_write_32(
+            DeviceNum, Dbg_BreakPointBase + bp * 4,
+            mask<<28 | state<<24 | 0 );
+}
+
 void dbg_cont( bool singlestep ) {
     uint32_t contArgs = Dbg_Status__Cont;
     if( singlestep )
@@ -928,6 +884,91 @@ void dbg_cont( bool singlestep ) {
     reg_write_32(DeviceNum, Dbg_Status, contArgs);
 
     irq_external_unmask(IrqExt__6502Debug);
+}
+
+void dbg_halt() {
+    reg_write_32(DeviceNum, Dbg_Status, Dbg_Status__Halt);
+}
+
+void dbg_singleStep() {
+    Saros::csr_read_clr_bits<Saros::CSR::mstatus>( Saros::MSTATUS__MIE );
+    dbg_cont( true );
+
+    dbg6502Halted.wait();
+}
+
+void dbg_dumpRegs() {
+    uart_send("A:");
+    print_hex( reg_read_32(DeviceNum, Dbg_ReadRegA ) );
+    uart_send(" X:");
+    print_hex( reg_read_32(DeviceNum, Dbg_ReadRegX ) );
+    uart_send(" Y:");
+    print_hex( reg_read_32(DeviceNum, Dbg_ReadRegY ) );
+    uart_send(" S:");
+    print_hex( reg_read_32(DeviceNum, Dbg_ReadRegS ) );
+    uart_send(" P:");
+    uint32_t regP = reg_read_32(DeviceNum, Dbg_ReadRegP );
+    print_hex( regP );
+
+    if( regP & 0x80 )
+        uart_send(" N");
+    else
+        uart_send(" -");
+
+    if( regP & 0x40 )
+        uart_send("V");
+    else
+        uart_send("-");
+
+    if( regP & 0x20 )
+        uart_send("1");
+    else
+        uart_send("-");
+
+    if( regP & 0x10 )
+        uart_send("B");
+    else
+        uart_send("-");
+
+    if( regP & 0x08 )
+        uart_send("D");
+    else
+        uart_send("-");
+
+    if( regP & 0x04 )
+        uart_send("I");
+    else
+        uart_send("-");
+
+    if( regP & 0x02 )
+        uart_send("Z");
+    else
+        uart_send("-");
+
+    if( regP & 0x01 )
+        uart_send("C");
+    else
+        uart_send("-");
+}
+
+void dbg_dumpCpuState() {
+    uint32_t state = reg_read_32(DeviceNum, Dbg_State);
+    uint16_t pc = state & 0xffff;
+
+    dbg_dumpRegs();
+    uart_send("  ");
+
+    print_hex(pc);
+    uart_send(": ");
+
+    uint8_t opcode = *translateAddr(pc, false);
+    const Opcode &decodedOp = opcodes[opcode];
+    const OpcodeNames &opcodeName = opcodeNames[ decodedOp.index ];
+    uart_send( opcodeName.name );
+
+    decodedOp.argsParse(pc, opcodeName.write);
+
+    uart_send("\n");
 }
 
 uint8_t dbg_readReg( DbgReg reg ) {
@@ -954,4 +995,15 @@ uint8_t dbg_readReg( DbgReg reg ) {
     }
 
     return reg_read_32(DeviceNum, regAddr);
+}
+
+void startTrace() {
+    dbgTrace.set();
+    uart_send("Starting tracing\n");
+}
+
+// Stop an ongoing trace. If trace was active, upon return the CPU is halted.
+void stopTrace() {
+    dbgTrace.clear();
+    dbgTraceDone.wait();
 }

@@ -56,11 +56,11 @@ localparam REG_FULL_READ_GRACE = 8;
 
 initial dma.req_valid = 1'b0;
 
-logic [31:0] spin_counter, spin_increment;
-
 logic [31:0] track_data_start, track_data_length, track_pos, track_pos_next, fetch_offset;
 logic [15:0] bit_ratio_num, bit_ratio_denom;
 logic motor_running = 1'b0, freq_div_reset = 1'b1, disk_in_drive = 1'b0;
+assign led_drive_on = !motor_running;   // LEDS are active low
+assign led_write = 1'b1;                // Off
 
 assign track_pos_next = track_pos + 1;
 
@@ -76,7 +76,7 @@ wire next_bit_in;
 assign next_bit_in = disk_in_drive ? dma_data[0][track_pos[DMA_WIDTH_ADDR-1:0]] : 1'b0;
 
 assign ctrl.req_ack = 1'b1;
-assign cpu_req_ack_o = 1'b1;
+assign cpu_req_ack_o = !disk_in_drive || !motor_running || dma_data_valid[0];
 
 logic [31:0] dbg_last_fetch_addr = 32'hbadabada;
 logic [31:0] dbg_apple_cycles = 0;
@@ -164,9 +164,6 @@ always_ff@(posedge clk_i) begin
     end
 
     // DMA handling
-    if( {fetch_offset, 3'b000} >= track_data_length )
-        fetch_offset <= 0;
-
     if( !motor_running || !disk_in_drive ) begin
         dma.req_valid <= 1'b0;
         dma_data_valid <= '{ default: 1'b0 };
@@ -179,7 +176,10 @@ always_ff@(posedge clk_i) begin
             dma.req_valid <= 1'b1;
             dma.req_write_mask <= 0;
             dma.req_addr <= track_data_start + fetch_offset;
-            fetch_offset <= fetch_offset + DMA_WIDTH_BYTES;
+            if( fetch_offset+DMA_WIDTH_BYTES >= track_data_length[31:3] )
+                fetch_offset <= 0;
+            else
+                fetch_offset <= fetch_offset + DMA_WIDTH_BYTES;
         end
         if( dma_req_pending && dma.rsp_valid ) begin
             dma_data[1] <= dma.rsp_data;
@@ -200,10 +200,12 @@ always_ff@(posedge clk_i) begin
     end
 
     if( should_bit_shift ) begin
-        if( track_pos_next == track_data_length )
+        if( track_pos_next == track_data_length ) begin
             track_pos <= 0;
-        else
+            dma_data_valid[0] <= 1'b0;
+        end else begin
             track_pos <= track_pos_next;
+        end
 
         if( track_pos_next[DMA_WIDTH_ADDR-1:0] == 0 )
             dma_data_valid[0] <= 1'b0;

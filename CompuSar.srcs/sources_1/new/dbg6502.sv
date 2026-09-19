@@ -39,15 +39,16 @@ module dbg6502(
     input[7:0]          cpu_reg_p,
 
     sync_bus.SLAVE      ctrl,
-    output              ctrl_intr_o,
 
-    output logic        n_halt_o
+    output logic        halt_o,
+
+
+    output [1:0]        internal_debug_o
 );
 
 localparam NUM_BREAKPOINT = 4;
 
 assign ctrl.req_ack = 1'b1;
-assign ctrl_intr_o = ! n_halt_o;
 
 typedef struct packed {
     bit vector_pull;
@@ -81,6 +82,11 @@ always_ff@(posedge clk_i) begin
         cont <= 1'b0;
     end
 
+    // If a breakpoint was hit, halt regardless of that breakpoint's current
+    // status
+    if( breakpoint_hit!={NUM_BREAKPOINT{1'b0}} )
+        halt <= 1'b1;
+
     if( ctrl.req_valid && ctrl.req_ack ) begin
         if( ctrl.req_write ) begin
             // Control CPU write
@@ -94,7 +100,7 @@ always_ff@(posedge clk_i) begin
         end else begin
             // Control CPU read
             case( ctrl.req_addr )
-                16'h0000: ctrl.rsp_data <= { !n_halt_o, 27'h00, breakpoint_hit };
+                16'h0000: ctrl.rsp_data <= { halt_o, 27'h00, breakpoint_hit };
                 16'h0004: begin
                     breakpoint bp;
                     bp.address = cpu_req_addr_i;
@@ -121,19 +127,19 @@ end
 always_comb begin
     if( cont )
         // Control requested we continue
-        n_halt_o = 1'b1;
-    else if( breakpoint_hit!=0 )
+        halt_o = 1'b0;
+    else if( breakpoint_hit!={NUM_BREAKPOINT{1'b0}} )
         // A breakpoint was hit
-        n_halt_o = 1'b0;
+        halt_o = 1'b1;
     else if( halt )
         // Control requested we halt
-        n_halt_o = 1'b0;
+        halt_o = 1'b1;
     else if( singlestep && cpu_req_valid_i && cpu_sync_i )
         // Instruction execution while we single step
-        n_halt_o = 1'b0;
+        halt_o = 1'b1;
     else
         // No reason to halt
-        n_halt_o = 1'b1;
+        halt_o = 1'b0;
 end
 
 genvar i;
@@ -153,5 +159,8 @@ for( i=0; i<NUM_BREAKPOINT; i++ ) begin
 end
 
 endgenerate
+
+assign internal_debug_o[0] = cont;
+assign internal_debug_o[1] = halt_o;
 
 endmodule

@@ -119,6 +119,7 @@ static void debugThread0(void *) noexcept {
 }
 
 static void debugThreadRwts(void *) noexcept {
+    uart_send("RWTS thread started\n");
     while(true) {
         dbg6502Bp[2].wait();
 
@@ -129,9 +130,11 @@ static void debugThreadRwts(void *) noexcept {
         uart_send("DBG: RWTS Op ");
         print_hex( *translateAddr(iocb+0xc, false) );
         uart_send(" T:");
-        print_hex( *translateAddr(iocb+0x4, false) );
+        uint8_t track = *translateAddr(iocb+0x4, false);
+        print_hex( track );
         uart_send(" S:");
-        print_hex( *translateAddr(iocb+0x5, false) );
+        uint8_t sector = *translateAddr(iocb+0x5, false);
+        print_hex( sector );
         uart_send(" -> $");
         uint16_t dstAddr = *translateAddr(iocb+0x9, false);
         dstAddr <<= 8;
@@ -150,11 +153,12 @@ static void debugThreadRwts(void *) noexcept {
         uart_send("\n");
 
         // Set the breakpoint to the sector successfully read point
-        set_breakpoint(2, retAddr, BP_SYNC, BP_SYNC);
         dbg6502Bp[2].clear();
+        set_breakpoint(2, retAddr, BP_SYNC, BP_SYNC);
         dbg_cont();
 
         dbg6502Bp[2].wait();
+        stopTrace();
         uart_send("DBG: RWTS ReadSector returned ");
         if( dbg_readReg(DbgReg::P) & 0x01 ) {
             uart_send("failure ");
@@ -163,20 +167,11 @@ static void debugThreadRwts(void *) noexcept {
         } else {
             uart_send("success\n");
         }
-        for(unsigned j=0; j<16; ++j) {
-            for(unsigned i=0; i<16; ++i) {
-                uart_send(" ");
-                if( i==8 )
-                    uart_send(" ");
-                print_hex( *translateAddr(dstAddr, false) );
-                dstAddr++;
-            }
-            uart_send("\n");
-        }
 
-        uart_send("\n");
-        set_breakpoint(2, 0xb7b5, BP_SYNC, BP_SYNC);
+        // Start tracing execution
         dbg6502Bp[2].clear();
+        set_breakpoint(2, 0xb7b5, BP_SYNC, BP_SYNC);
+
         dbg_cont();
     }
 }
@@ -185,9 +180,9 @@ bool Diskette::load(Filesystem::File &image) {
 #ifdef DEBUG
     set_breakpoint(1, 0xc65c, BP_SYNC, BP_SYNC);
     saros.createThread(debugThread0, nullptr, "DISK debug thread B0"_fs);
+#endif
     set_breakpoint(2, 0xb7b5, BP_SYNC, BP_SYNC);
     saros.createThread(debugThreadRwts, nullptr, "DISK debug thread RWTS"_fs);
-#endif
 
     // We are, essentially, formatting the floppy here.
     static constexpr size_t Gap1Size = 128;     // Beginning of track gap to be overwritten by last sector
@@ -283,7 +278,7 @@ bool Diskette::load(Filesystem::File &image) {
             trackWriteByte(track, position, 0xAA);
             trackWriteByte(track, position, 0xAD);
 
-            trackWriteSector62(track, position, trackData[ DosInterleaving[sector] ] );
+            trackWriteSector62(track, position, trackData[ DosInterleaving[sector] ]);
 
             trackWriteByte(track, position, 0xDE);
             trackWriteByte(track, position, 0xAA);
@@ -561,6 +556,7 @@ void Diskette::calcNewTrack( uint8_t phase, bool on ) {
     if( currentTrackX4 > MaxExpandedTrack )
         currentTrackX4 = MaxExpandedTrack;
 
+#ifdef DEBUG
     if( trackChanged ) {
         uart_send("DISK II is on track ");
         print_dec(currentTrackX4 >> 2);
@@ -579,6 +575,7 @@ void Diskette::calcNewTrack( uint8_t phase, bool on ) {
             break;
         }
     }
+#endif
 }
 
 void Diskette::ejectImpl() {
