@@ -7,8 +7,6 @@ static constexpr uint32_t DeviceNum = 2;
 static constexpr uint32_t SetBitsMask = 0x8000;
 static constexpr uint32_t ResetBitsMask = 0xc000;
 
-static volatile uint32_t *gpio_base = reinterpret_cast<uint32_t *>(0xc002'0000);
-
 uint32_t read_gpio(size_t gpio_num) {
     return reg_read_32( DeviceNum, gpio_num );
 }

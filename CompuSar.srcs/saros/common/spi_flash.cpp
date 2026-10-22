@@ -155,7 +155,7 @@ void init() {
     if( len>40 )
         len = 40;
     uart_send("  Flash ID (Quad):   ");
-    for( int i=0; i<len; ++i ) {
+    for( unsigned i=0; i<len; ++i ) {
         uart_send(" ");
         print_hex(reinterpret_cast<const uint8_t *>(&id)[i]);
     }
