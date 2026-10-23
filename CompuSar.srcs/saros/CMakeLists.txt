@@ -44,7 +44,8 @@ add_compile_options(
     -Wall -Wextra
     -O2
     -g
-    #-fno-lto
+    -flto
+    -fno-use-cxa-atexit
     $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
 )
@@ -136,6 +137,8 @@ endfunction()
 function(saros_add_firmware NAME)
     cmake_parse_arguments(FW "MCS;STRIP_ELF" "LINKER_SCRIPT;FLASH_OFFSET;SOURCE_DIR" "SOURCES;REMOVED_SECTIONS" ${ARGN})
 
+    set(REL_SOURCE_DIR "${FW_SOURCE_DIR}")
+
     # Base for relative paths: SOURCE_DIR (itself relative to the current
     # source dir if not absolute), else the current source dir.
     if(NOT FW_SOURCE_DIR)
@@ -161,7 +164,11 @@ function(saros_add_firmware NAME)
         INTERPROCEDURAL_OPTIMIZATION ON
         LINK_DEPENDS                 ${ld}        # relink if the script changes
     )
-    target_include_directories(${NAME} AFTER PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include" "${ASSETS_OUTPUT_DIR}")
+    target_include_directories(${NAME}
+        AFTER PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+        "${CMAKE_CURRENT_SOURCE_DIR}/include/stdc++"
+        "${CMAKE_CURRENT_BINARY_DIR}/${REL_SOURCE_DIR}")
     target_compile_definitions(${NAME} PRIVATE _GLIBCXX_NO_ASSERTIONS)
 
     target_link_options(${NAME} PRIVATE
@@ -237,12 +244,17 @@ saros_add_firmware(saros
     SOURCE_DIR    saros
     LINKER_SCRIPT saros/saros.ld
     FLASH_OFFSET  ${SAROS_FLASH_OFFSET}
-    SOURCES       start.s main.cpp uart.cpp saros.cpp mutex.cpp ${COMMON}/format.cpp irq.cpp ${COMMON}/reg.cpp ${COMMON}/gpio.cpp
-                  ../abort.cpp display.cpp crt.cpp sd.cpp
+    SOURCES       start.s main.cpp uart.cpp saros.cpp mutex.cpp
+                  ../abort.cpp display.cpp crt.cpp sd.cpp irq.cpp
+                  ${COMMON}/format.cpp ${COMMON}/reg.cpp ${COMMON}/gpio.cpp ${COMMON}/string.cpp ${COMMON}/dbglogger.cc
                   ${ASSETS_OUTPUT_DIR}/logo.cc
+                  # Saros files
+                  kernel/thread.cpp kernel/scheduler.cpp kernel/context.s kernel/thread_queue.cpp kernel/timer.cpp
+                  fs/partition.cpp fs/fat.cpp fs/filesystem.cpp
     STRIP_ELF
     MCS
 )
+target_compile_definitions(saros PRIVATE SAROS=1)
 
 # First-stage bootloader: bl1.mem only
 saros_add_firmware(bl1

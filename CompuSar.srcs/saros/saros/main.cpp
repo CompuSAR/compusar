@@ -6,7 +6,7 @@
 #include <saros/kernel/thread_stack.h>
 #include <saros/fs/filesystem.h>
 
-#include "assets/logo.h"
+#include "assets/logo.hpp"
 #include "display.h"
 #include "gpio.h"
 #include "sd.h"

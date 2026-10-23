@@ -27,7 +27,6 @@ PHDRS
 SECTIONS
 {
     .text : ALIGN(16) {
-        start.o (.text*)
         * (.text*)
     } >exe :text
     .init_array : ALIGN(4) {

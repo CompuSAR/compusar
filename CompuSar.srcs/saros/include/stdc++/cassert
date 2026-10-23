@@ -1,0 +1,2 @@
+// Boost type_traits.hpp includes cassert, despite not needing it.
+// We provide an empty file so compilation passes
