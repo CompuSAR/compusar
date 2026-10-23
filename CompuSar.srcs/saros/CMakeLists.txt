@@ -41,7 +41,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Removed: -ffunction-sections -fdata-sections
 add_compile_options(
-    -Wall -Wextra
+    -Wall -Wextra -Werror
     -O2
     -g
     -flto

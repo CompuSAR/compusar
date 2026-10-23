@@ -79,10 +79,6 @@ SECTIONS
         *(.uninitialized)
     } >mem_rw :NONE
 
-    .uninit_apple2_rom (NOLOAD) : {
-        . = 0xd000;
-    } >mem_16_rom :NONE
-
     /DISCARD/ : { *(.eh_frame) *(.note.GNU-stack) }
 
     .debug_info         0 : { *(.debug_info) } :NONE

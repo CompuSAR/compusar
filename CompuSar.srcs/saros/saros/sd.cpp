@@ -336,7 +336,6 @@ void SD::initCard() {
     }
 
     args |= 3<<20;              // We work at 3v3, do mark the range of 3v2 to 3v4.
-    unsigned retries = 0;
 
     static constexpr uint64_t SendOpTimeoutNs = 1'000'000'000; // 1 second
     static constexpr uint64_t SendOpTimeoutSplit = 50;
@@ -637,7 +636,7 @@ uint32_t send_sd_cmd(SdCmd command, uint32_t args, uint128_t &reply) {
     uart_send(")\n");
 #endif
     reg_write_32(DeviceId, RegW__SetCmdArgument, args);
-    reg_write_32(DeviceId, RegW__SendCmd, static_cast<uint32_t>(command) & CMD_BITS_MASK | SetCmd__Reply136);
+    reg_write_32(DeviceId, RegW__SendCmd, (static_cast<uint32_t>(command) & CMD_BITS_MASK) | SetCmd__Reply136);
 
     uint32_t status;
     do {
