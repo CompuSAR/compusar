@@ -20,8 +20,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
-set(COMMON ${CMAKE_CURRENT_SOURCE_DIR}/common CACHE PATH "Sources shared between boot loader and saros")
-
 project(saros LANGUAGES C CXX ASM)
 
 # ---------------------------------------------------------------------------
@@ -56,6 +54,12 @@ add_compile_options(
 # ---------------------------------------------------------------------------
 set(PROJECT_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../.." CACHE PATH "Project root directory")
 
+set(COMMON ${CMAKE_CURRENT_SOURCE_DIR}/common CACHE PATH "Sources shared between boot loader and saros")
+set(ASSETS_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/saros/assets CACHE PATH "Non code assets")
+set(ASSETS_OUTPUT_DIR ${CMAKE_BINARY_DIR}/saros/assets CACHE PATH "Output dir for processed assets")
+
+file(MAKE_DIRECTORY "${ASSETS_OUTPUT_DIR}")
+
 # ---------------------------------------------------------------------------
 # Tools and configuration for image generation
 # ---------------------------------------------------------------------------
@@ -65,6 +69,15 @@ if(NOT SCRIPTS_PATH)
         set(SCRIPTS_PATH "$ENV{SCRIPTS_PATH}")
     else()
         set(SCRIPTS_PATH "${PROJECT_ROOT}/scripts")
+    endif()
+endif()
+
+set(TOOLS_PATH "" CACHE PATH "Builder tools path")
+if(NOT TOOLS_PATH)
+    if(DEFINED ENV{TOOLS_PATH})
+        set(TOOLS_PATH "$ENV{TOOLS_PATH}")
+    else()
+        set(TOOLS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/tools")
     endif()
 endif()
 
@@ -81,6 +94,26 @@ set(BL1_FLASH_OFFSET   "0"      CACHE STRING "bl1 offset in flash (hex, no 0x)")
 # Sections stripped from bl1.bin by objcopy (the old Makefile's REMOVED_SECTIONS).
 # Semicolon-separated list, e.g. -DBL1_REMOVED_SECTIONS=".comment;.riscv.attributes"
 set(BL1_REMOVED_SECTIONS "" CACHE STRING "Sections removed from bl1.bin")
+
+# ---------------------------------------------------------------------------
+# saros_add_png(<name>
+#
+# reads in <name>.png, and produces <name>.cc and <name>.hpp that export the
+# image's content to the CPP code.
+function(saros_add_png NAME)
+    cmake_path(GET NAME STEM BASENAME)
+
+    set(out_cc "${ASSETS_OUTPUT_DIR}/${BASENAME}.cc")
+    set(out_hpp "${ASSETS_OUTPUT_DIR}/${BASENAME}.hpp")
+
+    add_custom_command(
+        OUTPUT "${out_cc}" "${out_hpp}"
+        COMMAND "${TOOLS_PATH}/png2source" "${ASSETS_SRC_DIR}/${NAME}" "${out_cc}"
+        DEPENDS "${ASSETS_SRC_DIR}/${NAME}" "${TOOLS_PATH}/png2source"
+        COMMENT "Importing ${NAME}"
+        VERBATIM
+    )
+endfunction()
 
 # ---------------------------------------------------------------------------
 # saros_add_firmware(<name>
@@ -128,7 +161,7 @@ function(saros_add_firmware NAME)
         INTERPROCEDURAL_OPTIMIZATION ON
         LINK_DEPENDS                 ${ld}        # relink if the script changes
     )
-    target_include_directories(${NAME} AFTER PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
+    target_include_directories(${NAME} AFTER PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include" "${ASSETS_OUTPUT_DIR}")
     target_compile_definitions(${NAME} PRIVATE _GLIBCXX_NO_ASSERTIONS)
 
     target_link_options(${NAME} PRIVATE
@@ -194,6 +227,8 @@ function(saros_add_firmware NAME)
     add_custom_target(${NAME}_images ALL DEPENDS ${outputs})
 endfunction()
 
+saros_add_png(logo.png)
+
 # ---------------------------------------------------------------------------
 # Firmware images
 # ---------------------------------------------------------------------------
@@ -204,7 +239,7 @@ saros_add_firmware(saros
     FLASH_OFFSET  ${SAROS_FLASH_OFFSET}
     SOURCES       start.s main.cpp uart.cpp saros.cpp mutex.cpp ${COMMON}/format.cpp irq.cpp ${COMMON}/reg.cpp ${COMMON}/gpio.cpp
                   ../abort.cpp display.cpp crt.cpp sd.cpp
-                  assets/logo.cpp
+                  ${ASSETS_OUTPUT_DIR}/logo.cc
     STRIP_ELF
     MCS
 )
