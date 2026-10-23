@@ -213,7 +213,9 @@ function(saros_add_firmware NAME)
     # tmp + mv so a failed run never leaves a truncated output file.
     add_custom_command(
         OUTPUT  ${mem}
-        COMMAND sh -c "echo @${FW_FLASH_OFFSET} > \"${mem}.tmp\" && \"${HEXDUMP}\" -ve '16/1 \"%02X \" \"\\n\"' \"${bin}\" >> \"${mem}.tmp\" && mv \"${mem}.tmp\" \"${mem}\""
+        COMMAND sh -c
+            [=[ "$1" -ve '4/4 "%08x" "\n"' "$2" | sed -e 's:^\(........\)\(........\)\(........\)\(........\)$:\4\3\2\1: ; s: :0:g' > "$3" ]=]
+            sh "${HEXDUMP}" "${bin}" "${mem}"
         DEPENDS ${bin}
         COMMENT "Creating ${NAME}.mem"
         VERBATIM
@@ -223,7 +225,9 @@ function(saros_add_firmware NAME)
     if(FW_MCS)
         add_custom_command(
             OUTPUT  ${mcs}
-            COMMAND sh -c "\"${Python3_EXECUTABLE}\" \"${SCRIPTS_PATH}/make_hex.py\" --offset 0x${FW_FLASH_OFFSET} \"\" \"${bin}\" > \"${mcs}.tmp\" && mv \"${mcs}.tmp\" \"${mcs}\""
+            COMMAND sh -c
+                [=[ "$1" "$2" --offset 0x"$3" "" "$4" > "$5" ]=]
+                sh "${Python3_EXECUTABLE}" "${SCRIPTS_PATH}/make_hex.py" ${FW_FLASH_OFFSET} "${bin}" "${mcs}"
             DEPENDS ${bin} ${SCRIPTS_PATH}/make_hex.py
             COMMENT "Creating ${NAME}.mcs"
             VERBATIM
