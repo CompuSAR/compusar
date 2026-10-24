@@ -10,7 +10,7 @@ ENTRY(_start)
 SECTIONS
 {
     .text : AT(MEM_BASE) {
-        start.o (.text*)
+        *start.o (.text*)
         * (.text*)
     } >preload
     .rodata : ALIGN(16) {

@@ -168,9 +168,16 @@ static void handleExternalInterrupt() {
         halt();
     }
 
-    uart_sync_message("\nThread state:\n");
+    uint32_t gp;
+    asm("mv %0, gp": "=r"(gp));
+
+    uart_sync_message("\n gp: ");
+    print_hex(gp, true);
 
     auto context = threadPtr->getContext();
+    uart_sync_message(" tp: ");
+    print_hex(&context, true);
+    uart_sync_message("\nThread state:\n");
 
     uart_sync_message(" ra: ");
     print_hex(context.ra, true);

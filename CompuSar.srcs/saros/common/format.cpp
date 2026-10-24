@@ -19,6 +19,8 @@ void print_hex(uint64_t number, bool sync) {
         if( sync )
             uart_send_raw(buffer[j]);
         else
+#else
+            (void)sync;
 #endif
             uart_send(buffer[j]);
     }
@@ -29,6 +31,8 @@ void print_hex(void *ptr, bool sync) {
     if( sync )
         uart_sync_message("0x");
     else
+#else
+        (void)sync;
 #endif
         uart_send("0x");
 
@@ -49,6 +53,8 @@ void print_dec(uint64_t number, bool sync) {
         if( sync )
             uart_send_raw(buffer[j]);
         else
+#else
+            (void)sync;
 #endif
             uart_send(buffer[j]);
     }

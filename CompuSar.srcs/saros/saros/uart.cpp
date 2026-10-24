@@ -17,8 +17,6 @@ static constexpr uint32_t UartStatus__TxReady = 0x00000001;
 static constexpr uint32_t UartStatus__RxReady = 0x00000002;
 
 
-static volatile unsigned long *uart = reinterpret_cast<unsigned long *>(0xc000'0000);
-
 void uart_send_raw(char c) {
     reg_write_32( DeviceNum, RegUartData, static_cast<unsigned long>(c) & 0xff );
 }
@@ -32,7 +30,7 @@ static bool uart_rx_ready() {
 }
 
 // Manually verified constructor is called at program init 2-Aug-26
-static __attribute__((section(".uninitialized"))) P1C1<char, 4096> uartTxBuffer, uartRxBuffer;
+static P1C1<char, 4096> uartTxBuffer, uartRxBuffer;
 static Saros::Sync::Event uartTxReady, uartRxReady;
 
 void handle_uart_tx_ready_irq() {

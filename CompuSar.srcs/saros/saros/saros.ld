@@ -27,17 +27,15 @@ PHDRS
 SECTIONS
 {
     .text : ALIGN(16) {
-        start.o (.text*)
         * (.text*)
     } >exe :text
     .init_array : ALIGN(4) {
         __init_array_start = .;
-        * (.init_array.00000)
-        * (.init_array*)
+        KEEP(* (SORT(.init_array*)))
         __init_array_end = .;
     } >readonly :rom
     .fini_array : ALIGN(4) {
-        * (.fini_array)
+        KEEP(* (SORT(.fini_array)))
     } >readonly :rom
 
     .got : ALIGN(4) {
@@ -68,7 +66,7 @@ SECTIONS
         * (.sbss*)
     } >mem_rw :rw
 
-    .bss : ALIGN(16) {
+    .bss (NOLOAD) : ALIGN(16) {
         * (.bss*)
     } >mem_rw :rw
 
@@ -76,13 +74,9 @@ SECTIONS
          *(.data*)
     } >mem_rw :rw
 
-    .uninitialized (NOLOAD) : ALIGN(16) {
-        *(.uninitialized)
-    } >mem_rw :NONE
-
-    .uninit_apple2_rom (NOLOAD) : {
-        . = 0xd000;
-    } >mem_16_rom :NONE
+    #.uninitialized (NOLOAD) : ALIGN(16) {
+    #    *(.uninitialized)
+    #} >mem_rw :NONE
 
     /DISCARD/ : { *(.eh_frame) *(.note.GNU-stack) }
 

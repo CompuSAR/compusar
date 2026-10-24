@@ -42,6 +42,7 @@ static constexpr uint32_t DdrCtrl_Cke         = 0x0020;
 static constexpr uint32_t DdrCtrl_WriteLevel  = 0x0040;
 static constexpr uint32_t DdrCtrl_OutDqs      = 0x0080;
 
+#if 0
 static void ddr_control(uint32_t ctrl) {
     reg_write_32(DdrDevice, DdrControl, ctrl);
 }
@@ -50,11 +51,13 @@ void override_command(DdrCommands cmd) {
     fence();
     reg_write_32(DdrDevice, DdrOverrideCommand, static_cast<uint32_t>(cmd));
 }
+#endif
 
 constexpr uint32_t composeDdrAddress(uint32_t bank, uint32_t address) {
-    return bank<<(32-BankBits) | address&((1<<AddrBits) - 1);
+    return (bank<<(32-BankBits)) | (address&((1<<AddrBits) - 1));
 }
 
+#if 0
 void write_mode_reg0(uint32_t bl, uint32_t cl, uint32_t bt, bool dllReset, uint32_t writeRecovery, bool prechardPd) {
     uint32_t value = 0; // Register 0
 
@@ -143,6 +146,7 @@ void write_mode_reg3(uint32_t mpr_rf, bool mprEnable) {
     reg_write_32( DdrDevice, DdrOverrideAddress, composeDdrAddress(3, value) );
     override_command(DdrCommands::ModeRegisterSet);
 }
+#endif
 }
 
 void ddr_init() {

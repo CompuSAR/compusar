@@ -111,7 +111,7 @@ public:
         }
     };
 
-    PoolAllocator() requires (NumElements != 0) : _firstFree(&_pool.pool[0]) {
+    PoolAllocator() requires (NumElements != 0) : _pool(), _firstFree(&_pool.pool[0]) {
 
         // Add all elements to the free list
         for( auto &element : _pool.pool ) {

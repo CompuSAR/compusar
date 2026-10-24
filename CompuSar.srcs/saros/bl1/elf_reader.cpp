@@ -132,7 +132,7 @@ EntryPoint load_os() {
         // Make sure this section header is within the program headers. Otherwise, we asked for it to be completely uninitialized.
         bool found = false;
         const Elf32_Addr sectionEnd = section_headers[i].sh_addr + section_headers[i].sh_size;
-        for( unsigned j=0; &found && j<header.e_phnum; ++j ) {
+        for( unsigned j=0; !found && j<header.e_phnum; ++j ) {
             const Elf32_Addr programEnd = program_headers[j].p_vaddr + program_headers[j].p_memsz;
             if( section_headers[i].sh_addr>=program_headers[j].p_vaddr && sectionEnd <= programEnd ) {
                 found = true;
@@ -155,8 +155,8 @@ EntryPoint load_os() {
         print_hex(section_headers[i].sh_size);
         uart_send("\n");
 
-        unsigned char *section = reinterpret_cast<unsigned char *>( section_headers[i].sh_addr );
-        for( unsigned int j=0; j<section_headers[i].sh_size; ++j ) {
+        uint32_t *section = reinterpret_cast<uint32_t *>( section_headers[i].sh_addr );
+        for( unsigned int j=0; j*sizeof(*section) < section_headers[i].sh_size; j++ ) {
             section[j] = 0;
         }
     }
