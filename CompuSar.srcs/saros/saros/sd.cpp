@@ -551,7 +551,7 @@ bool SD::deselectCard() const {
 }
 
 // Manually verified constructor is called at program init 2-Aug-26
-__attribute__((section(".uninitialized"))) DS::PoolAllocator<SD::Block, SD::BlocksPoolSize> SD::_blocksPool;
+DS::PoolAllocator<SD::Block, SD::BlocksPoolSize> SD::_blocksPool;
 
 // Internal utility functions
 

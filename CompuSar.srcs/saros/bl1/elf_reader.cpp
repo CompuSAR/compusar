@@ -155,8 +155,8 @@ EntryPoint load_os() {
         print_hex(section_headers[i].sh_size);
         uart_send("\n");
 
-        unsigned char *section = reinterpret_cast<unsigned char *>( section_headers[i].sh_addr );
-        for( unsigned int j=0; j<section_headers[i].sh_size; ++j ) {
+        uint32_t *section = reinterpret_cast<uint32_t *>( section_headers[i].sh_addr );
+        for( unsigned int j=0; j*sizeof(*section) < section_headers[i].sh_size; j++ ) {
             section[j] = 0;
         }
     }
