@@ -64,17 +64,23 @@ void logoCrawl(void *) noexcept {
 }
 
 void startup_function(void *) noexcept {
+    uart_send("Point 1\n");
     SD::init();
+    uart_send("Point 2\n");
 
     saros.createThread( logoCrawl, nullptr, "Logo crawl"_fs );
+    uart_send("Point 3\n");
     start_8bit();
 }
 
 void  __attribute__((weak)) start_8bit() {
+    uart_send("8bit 1\n");
     while( !fs ) {
         fsChanged.wait();
     }
+    uart_send("8bit 2\n");
     auto rootDir = fs->getRootDir();
+    uart_send("8bit 3\n");
     for( auto dirEntry : rootDir ) {
         if( dirEntry.dirAttr == FAT::Directory::DirEntry::AttributeLongName )
             continue;

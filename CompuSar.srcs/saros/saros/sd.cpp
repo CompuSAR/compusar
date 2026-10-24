@@ -451,8 +451,11 @@ void SD::initCard() {
 }
 
 void SD::threadMain() noexcept {
+    uart_send("SD 1\n");
     while(true) {
+        uart_send("SD 2\n");
         if( isInserted() ) {
+            uart_send("SD 3\n");
             irq_external_mask( IrqExt__SdCardIn );
             reset_gpio_bits(0, GPO0__SD_CARD_POLARITY);
 
