@@ -2,6 +2,8 @@
 
 #include <saros/fs/partition.h>
 
+#include <uart.h>
+
 class FAT {
     const Partition &partition_;
 
@@ -58,6 +60,16 @@ public:
             uint16_t dirWrtDate;
             uint16_t dirFstClusLo;
             uint32_t dirFileSize;
+
+            void printFileName() const {
+                for(unsigned i=0; i<8; ++i) {
+                    uart_send(dirName[i]);
+                }
+                uart_send(".");
+                for(unsigned i=8; i<11; ++i) {
+                    uart_send(dirName[i]);
+                }
+            }
 
             bool isDeleted() const {
                 return dirName[0] == FreeMarker || dirName[0] == EndMarker;
